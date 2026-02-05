@@ -6,6 +6,7 @@ struct CategoryListView: View {
     @State private var isAddingCategory = false
     @State private var newCategoryName = ""
     @State private var editingCategory: MockCategory?
+    @State private var editingCategoryName = ""
     @State private var deleteConfig: ConfirmationDialogConfig?
 
     var body: some View {
@@ -18,21 +19,20 @@ struct CategoryListView: View {
                     CategoryRow(category: category)
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    if !category.isDefault {
-                        Button("Delete", role: .destructive) {
-                            deleteConfig = ConfirmationDialogConfig(
-                                title: "Delete \"\(category.name)\"?",
-                                message: "Exercises in this category will not be deleted.",
-                                confirmTitle: "Delete"
-                            ) {
-                                withAnimation {
-                                    categories.removeAll { $0.id == category.id }
-                                }
+                    Button("Delete", role: .destructive) {
+                        deleteConfig = ConfirmationDialogConfig(
+                            title: "Delete \"\(category.name)\"?",
+                            message: "Exercises in this category will not be deleted.",
+                            confirmTitle: "Delete"
+                        ) {
+                            withAnimation {
+                                categories.removeAll { $0.id == category.id }
                             }
                         }
                     }
                     Button("Edit") {
                         editingCategory = category
+                        editingCategoryName = category.name
                     }
                     .tint(.blue)
                 }
@@ -67,18 +67,14 @@ struct CategoryListView: View {
             get: { editingCategory != nil },
             set: { if !$0 { editingCategory = nil } }
         )) {
-            TextField("Category name", text: Binding(
-                get: { editingCategory?.name ?? "" },
-                set: { newName in
-                    if let index = categories.firstIndex(where: { $0.id == editingCategory?.id }) {
-                        categories[index].name = newName
-                    }
-                }
-            ))
+            TextField("Category name", text: $editingCategoryName)
             Button("Cancel", role: .cancel) {
                 editingCategory = nil
             }
             Button("Save") {
+                if let index = categories.firstIndex(where: { $0.id == editingCategory?.id }) {
+                    categories[index].name = editingCategoryName
+                }
                 editingCategory = nil
             }
         }

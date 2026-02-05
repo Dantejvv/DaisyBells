@@ -8,46 +8,39 @@ struct AnalyticsDashboardView: View {
     private let workoutsThisWeek = 3
     private let workoutsThisMonth = 12
     private let totalWorkouts = 47
-    private let recentExercises = MockAnalyticsData.recentExercises
     private let personalRecords = MockAnalyticsData.personalRecords
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Summary cards
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    SummaryCard(
-                        title: "This Week",
-                        value: "\(workoutsThisWeek)",
-                        subtitle: "workouts",
-                        systemImage: "calendar",
-                        color: .blue
-                    )
+                // Hero Card
+                VStack(spacing: 16) {
+                    Text("\(workoutsThisWeek)")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
 
-                    SummaryCard(
-                        title: "This Month",
-                        value: "\(workoutsThisMonth)",
-                        subtitle: "workouts",
-                        systemImage: "calendar.badge.clock",
-                        color: .green
-                    )
+                    Text("workouts this week")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
 
-                    SummaryCard(
-                        title: "Total",
-                        value: "\(totalWorkouts)",
-                        subtitle: "workouts",
-                        systemImage: "flame",
-                        color: .orange
-                    )
+                    HStack(spacing: 24) {
+                        SupportingStat(value: "\(workoutsThisMonth)", label: "this month")
 
-                    SummaryCard(
-                        title: "PRs Set",
-                        value: "\(personalRecords.count)",
-                        subtitle: "all time",
-                        systemImage: "trophy",
-                        color: .yellow
-                    )
+                        Divider()
+                            .frame(height: 32)
+
+                        SupportingStat(value: "\(totalWorkouts)", label: "total")
+
+                        Divider()
+                            .frame(height: 32)
+
+                        SupportingStat(value: "\(personalRecords.count)", label: "PRs")
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                .padding(.horizontal)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
 
                 // Recent PRs
@@ -60,85 +53,42 @@ struct AnalyticsDashboardView: View {
                         }
                         .padding(.horizontal)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(personalRecords) { pr in
-                                    PRCard(record: pr)
-                                }
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            ForEach(personalRecords) { pr in
+                                PRCard(record: pr)
                             }
-                            .padding(.horizontal)
                         }
+                        .padding(.horizontal)
                     }
                 }
 
-                // Recent exercises
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Recent Exercises")
-                            .font(.headline)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-
-                    VStack(spacing: 0) {
-                        ForEach(recentExercises) { exercise in
-                            NavigationLink {
-                                ExerciseAnalyticsDetailView(exercise: exercise)
-                            } label: {
-                                RecentExerciseRow(exercise: exercise)
-                            }
-                            .buttonStyle(.plain)
-
-                            if exercise.id != recentExercises.last?.id {
-                                Divider()
-                                    .padding(.leading)
-                            }
-                        }
-                    }
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
-                }
             }
             .padding(.vertical)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Analytics")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("Analytics")
+                    .font(.title.weight(.semibold))
+            }
+        }
     }
 }
 
-private struct SummaryCard: View {
-    let title: String
+private struct SupportingStat: View {
     let value: String
-    let subtitle: String
-    let systemImage: String
-    let color: Color
+    let label: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: systemImage)
-                    .foregroundStyle(color)
-                Spacer()
-            }
-
+        VStack(spacing: 4) {
             Text(value)
-                .font(.system(.title, design: .rounded))
+                .font(.system(.title2, design: .rounded))
                 .fontWeight(.bold)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(title)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -154,6 +104,10 @@ private struct PRCard: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
+                Spacer()
+                Text(formattedDate)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
 
             Text(record.exerciseName)
@@ -164,13 +118,9 @@ private struct PRCard: View {
             Text(record.value)
                 .font(.headline)
                 .fontWeight(.bold)
-
-            Text(formattedDate)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         }
         .padding()
-        .frame(width: 140)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
@@ -182,54 +132,6 @@ private struct PRCard: View {
     }
 }
 
-private struct RecentExerciseRow: View {
-    let exercise: MockRecentExercise
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(exercise.name)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-
-                Text("Last: \(formattedDate)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(exercise.lastPerformance)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-
-                Text("\(exercise.timesPerformed)x performed")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding()
-    }
-
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        let calendar = Calendar.current
-
-        if calendar.isDateInToday(exercise.lastPerformed) {
-            return "Today"
-        } else if calendar.isDateInYesterday(exercise.lastPerformed) {
-            return "Yesterday"
-        } else {
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: exercise.lastPerformed)
-        }
-    }
-}
 
 #Preview {
     NavigationStack {

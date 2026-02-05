@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// Main workout logging screen with timer, exercises, and sets
+/// Main workout logging screen using List for native swipe-to-delete support
 struct ActiveWorkoutView: View {
     let templateName: String?
     let exercises: [MockTemplateExercise]
 
     @Environment(\.dismiss) private var dismiss
 
+    @State private var startTime = Date()
     @State private var elapsedTime: TimeInterval = 0
     @State private var timerActive = true
     @State private var loggedExercises: [MockLoggedExercise]
@@ -14,12 +15,13 @@ struct ActiveWorkoutView: View {
     @State private var showingExercisePicker = false
     @State private var completeConfig: ConfirmationDialogConfig?
     @State private var cancelConfig: ConfirmationDialogConfig?
+    @State private var deleteExerciseConfig: ConfirmationDialogConfig?
+    @State private var isEditing = false
 
     init(templateName: String? = nil, exercises: [MockTemplateExercise] = []) {
         self.templateName = templateName
         self.exercises = exercises
 
-        // Convert template exercises to logged exercises
         let logged = exercises.enumerated().map { index, te in
             MockLoggedExercise(
                 exerciseName: te.exerciseName,
@@ -30,15 +32,33 @@ struct ActiveWorkoutView: View {
                 }
             )
         }
+
         _loggedExercises = State(initialValue: logged)
     }
 
     var body: some View {
         List {
-            // Timer section
+            // MARK: - Header Section
             Section {
+                // Title
+                Text(templateName ?? "Workout")
+                    .font(.title2.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                // Timer and Start Time
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
+                        Text(startTime, format: .dateTime.month(.abbreviated).day().hour().minute())
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text("Started")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
                         Text(formattedTime)
                             .font(.system(.title, design: .monospaced))
                             .fontWeight(.medium)
@@ -47,111 +67,88 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Spacer()
-
                     Button {
                         timerActive.toggle()
                     } label: {
                         Image(systemName: timerActive ? "pause.circle.fill" : "play.circle.fill")
                             .font(.title)
                     }
+                    .padding(.leading, 8)
                 }
+
+                // Notes
+                TextField(
+                    "Workout notes",
+                    text: $workoutNotes,
+                    axis: .vertical
+                )
+                .lineLimit(2...4)
             }
 
-            // Exercises
-            ForEach($loggedExercises) { $exercise in
+            // MARK: - Exercise Sections
+            ForEach(loggedExercises.indices, id: \.self) { index in
                 Section {
-                    // Exercise header
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(exercise.exerciseName)
-                                .font(.headline)
-                            Spacer()
-                            Text(exercise.exerciseType.displayName)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        // Column headers
-                        columnHeaders(for: exercise.exerciseType)
-                    }
-
-                    // Sets
-                    ForEach($exercise.sets) { $set in
-                        LoggedSetRow(
-                            exerciseType: exercise.exerciseType,
-                            set: $set
+                    // Set rows with swipe-to-delete
+                    ForEach($loggedExercises[index].sets) { $set in
+                        let setIndex = loggedExercises[index].sets.firstIndex(where: { $0.id == set.id }) ?? 0
+                        LoggedSetEditorView(
+                            exerciseType: loggedExercises[index].exerciseType,
+                            setNumber: setIndex + 1,
+                            weight: $set.weight,
+                            reps: $set.reps,
+                            bodyweightModifier: $set.bodyweightModifier,
+                            time: $set.time,
+                            distance: $set.distance,
+                            notes: $set.notes
                         )
                     }
                     .onDelete { indexSet in
-                        exercise.sets.remove(atOffsets: indexSet)
-                        reorderSets(for: &exercise)
+                        loggedExercises[index].sets.remove(atOffsets: indexSet)
+                        reorderSets(at: index)
                     }
 
-                    // Add set button
+                    // Add Set button
                     Button {
-                        let newSet = MockLoggedSet(order: exercise.sets.count)
+                        let newSet = MockLoggedSet(order: loggedExercises[index].sets.count)
                         withAnimation {
-                            exercise.sets.append(newSet)
+                            loggedExercises[index].sets.append(newSet)
                         }
                     } label: {
                         HStack {
                             Image(systemName: "plus.circle.fill")
+                                .font(.title3)
                             Text("Add Set")
+                                .font(.body)
                         }
-                        .font(.subheadline)
+                        .padding(.vertical, 4)
                     }
-
-                    // Exercise notes
-                    TextField("Notes for this exercise...", text: $exercise.notes, axis: .vertical)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2...4)
+                } header: {
+                    exerciseHeader(for: index)
                 }
             }
-            .onDelete { indexSet in
-                loggedExercises.remove(atOffsets: indexSet)
-                reorderExercises()
-            }
-            .onMove { from, to in
-                loggedExercises.move(fromOffsets: from, toOffset: to)
-                reorderExercises()
-            }
 
-            // Add exercise button
+            // MARK: - Add Exercise Section
             Section {
                 Button {
                     showingExercisePicker = true
                 } label: {
                     HStack {
                         Image(systemName: "plus.circle.fill")
+                            .font(.title2)
                         Text("Add Exercise")
+                            .font(.body)
                     }
+                    .padding(.vertical, 6)
                 }
-            }
-
-            // Workout notes
-            Section("Workout Notes") {
-                TextField("How did the workout feel?", text: $workoutNotes, axis: .vertical)
-                    .lineLimit(3...6)
             }
         }
-        .navigationTitle(templateName ?? "Workout")
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
+        .contentMargins(.top, 0, for: .scrollContent)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    cancelConfig = ConfirmationDialogConfig(
-                        title: "Discard Workout?",
-                        message: "All logged sets will be lost.",
-                        confirmTitle: "Discard"
-                    ) {
-                        dismiss()
-                    }
-                }
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Complete") {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
                     completeConfig = ConfirmationDialogConfig(
                         title: "Complete Workout?",
                         message: "This will save your workout to history.",
@@ -160,10 +157,42 @@ struct ActiveWorkoutView: View {
                     ) {
                         dismiss()
                     }
+                } label: {
+                    Text("Complete")
+                        .fontWeight(.semibold)
                 }
             }
+
             ToolbarItem(placement: .topBarTrailing) {
-                EditButton()
+                if isEditing {
+                    Button("Done") {
+                        withAnimation {
+                            isEditing = false
+                        }
+                    }
+                    .fontWeight(.semibold)
+                } else {
+                    Menu {
+                        Button("Edit Workout") {
+                            withAnimation {
+                                isEditing = true
+                            }
+                        }
+
+                        Button("Cancel Workout", role: .destructive) {
+                            cancelConfig = ConfirmationDialogConfig(
+                                title: "Discard Workout?",
+                                message: "All logged sets will be lost.",
+                                confirmTitle: "Discard"
+                            ) {
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.title3)
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingExercisePicker) {
@@ -175,6 +204,7 @@ struct ActiveWorkoutView: View {
                         order: loggedExercises.count,
                         sets: [MockLoggedSet(order: 0)]
                     )
+
                     withAnimation {
                         loggedExercises.append(logged)
                     }
@@ -183,11 +213,13 @@ struct ActiveWorkoutView: View {
         }
         .confirmationDialog($completeConfig)
         .confirmationDialog($cancelConfig)
+        .confirmationDialog($deleteExerciseConfig)
         .onAppear {
             startTimer()
         }
     }
 
+    // MARK: - Helpers
     private var formattedTime: String {
         let hours = Int(elapsedTime) / 3600
         let minutes = (Int(elapsedTime) % 3600) / 60
@@ -200,52 +232,6 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    @ViewBuilder
-    private func columnHeaders(for type: MockExerciseType) -> some View {
-        HStack(spacing: 12) {
-            Text("SET")
-                .frame(width: 24)
-
-            switch type {
-            case .weightAndReps:
-                Text("WEIGHT")
-                    .frame(width: 70, alignment: .leading)
-                Text("REPS")
-                    .frame(width: 50, alignment: .leading)
-
-            case .bodyweightAndReps:
-                Text("MOD %")
-                    .frame(width: 60, alignment: .leading)
-                Text("REPS")
-                    .frame(width: 50, alignment: .leading)
-
-            case .reps:
-                Text("REPS")
-                    .frame(width: 50, alignment: .leading)
-
-            case .time:
-                Text("TIME")
-                    .frame(width: 50, alignment: .leading)
-
-            case .distanceAndTime:
-                Text("DIST")
-                    .frame(width: 60, alignment: .leading)
-                Text("TIME")
-                    .frame(width: 50, alignment: .leading)
-
-            case .weightAndTime:
-                Text("WEIGHT")
-                    .frame(width: 70, alignment: .leading)
-                Text("TIME")
-                    .frame(width: 50, alignment: .leading)
-            }
-
-            Spacer()
-        }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    }
-
     private func startTimer() {
         Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if timerActive {
@@ -254,44 +240,130 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    private func deleteExercise(at index: Int) {
+        loggedExercises.remove(at: index)
+        reorderExercises()
+    }
+
+    private func moveExerciseUp(at index: Int) {
+        guard index > 0 else { return }
+        loggedExercises.swapAt(index, index - 1)
+        reorderExercises()
+    }
+
+    private func moveExerciseDown(at index: Int) {
+        guard index < loggedExercises.count - 1 else { return }
+        loggedExercises.swapAt(index, index + 1)
+        reorderExercises()
+    }
+
     private func reorderExercises() {
-        for (index, _) in loggedExercises.enumerated() {
+        for index in loggedExercises.indices {
             loggedExercises[index].order = index
         }
     }
 
-    private func reorderSets(for exercise: inout MockLoggedExercise) {
-        for (index, _) in exercise.sets.enumerated() {
-            exercise.sets[index].order = index
+    private func reorderSets(at exerciseIndex: Int) {
+        for index in loggedExercises[exerciseIndex].sets.indices {
+            loggedExercises[exerciseIndex].sets[index].order = index
         }
     }
-}
 
-private struct LoggedSetRow: View {
-    let exerciseType: MockExerciseType
-    @Binding var set: MockLoggedSet
+    @ViewBuilder
+    private func exerciseHeader(for index: Int) -> some View {
+        let exercise = loggedExercises[index]
+        let isFirst = index == 0
+        let isLast = index == loggedExercises.count - 1
 
-    var body: some View {
-        LoggedSetEditorView(
-            exerciseType: exerciseType,
-            setNumber: set.order + 1,
-            weight: $set.weight,
-            reps: $set.reps,
-            bodyweightModifier: $set.bodyweightModifier,
-            time: $set.time,
-            distance: $set.distance
-        )
+        HStack {
+            if isEditing {
+                Button(role: .destructive) {
+                    deleteExerciseConfig = ConfirmationDialogConfig(
+                        title: "Delete \(exercise.exerciseName)?",
+                        message: "All logged sets for this exercise will be removed.",
+                        confirmTitle: "Delete"
+                    ) {
+                        withAnimation {
+                            deleteExercise(at: index)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundStyle(.red)
+                        .font(.title2)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(exercise.exerciseName)
+                    .font(.headline)
+                    .textCase(nil)
+                    .foregroundStyle(Color(.label))
+                Text(exercise.exerciseType.displayName)
+                    .font(.caption)
+                    .textCase(nil)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if isEditing {
+                HStack(spacing: 12) {
+                    Button {
+                        withAnimation {
+                            moveExerciseUp(at: index)
+                        }
+                    } label: {
+                        Image(systemName: "chevron.up")
+                            .font(.title3)
+                            .foregroundStyle(isFirst ? .tertiary : .secondary)
+                    }
+                    .disabled(isFirst)
+
+                    Button {
+                        withAnimation {
+                            moveExerciseDown(at: index)
+                        }
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.title3)
+                            .foregroundStyle(isLast ? .tertiary : .secondary)
+                    }
+                    .disabled(isLast)
+                }
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
+// MARK: - Previews
 #Preview("From Template") {
     NavigationStack {
         ActiveWorkoutView(
             templateName: "Push Day",
             exercises: [
-                MockTemplateExercise(exerciseName: "Bench Press", exerciseType: .weightAndReps, order: 0, targetSets: 4, targetReps: 8),
-                MockTemplateExercise(exerciseName: "Overhead Press", exerciseType: .weightAndReps, order: 1, targetSets: 3, targetReps: 10),
-                MockTemplateExercise(exerciseName: "Dips", exerciseType: .bodyweightAndReps, order: 2, targetSets: 3, targetReps: 12),
+                MockTemplateExercise(
+                    exerciseName: "Bench Press",
+                    exerciseType: .weightAndReps,
+                    order: 0,
+                    targetSets: 4,
+                    targetReps: 8
+                ),
+                MockTemplateExercise(
+                    exerciseName: "Overhead Press",
+                    exerciseType: .weightAndReps,
+                    order: 1,
+                    targetSets: 3,
+                    targetReps: 10
+                ),
+                MockTemplateExercise(
+                    exerciseName: "Dips",
+                    exerciseType: .bodyweightAndReps,
+                    order: 2,
+                    targetSets: 3,
+                    targetReps: 12
+                )
             ]
         )
     }

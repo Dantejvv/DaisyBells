@@ -1,55 +1,76 @@
 import SwiftUI
 
-/// Read-only view of a completed workout
+/// Read-only view of a completed workout, matching ActiveWorkoutView layout
 struct CompletedWorkoutDetailView: View {
     let workout: MockCompletedWorkout
 
     @Environment(\.dismiss) private var dismiss
-    @State private var notes: String
     @State private var deleteConfig: ConfirmationDialogConfig?
-
-    init(workout: MockCompletedWorkout) {
-        self.workout = workout
-        _notes = State(initialValue: workout.notes ?? "")
-    }
 
     var body: some View {
         List {
-            // Summary section
+            // MARK: - Header Section
             Section {
-                SummaryRow(label: "Date", value: formattedDate)
-                SummaryRow(label: "Duration", value: formattedDuration)
-                SummaryRow(label: "Exercises", value: "\(workout.exerciseCount)")
-                SummaryRow(label: "Total Sets", value: "\(workout.totalSets)")
-            }
+                // Title
+                Text(workout.name)
+                    .font(.title2.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-            // Exercises section
-            if !workout.exercises.isEmpty {
-                ForEach(workout.exercises) { exercise in
-                    Section(exercise.exerciseName) {
-                        // Column headers
-                        columnHeaders(for: exercise.exerciseType)
-                            .listRowBackground(Color.clear)
+                // Date and Duration
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(workout.completedAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text("Completed")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                        ForEach(exercise.sets) { set in
-                            setRow(set: set, exerciseType: exercise.exerciseType)
-                        }
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(formattedDuration)
+                            .font(.system(.title, design: .monospaced))
+                            .fontWeight(.medium)
+                        Text("Duration")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-            }
 
-            // Notes section
-            Section("Notes") {
-                if notes.isEmpty {
-                    Text("No notes")
-                        .foregroundStyle(.secondary)
-                        .italic()
-                } else {
+                // Notes
+                if let notes = workout.notes, !notes.isEmpty {
                     Text(notes)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("No notes")
+                        .foregroundStyle(.tertiary)
+                        .italic()
                 }
             }
 
-            // Delete section
+            // MARK: - Exercise Sections
+            ForEach(workout.exercises) { exercise in
+                Section {
+                    ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { index, set in
+                        LoggedSetDisplayView(
+                            exerciseType: exercise.exerciseType,
+                            setNumber: index + 1,
+                            weight: set.weight,
+                            reps: set.reps,
+                            bodyweightModifier: set.bodyweightModifier,
+                            time: set.time,
+                            distance: set.distance,
+                            notes: set.notes ?? ""
+                        )
+                    }
+                } header: {
+                    exerciseHeader(for: exercise)
+                }
+            }
+
+            // MARK: - Delete Section
             Section {
                 Button(role: .destructive) {
                     deleteConfig = ConfirmationDialogConfig(
@@ -61,156 +82,163 @@ struct CompletedWorkoutDetailView: View {
                     }
                 } label: {
                     HStack {
+                        Spacer()
                         Image(systemName: "trash")
                         Text("Delete Workout")
+                        Spacer()
                     }
                 }
             }
         }
-        .navigationTitle(workout.name)
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(0)
+        .contentMargins(.top, 0, for: .scrollContent)
+        .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog($deleteConfig)
     }
 
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .short
-        return formatter.string(from: workout.completedAt)
-    }
+    // MARK: - Helpers
 
     private var formattedDuration: String {
         let hours = Int(workout.duration) / 3600
         let minutes = (Int(workout.duration) % 3600) / 60
+        let seconds = Int(workout.duration) % 60
 
         if hours > 0 {
-            return "\(hours)h \(minutes)m"
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
         } else {
-            return "\(minutes) min"
+            return String(format: "%02d:%02d", minutes, seconds)
         }
     }
 
     @ViewBuilder
-    private func columnHeaders(for type: MockExerciseType) -> some View {
+    private func exerciseHeader(for exercise: MockCompletedExercise) -> some View {
         HStack {
-            Text("SET")
-                .frame(width: 40, alignment: .leading)
-
-            switch type {
-            case .weightAndReps:
-                Text("WEIGHT")
-                Spacer()
-                Text("REPS")
-                    .frame(width: 50, alignment: .trailing)
-
-            case .bodyweightAndReps:
-                Text("MOD")
-                Spacer()
-                Text("REPS")
-                    .frame(width: 50, alignment: .trailing)
-
-            case .reps:
-                Spacer()
-                Text("REPS")
-                    .frame(width: 50, alignment: .trailing)
-
-            case .time:
-                Spacer()
-                Text("TIME")
-                    .frame(width: 80, alignment: .trailing)
-
-            case .distanceAndTime:
-                Text("DIST")
-                Spacer()
-                Text("TIME")
-                    .frame(width: 80, alignment: .trailing)
-
-            case .weightAndTime:
-                Text("WEIGHT")
-                Spacer()
-                Text("TIME")
-                    .frame(width: 80, alignment: .trailing)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(exercise.exerciseName)
+                    .font(.headline)
+                    .textCase(nil)
+                    .foregroundStyle(Color(.label))
+                Text(exercise.exerciseType.displayName)
+                    .font(.caption)
+                    .textCase(nil)
+                    .foregroundStyle(.secondary)
             }
+            Spacer()
         }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    }
-
-    @ViewBuilder
-    private func setRow(set: MockCompletedSet, exerciseType: MockExerciseType) -> some View {
-        HStack {
-            Text("\(set.order + 1)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 40, alignment: .leading)
-
-            switch exerciseType {
-            case .weightAndReps:
-                Text("\(Int(set.weight ?? 0)) lbs")
-                Spacer()
-                Text("\(set.reps ?? 0)")
-                    .fontWeight(.medium)
-                    .frame(width: 50, alignment: .trailing)
-
-            case .bodyweightAndReps:
-                if let mod = set.bodyweightModifier {
-                    Text(mod >= 0 ? "+\(Int(mod))%" : "\(Int(mod))%")
-                } else {
-                    Text("BW")
-                }
-                Spacer()
-                Text("\(set.reps ?? 0)")
-                    .fontWeight(.medium)
-                    .frame(width: 50, alignment: .trailing)
-
-            case .reps:
-                Spacer()
-                Text("\(set.reps ?? 0)")
-                    .fontWeight(.medium)
-                    .frame(width: 50, alignment: .trailing)
-
-            case .time:
-                Spacer()
-                Text(formatTime(set.time ?? 0))
-                    .fontWeight(.medium)
-                    .frame(width: 80, alignment: .trailing)
-
-            case .distanceAndTime:
-                Text(String(format: "%.2f mi", set.distance ?? 0))
-                Spacer()
-                Text(formatTime(set.time ?? 0))
-                    .fontWeight(.medium)
-                    .frame(width: 80, alignment: .trailing)
-
-            case .weightAndTime:
-                Text("\(Int(set.weight ?? 0)) lbs")
-                Spacer()
-                Text(formatTime(set.time ?? 0))
-                    .fontWeight(.medium)
-                    .frame(width: 80, alignment: .trailing)
-            }
-        }
-    }
-
-    private func formatTime(_ seconds: TimeInterval) -> String {
-        let minutes = Int(seconds) / 60
-        let secs = Int(seconds) % 60
-        return String(format: "%d:%02d", minutes, secs)
+        .padding(.vertical, 4)
     }
 }
 
-private struct SummaryRow: View {
-    let label: String
-    let value: String
+/// Read-only display of a logged set, matching LoggedSetEditorView layout
+private struct LoggedSetDisplayView: View {
+    let exerciseType: MockExerciseType
+    let setNumber: Int
+    let weight: Double?
+    let reps: Int?
+    let bodyweightModifier: Double?
+    let time: TimeInterval?
+    let distance: Double?
+    let notes: String
 
     var body: some View {
-        HStack {
-            Text(label)
+        HStack(spacing: 16) {
+            // Set number indicator
+            Text("\(setNumber)")
+                .font(.headline)
                 .foregroundStyle(.secondary)
+                .frame(width: 24)
+
+            // Dynamic display based on exercise type
+            switch exerciseType {
+            case .weightAndReps:
+                valueDisplay(value: formatWeight(weight), label: "lbs")
+                valueDisplay(value: formatReps(reps), label: "reps")
+
+            case .bodyweightAndReps:
+                valueDisplay(value: formatBodyweightModifier(bodyweightModifier), label: "+/- lbs")
+                valueDisplay(value: formatReps(reps), label: "reps")
+
+            case .reps:
+                valueDisplay(value: formatReps(reps), label: "reps")
+
+            case .time:
+                valueDisplay(value: formatTime(time), label: "min")
+
+            case .distanceAndTime:
+                valueDisplay(value: formatDistance(distance), label: "mi")
+                valueDisplay(value: formatTime(time), label: "min")
+
+            case .weightAndTime:
+                valueDisplay(value: formatWeight(weight), label: "lbs")
+                valueDisplay(value: formatTime(time), label: "min")
+            }
+
             Spacer()
+
+            // Notes display
+            if !notes.isEmpty {
+                Text(notes)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func valueDisplay(value: String, label: String) -> some View {
+        VStack(alignment: .center, spacing: 2) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             Text(value)
+                .frame(width: label == "+/- lbs" ? 50 : 40)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
+
+    // MARK: - Formatters
+
+    private func formatWeight(_ weight: Double?) -> String {
+        guard let weight else { return "—" }
+        return "\(Int(weight))"
+    }
+
+    private func formatReps(_ reps: Int?) -> String {
+        guard let reps else { return "—" }
+        return "\(reps)"
+    }
+
+    private func formatBodyweightModifier(_ modifier: Double?) -> String {
+        guard let modifier else { return "BW" }
+        if modifier > 0 {
+            return "+\(Int(modifier))"
+        } else if modifier < 0 {
+            return "\(Int(modifier))"
+        } else {
+            return "BW"
+        }
+    }
+
+    private func formatTime(_ time: TimeInterval?) -> String {
+        guard let time else { return "—" }
+        let minutes = time / 60
+        if minutes < 1 {
+            return String(format: "%.1f", minutes)
+        }
+        return String(format: "%.1f", minutes)
+    }
+
+    private func formatDistance(_ distance: Double?) -> String {
+        guard let distance else { return "—" }
+        return String(format: "%.2f", distance)
+    }
 }
+
+// MARK: - Previews
 
 #Preview("Full Workout") {
     NavigationStack {
@@ -238,7 +266,7 @@ private struct SummaryRow: View {
                         exerciseType: .bodyweightAndReps,
                         sets: [
                             MockCompletedSet(order: 0, reps: 15),
-                            MockCompletedSet(order: 1, reps: 10, bodyweightModifier: 25),
+                            MockCompletedSet(order: 1, reps: 10),
                             MockCompletedSet(order: 2, reps: 8, bodyweightModifier: 25),
                         ]
                     ),
@@ -257,16 +285,50 @@ private struct SummaryRow: View {
     }
 }
 
-#Preview("Minimal") {
+#Preview("No Notes") {
     NavigationStack {
         CompletedWorkoutDetailView(
             workout: MockCompletedWorkout(
                 name: "Quick Workout",
                 completedAt: Date(),
                 duration: 1800,
-                exerciseCount: 2,
-                totalSets: 6,
-                exercises: []
+                exerciseCount: 1,
+                totalSets: 3,
+                exercises: [
+                    MockCompletedExercise(
+                        exerciseName: "Pull-ups",
+                        exerciseType: .bodyweightAndReps,
+                        sets: [
+                            MockCompletedSet(order: 0, reps: 10),
+                            MockCompletedSet(order: 1, reps: 8),
+                            MockCompletedSet(order: 2, reps: 6),
+                        ]
+                    )
+                ]
+            )
+        )
+    }
+}
+
+#Preview("Cardio Workout") {
+    NavigationStack {
+        CompletedWorkoutDetailView(
+            workout: MockCompletedWorkout(
+                name: "Morning Run",
+                completedAt: Date(),
+                duration: 2700,
+                notes: "Easy pace, felt good.",
+                exerciseCount: 1,
+                totalSets: 1,
+                exercises: [
+                    MockCompletedExercise(
+                        exerciseName: "Running",
+                        exerciseType: .distanceAndTime,
+                        sets: [
+                            MockCompletedSet(order: 0, time: 2700, distance: 3.5)
+                        ]
+                    )
+                ]
             )
         )
     }

@@ -17,7 +17,7 @@
   - Notes / form cues
 - Exercise types:
   - Weight + Reps (e.g., bench press)
-  - Bodyweight + Reps with optional % modifier (e.g., pull-ups, assisted or weighted)
+  - Bodyweight + Reps with optional +/- weight modifier (e.g., pull-ups with +45 lbs, or -30 lbs assisted)
   - Reps only (e.g., box jumps)
   - Time (e.g., plank)
   - Distance + Time (e.g., running)
@@ -50,6 +50,7 @@
   - Weight
   - Reps
   - Time or distance (depending on exercise type)
+- Previous performance shown as placeholder text (weight, reps, time, distance from last completed workout for that exercise)
 - Exercise-level notes during workout
 - Workout-level notes
 - Complete workout (records end time)

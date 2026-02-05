@@ -203,6 +203,7 @@ This document defines the interface between Views and ViewModels, including stat
 #### State (ViewModel → View)
 - **workout:** Workout — The active workout session
 - **exercises:** [LoggedExercise] — Exercises being logged
+- **previousPerformance:** [Exercise.ID: [LoggedSet]] — Last completed sets per exercise, used as placeholder values
 - **elapsedTime:** TimeInterval — Time since workout started
 - **fromTemplate:** WorkoutTemplate? — Source template (if any)
 - **isLoading:** Bool — Whether data is being saved
@@ -210,6 +211,7 @@ This document defines the interface between Views and ViewModels, including stat
 
 #### Intents (View → ViewModel)
 - **loadWorkout()** — Load active workout data → updates workout, exercises
+- **loadPreviousPerformance(for exercise:)** — Fetch last completed sets for exercise → updates previousPerformance
 - **addExercise()** — User taps add exercise → triggers navigation to picker
 - **removeExercise(exercise:)** — Remove exercise from workout → updates exercises
 - **reorderExercises(from:to:)** — Drag to reorder → updates exercises order
@@ -230,7 +232,7 @@ This document defines the interface between Views and ViewModels, including stat
 - **showError** — Display error alert
 
 #### Services
-- WorkoutService: fetch(), update(), complete(), cancel()
+- WorkoutService: fetch(), update(), complete(), cancel(), lastPerformedSets(for:)
 - LoggedExerciseService: create(), update(), delete(), reorder()
 - LoggedSetService: create(), update(), delete()
 

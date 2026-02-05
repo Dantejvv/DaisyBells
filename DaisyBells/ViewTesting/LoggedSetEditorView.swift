@@ -10,9 +10,10 @@ struct LoggedSetEditorView: View {
     @Binding var bodyweightModifier: Double?
     @Binding var time: TimeInterval?
     @Binding var distance: Double?
+    @Binding var notes: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             // Set number indicator
             Text("\(setNumber)")
                 .font(.headline)
@@ -31,11 +32,9 @@ struct LoggedSetEditorView: View {
 
             case .reps:
                 repsInput
-                Spacer()
 
             case .time:
                 timeInput
-                Spacer()
 
             case .distanceAndTime:
                 distanceInput
@@ -45,72 +44,123 @@ struct LoggedSetEditorView: View {
                 weightInput
                 timeInput
             }
+
+            // Notes input - expands vertically
+            notesInput
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
+    }
+
+    private var notesInput: some View {
+        VStack(alignment: .center, spacing: 2) {
+            Text("note")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            TextField("", text: $notes, axis: .vertical)
+                .lineLimit(1...3)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
     }
 
     private var weightInput: some View {
-        HStack(spacing: 4) {
+        VStack(alignment: .center, spacing: 2) {
+            Text("lbs")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             TextField("0", value: $weight, format: .number)
                 .keyboardType(.decimalPad)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 70)
-            Text("lbs")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(width: 40)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
 
     private var repsInput: some View {
-        HStack(spacing: 4) {
+        VStack(alignment: .center, spacing: 2) {
+            Text("reps")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             TextField("0", value: $reps, format: .number)
                 .keyboardType(.numberPad)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 50)
-            Text("reps")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(width: 40)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
 
     private var bodyweightModifierInput: some View {
-        HStack(spacing: 4) {
-            TextField("0", value: $bodyweightModifier, format: .number)
-                .keyboardType(.numbersAndPunctuation)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 60)
-            Text("%")
-                .font(.caption)
+        VStack(alignment: .center, spacing: 2) {
+            Text("+/- lbs")
+                .font(.caption2)
                 .foregroundStyle(.secondary)
+            TextField("0", text: Binding(
+                get: {
+                    guard let value = bodyweightModifier else { return "" }
+                    if value > 0 {
+                        return "+\(Int(value))"
+                    } else if value < 0 {
+                        return "\(Int(value))"
+                    } else {
+                        return "0"
+                    }
+                },
+                set: { newValue in
+                    let cleaned = newValue.trimmingCharacters(in: .whitespaces)
+                    if cleaned.isEmpty {
+                        bodyweightModifier = nil
+                    } else if let parsed = Double(cleaned) {
+                        bodyweightModifier = parsed
+                    }
+                }
+            ))
+                .keyboardType(.numbersAndPunctuation)
+                .multilineTextAlignment(.center)
+                .frame(width: 50)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
 
     private var timeInput: some View {
-        HStack(spacing: 4) {
+        VStack(alignment: .center, spacing: 2) {
+            Text("min")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             TextField("0", value: Binding(
                 get: { (time ?? 0) / 60 },
                 set: { time = $0 * 60 }
             ), format: .number)
                 .keyboardType(.decimalPad)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 50)
-            Text("min")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(width: 40)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
 
     private var distanceInput: some View {
-        HStack(spacing: 4) {
+        VStack(alignment: .center, spacing: 2) {
+            Text("mi")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             TextField("0", value: $distance, format: .number)
                 .keyboardType(.decimalPad)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 60)
-            Text("mi")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(width: 40)
+                .padding(6)
+                .background(Color(.tertiarySystemFill))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
+
 }
 
 // MARK: - Preview Helper
@@ -121,6 +171,7 @@ private struct LoggedSetEditorPreview: View {
     @State private var bodyweightModifier: Double? = nil
     @State private var time: TimeInterval? = nil
     @State private var distance: Double? = nil
+    @State private var notes: String = ""
 
     let exerciseType: MockExerciseType
 
@@ -132,7 +183,8 @@ private struct LoggedSetEditorPreview: View {
             reps: $reps,
             bodyweightModifier: $bodyweightModifier,
             time: $time,
-            distance: $distance
+            distance: $distance,
+            notes: $notes
         )
     }
 }

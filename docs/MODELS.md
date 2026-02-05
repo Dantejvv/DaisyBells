@@ -43,8 +43,8 @@ enum Appearance: String, Codable {
 - **Example:** Bench Press
 
 ### bodyweightAndReps
-- **Input Fields:** reps, bodyweightModifier %
-- **Example:** Pull-ups (-20% assisted, +10% weighted)
+- **Input Fields:** reps, bodyweightModifier (+/- lbs)
+- **Example:** Pull-ups (-30 lbs assisted, +45 lbs weighted)
 
 ### reps
 - **Input Fields:** reps only
@@ -208,7 +208,7 @@ class LoggedSet {
     var order: Int
     var weight: Double?
     var reps: Int?
-    var bodyweightModifier: Double?  // percentage: -20 for assisted, +10 for weighted
+    var bodyweightModifier: Double?  // +/- lbs: -30 for assisted, +45 for weighted
     var time: TimeInterval?
     var distance: Double?
 

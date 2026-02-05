@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Configuration for a confirmation dialog
+/// Configuration for a confirmation alert
 struct ConfirmationDialogConfig {
     let title: String
     let message: String
@@ -23,19 +23,18 @@ struct ConfirmationDialogConfig {
     }
 }
 
-/// A ViewModifier that presents a confirmation dialog for destructive actions
+/// A ViewModifier that presents a centered confirmation alert
 struct ConfirmationDialogModifier: ViewModifier {
     @Binding var config: ConfirmationDialogConfig?
 
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(
+            .alert(
                 config?.title ?? "",
                 isPresented: Binding(
                     get: { config != nil },
                     set: { if !$0 { config = nil } }
-                ),
-                titleVisibility: .visible
+                )
             ) {
                 if let config {
                     Button(config.confirmTitle, role: config.confirmRole) {
@@ -55,7 +54,7 @@ struct ConfirmationDialogModifier: ViewModifier {
 }
 
 extension View {
-    /// Presents a confirmation dialog when config is non-nil
+    /// Presents a confirmation alert when config is non-nil
     func confirmationDialog(_ config: Binding<ConfirmationDialogConfig?>) -> some View {
         modifier(ConfirmationDialogModifier(config: config))
     }

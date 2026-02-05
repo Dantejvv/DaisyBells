@@ -134,6 +134,7 @@ struct MockLoggedSet: Identifiable {
     var bodyweightModifier: Double?
     var time: TimeInterval?
     var distance: Double?
+    var notes: String = ""
 }
 
 // MARK: - History Models
@@ -164,6 +165,7 @@ struct MockCompletedSet: Identifiable {
     var bodyweightModifier: Double?
     var time: TimeInterval?
     var distance: Double?
+    var notes: String?
 }
 
 // MARK: - Analytics Models
