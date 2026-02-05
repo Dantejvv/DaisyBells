@@ -42,6 +42,19 @@ enum SchemaV1: VersionedSchema {
         var isFavorite: Bool
         var isArchived: Bool
 
+        // Cached statistics (updated on workout completion)
+        var lastPerformedAt: Date?
+        var hasCompletedWorkout: Bool
+        var totalVolume: Double
+
+        // Personal record cache
+        var prWeight: Double?
+        var prReps: Int?
+        var prTime: TimeInterval?
+        var prDistance: Double?
+        var prEstimated1RM: Double?
+        var prAchievedAt: Date?
+
         @Relationship
         var categories: [ExerciseCategory]
 
@@ -52,6 +65,15 @@ enum SchemaV1: VersionedSchema {
             self.notes = notes
             self.isFavorite = false
             self.isArchived = false
+            self.lastPerformedAt = nil
+            self.hasCompletedWorkout = false
+            self.totalVolume = 0
+            self.prWeight = nil
+            self.prReps = nil
+            self.prTime = nil
+            self.prDistance = nil
+            self.prEstimated1RM = nil
+            self.prAchievedAt = nil
             self.categories = []
         }
     }
@@ -98,10 +120,17 @@ enum SchemaV1: VersionedSchema {
     @Model
     final class Workout {
         @Attribute(.unique) var id: UUID
-        var status: WorkoutStatus
         var startedAt: Date
         var completedAt: Date?
         var notes: String?
+
+        // Store as raw string for predicate support (internal for predicate access)
+        var statusValue: String
+
+        var status: WorkoutStatus {
+            get { WorkoutStatus(rawValue: statusValue) ?? .active }
+            set { statusValue = newValue.rawValue }
+        }
 
         @Relationship
         var fromTemplate: WorkoutTemplate?
@@ -111,7 +140,7 @@ enum SchemaV1: VersionedSchema {
 
         init(fromTemplate: WorkoutTemplate? = nil) {
             self.id = UUID()
-            self.status = .active
+            self.statusValue = WorkoutStatus.active.rawValue
             self.startedAt = Date()
             self.fromTemplate = fromTemplate
             self.loggedExercises = []
@@ -151,12 +180,18 @@ enum SchemaV1: VersionedSchema {
         var time: TimeInterval?
         var distance: Double?
 
+        // Denormalized for direct queries (set on workout completion)
+        var exerciseId: UUID?
+        var completedAt: Date?
+
         @Relationship
         var loggedExercise: LoggedExercise?
 
         init(order: Int) {
             self.id = UUID()
             self.order = order
+            self.exerciseId = nil
+            self.completedAt = nil
         }
     }
 }

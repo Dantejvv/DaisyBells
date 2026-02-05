@@ -3,26 +3,24 @@ import SwiftData
 
 @main
 struct DaisyBellsApp: App {
-    let container: ModelContainer
+    @State private var dependencyContainer: DependencyContainer
 
     init() {
         do {
-            let schema = Schema(versionedSchema: SchemaV1.self)
-            let config = ModelConfiguration(schema: schema)
-            container = try ModelContainer(
-                for: schema,
-                migrationPlan: DaisyBellsMigrationPlan.self,
-                configurations: config
-            )
+            _dependencyContainer = State(initialValue: try DependencyContainer())
         } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
+            fatalError("Failed to create DependencyContainer: \(error)")
         }
     }
 
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .task {
+                    await dependencyContainer.performSetup()
+                }
         }
-        .modelContainer(container)
+        .modelContainer(dependencyContainer.modelContainer)
+        .environment(dependencyContainer)
     }
 }

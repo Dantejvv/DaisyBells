@@ -1,0 +1,42 @@
+[
+    { "name": "Bench Press", "type": "weightAndReps", "categories": ["Chest"] },
+    { "name": "Incline Bench Press", "type": "weightAndReps", "categories": ["Chest"] },
+    { "name": "Dumbbell Fly", "type": "weightAndReps", "categories": ["Chest"] },
+    { "name": "Push-Up", "type": "bodyweightAndReps", "categories": ["Chest"] },
+    { "name": "Cable Crossover", "type": "weightAndReps", "categories": ["Chest"] },
+
+    { "name": "Deadlift", "type": "weightAndReps", "categories": ["Back", "Legs"] },
+    { "name": "Pull-Up", "type": "bodyweightAndReps", "categories": ["Back"] },
+    { "name": "Bent Over Row", "type": "weightAndReps", "categories": ["Back"] },
+    { "name": "Lat Pulldown", "type": "weightAndReps", "categories": ["Back"] },
+    { "name": "Seated Cable Row", "type": "weightAndReps", "categories": ["Back"] },
+
+    { "name": "Overhead Press", "type": "weightAndReps", "categories": ["Shoulders"] },
+    { "name": "Lateral Raise", "type": "weightAndReps", "categories": ["Shoulders"] },
+    { "name": "Front Raise", "type": "weightAndReps", "categories": ["Shoulders"] },
+    { "name": "Face Pull", "type": "weightAndReps", "categories": ["Shoulders", "Back"] },
+
+    { "name": "Bicep Curl", "type": "weightAndReps", "categories": ["Arms"] },
+    { "name": "Hammer Curl", "type": "weightAndReps", "categories": ["Arms"] },
+    { "name": "Tricep Pushdown", "type": "weightAndReps", "categories": ["Arms"] },
+    { "name": "Tricep Dip", "type": "bodyweightAndReps", "categories": ["Arms", "Chest"] },
+    { "name": "Skull Crusher", "type": "weightAndReps", "categories": ["Arms"] },
+
+    { "name": "Squat", "type": "weightAndReps", "categories": ["Legs"] },
+    { "name": "Leg Press", "type": "weightAndReps", "categories": ["Legs"] },
+    { "name": "Leg Extension", "type": "weightAndReps", "categories": ["Legs"] },
+    { "name": "Leg Curl", "type": "weightAndReps", "categories": ["Legs"] },
+    { "name": "Calf Raise", "type": "weightAndReps", "categories": ["Legs"] },
+    { "name": "Lunge", "type": "weightAndReps", "categories": ["Legs"] },
+
+    { "name": "Plank", "type": "time", "categories": ["Core"] },
+    { "name": "Crunch", "type": "reps", "categories": ["Core"] },
+    { "name": "Russian Twist", "type": "reps", "categories": ["Core"] },
+    { "name": "Hanging Leg Raise", "type": "reps", "categories": ["Core"] },
+    { "name": "Ab Wheel Rollout", "type": "reps", "categories": ["Core"] },
+
+    { "name": "Running", "type": "distanceAndTime", "categories": ["Cardio"] },
+    { "name": "Cycling", "type": "distanceAndTime", "categories": ["Cardio"] },
+    { "name": "Rowing", "type": "distanceAndTime", "categories": ["Cardio"] },
+    { "name": "Jump Rope", "type": "time", "categories": ["Cardio"] }
+]

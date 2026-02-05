@@ -1,0 +1,9 @@
+[
+    { "name": "Chest", "isDefault": true },
+    { "name": "Back", "isDefault": true },
+    { "name": "Shoulders", "isDefault": true },
+    { "name": "Arms", "isDefault": true },
+    { "name": "Legs", "isDefault": true },
+    { "name": "Core", "isDefault": true },
+    { "name": "Cardio", "isDefault": true }
+]

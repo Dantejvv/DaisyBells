@@ -68,8 +68,6 @@ Build DI container, routers, extensions.
 - `DaisyBells/Features/Analytics/AnalyticsRouter.swift`
 - `DaisyBells/Extensions/Date+Formatting.swift`
 - `DaisyBells/Extensions/Double+Units.swift`
-- `DaisyBells/Resources/SeedData/categories.json`
-- `DaisyBells/Resources/SeedData/exercises.json`
 
 **Verification:**
 - App launches with DependencyContainer
