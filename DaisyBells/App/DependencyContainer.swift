@@ -14,6 +14,11 @@ final class DependencyContainer {
     let analyticsService: AnalyticsService
     let seedingService: SeedingService
 
+    // Routers
+    let libraryRouter: LibraryRouter
+    let historyRouter: HistoryRouter
+    let analyticsRouter: AnalyticsRouter
+
     init() throws {
         let schema = Schema(versionedSchema: SchemaV1.self)
         let config = ModelConfiguration(schema: schema)
@@ -32,6 +37,11 @@ final class DependencyContainer {
         self.workoutService = WorkoutService(modelContext: modelContext)
         self.analyticsService = AnalyticsService(modelContext: modelContext)
         self.seedingService = SeedingService(modelContext: modelContext)
+
+        // Initialize routers
+        self.libraryRouter = LibraryRouter()
+        self.historyRouter = HistoryRouter()
+        self.analyticsRouter = AnalyticsRouter()
     }
 
     func performSetup() async {
