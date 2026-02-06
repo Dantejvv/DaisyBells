@@ -16,6 +16,10 @@ final class CategoryService: CategoryServiceProtocol {
         return try modelContext.fetch(descriptor)
     }
 
+    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.ExerciseCategory? {
+        modelContext.model(for: persistentId) as? SchemaV1.ExerciseCategory
+    }
+
     func create(name: String) async throws -> SchemaV1.ExerciseCategory {
         let category = SchemaV1.ExerciseCategory(name: name)
         modelContext.insert(category)

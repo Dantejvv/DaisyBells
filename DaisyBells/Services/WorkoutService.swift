@@ -54,6 +54,10 @@ final class WorkoutService: WorkoutServiceProtocol {
         return workout
     }
 
+    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.Workout? {
+        modelContext.model(for: persistentId) as? SchemaV1.Workout
+    }
+
     func update(_ workout: SchemaV1.Workout) async throws {
         try modelContext.save()
     }

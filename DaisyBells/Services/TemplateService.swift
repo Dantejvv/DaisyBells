@@ -27,6 +27,10 @@ final class TemplateService: TemplateServiceProtocol {
         return template
     }
 
+    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.WorkoutTemplate? {
+        modelContext.model(for: persistentId) as? SchemaV1.WorkoutTemplate
+    }
+
     func create(name: String) async throws -> SchemaV1.WorkoutTemplate {
         let template = SchemaV1.WorkoutTemplate(name: name)
         modelContext.insert(template)

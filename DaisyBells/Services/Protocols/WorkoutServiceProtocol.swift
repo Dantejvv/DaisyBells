@@ -6,6 +6,7 @@ protocol WorkoutServiceProtocol {
     func createFromTemplate(_ template: SchemaV1.WorkoutTemplate) async throws -> SchemaV1.Workout
     func createEmpty() async throws -> SchemaV1.Workout
     func fetch(id: UUID) async throws -> SchemaV1.Workout
+    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.Workout?
     func update(_ workout: SchemaV1.Workout) async throws
     func complete(_ workout: SchemaV1.Workout) async throws
     func cancel(_ workout: SchemaV1.Workout) async throws

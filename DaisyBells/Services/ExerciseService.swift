@@ -52,6 +52,10 @@ final class ExerciseService: ExerciseServiceProtocol {
         return exercise
     }
 
+    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.Exercise? {
+        modelContext.model(for: persistentId) as? SchemaV1.Exercise
+    }
+
     func create(name: String, type: ExerciseType) async throws -> SchemaV1.Exercise {
         let exercise = SchemaV1.Exercise(name: name, type: type)
         modelContext.insert(exercise)

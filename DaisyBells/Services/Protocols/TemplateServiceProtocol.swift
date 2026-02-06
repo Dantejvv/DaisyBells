@@ -5,6 +5,7 @@ import SwiftData
 protocol TemplateServiceProtocol {
     func fetchAll() async throws -> [SchemaV1.WorkoutTemplate]
     func fetch(id: UUID) async throws -> SchemaV1.WorkoutTemplate
+    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.WorkoutTemplate?
     func create(name: String) async throws -> SchemaV1.WorkoutTemplate
     func update(_ template: SchemaV1.WorkoutTemplate) async throws
     func duplicate(_ template: SchemaV1.WorkoutTemplate) async throws -> SchemaV1.WorkoutTemplate
