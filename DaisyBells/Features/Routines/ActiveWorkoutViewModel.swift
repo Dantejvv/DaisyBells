@@ -12,14 +12,18 @@ final class ActiveWorkoutViewModel {
     private(set) var elapsedTime: TimeInterval = 0
     private(set) var fromTemplateName: String?
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    private(set) var didSaveAsTemplate = false
+    var errorMessage: String?
     var workoutNotes: String = ""
+    var showSaveAsTemplatePrompt = false
+    var templateName: String = ""
 
     // MARK: - Dependencies
 
     private let workoutService: WorkoutServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
-    private let router: LibraryRouter
+    private let templateService: TemplateServiceProtocol
+    private let router: RoutinesRouter
     private let workoutId: PersistentIdentifier
     private var timerTask: Task<Void, Never>? {
         willSet {
@@ -32,11 +36,13 @@ final class ActiveWorkoutViewModel {
     init(
         workoutService: WorkoutServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
-        router: LibraryRouter,
+        templateService: TemplateServiceProtocol,
+        router: RoutinesRouter,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService
         self.exerciseService = exerciseService
+        self.templateService = templateService
         self.router = router
         self.workoutId = workoutId
     }
@@ -142,13 +148,15 @@ final class ActiveWorkoutViewModel {
         reps: Int?,
         time: TimeInterval?,
         distance: Double?,
-        bodyweightModifier: Double?
+        bodyweightModifier: Double?,
+        notes: String? = nil
     ) async {
         set.weight = weight
         set.reps = reps
         set.time = time
         set.distance = distance
         set.bodyweightModifier = bodyweightModifier
+        set.notes = notes
 
         errorMessage = nil
         do {
@@ -189,10 +197,48 @@ final class ActiveWorkoutViewModel {
         do {
             try await workoutService.complete(workout)
             stopTimer()
+            if workout.fromTemplate == nil && !exercises.isEmpty {
+                showSaveAsTemplatePrompt = true
+            } else {
+                router.popToRoot()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func saveAsTemplate() async {
+        guard workout != nil else { return }
+        let name = templateName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            errorMessage = "Template name is required"
+            return
+        }
+
+        errorMessage = nil
+        do {
+            let template = try await templateService.create(name: name)
+            for loggedExercise in exercises {
+                guard let exercise = loggedExercise.exercise else { continue }
+                let setCount = loggedExercise.sets.count
+                try await templateService.addExercise(
+                    exercise,
+                    to: template,
+                    targetSets: setCount > 0 ? setCount : nil,
+                    targetReps: nil
+                )
+            }
+            didSaveAsTemplate = true
+            showSaveAsTemplatePrompt = false
             router.popToRoot()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func skipSaveAsTemplate() {
+        showSaveAsTemplatePrompt = false
+        router.popToRoot()
     }
 
     func cancelWorkout() async {

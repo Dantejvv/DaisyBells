@@ -7,7 +7,7 @@ final class ExerciseListViewModel {
 
     private(set) var exercises: [SchemaV1.Exercise] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
     var searchQuery: String = ""
     var showFavoritesOnly = false
     let selectedCategoryId: PersistentIdentifier?

@@ -11,13 +11,13 @@ final class TemplateFormViewModel {
     private(set) var exercises: [SchemaV1.TemplateExercise] = []
     private(set) var isEditing = false
     private(set) var isSaving = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
     private let templateService: TemplateServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
-    private let router: LibraryRouter
+    private let router: RoutinesRouter
     private let templateId: PersistentIdentifier?
     private var template: SchemaV1.WorkoutTemplate?
 
@@ -26,7 +26,7 @@ final class TemplateFormViewModel {
     init(
         templateService: TemplateServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
-        router: LibraryRouter,
+        router: RoutinesRouter,
         templateId: PersistentIdentifier? = nil
     ) {
         self.templateService = templateService

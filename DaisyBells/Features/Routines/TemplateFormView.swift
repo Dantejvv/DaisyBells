@@ -2,67 +2,66 @@ import SwiftUI
 
 /// Create or edit a workout template
 struct TemplateFormView: View {
-    let template: MockTemplate?
+    @State private var viewModel: TemplateFormViewModel
 
-    @Environment(\.dismiss) private var dismiss
+    init(viewModel: TemplateFormViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
-    @State private var name: String
-    @State private var notes: String
-    @State private var exercises: [MockTemplateExercise]
-    @State private var showingExercisePicker = false
-    @State private var errorMessage: String?
-
-    private var isEditing: Bool { template != nil }
-    private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
-
-    init(template: MockTemplate?) {
-        self.template = template
-        _name = State(initialValue: template?.name ?? "")
-        _notes = State(initialValue: template?.notes ?? "")
-        _exercises = State(initialValue: template?.exercises ?? [])
+    private var canSave: Bool {
+        !viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var body: some View {
         Form {
             Section("Template Info") {
-                TextField("Name", text: $name)
-                TextField("Notes (optional)", text: $notes, axis: .vertical)
+                TextField("Name", text: $viewModel.name)
+                TextField("Notes (optional)", text: $viewModel.notes, axis: .vertical)
                     .lineLimit(2...4)
             }
 
             Section {
-                if exercises.isEmpty {
+                if viewModel.exercises.isEmpty {
                     Text("No exercises added")
                         .foregroundStyle(.secondary)
                         .italic()
                 } else {
-                    ForEach(exercises) { exercise in
+                    ForEach(viewModel.exercises) { exercise in
                         TemplateExerciseEditRow(
                             exercise: exercise,
                             onUpdateSets: { newSets in
-                                if let index = exercises.firstIndex(where: { $0.id == exercise.id }) {
-                                    exercises[index].targetSets = newSets
+                                Task {
+                                    await viewModel.updateTargets(
+                                        exercise: exercise,
+                                        sets: newSets,
+                                        reps: exercise.targetReps
+                                    )
                                 }
                             },
                             onUpdateReps: { newReps in
-                                if let index = exercises.firstIndex(where: { $0.id == exercise.id }) {
-                                    exercises[index].targetReps = newReps
+                                Task {
+                                    await viewModel.updateTargets(
+                                        exercise: exercise,
+                                        sets: exercise.targetSets,
+                                        reps: newReps
+                                    )
                                 }
                             }
                         )
                     }
                     .onDelete { indexSet in
-                        exercises.remove(atOffsets: indexSet)
-                        reorderExercises()
+                        if let first = indexSet.first {
+                            let exercise = viewModel.exercises[first]
+                            Task { await viewModel.removeExercise(exercise) }
+                        }
                     }
                     .onMove { from, to in
-                        exercises.move(fromOffsets: from, toOffset: to)
-                        reorderExercises()
+                        Task { await viewModel.reorderExercises(from: from, to: to) }
                     }
                 }
 
                 Button {
-                    showingExercisePicker = true
+                    viewModel.addExercise()
                 } label: {
                     HStack {
                         Image(systemName: "plus.circle.fill")
@@ -73,72 +72,48 @@ struct TemplateFormView: View {
                 HStack {
                     Text("Exercises")
                     Spacer()
-                    if !exercises.isEmpty {
+                    if !viewModel.exercises.isEmpty {
                         EditButton()
                             .font(.caption)
                     }
                 }
             }
         }
-        .navigationTitle(isEditing ? "Edit Template" : "New Template")
+        .navigationTitle(viewModel.isEditing ? "Edit Template" : "New Template")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
-                    dismiss()
+                    viewModel.cancel()
                 }
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
-                    save()
+                    Task { await viewModel.save() }
                 }
                 .disabled(!canSave)
             }
         }
-        .sheet(isPresented: $showingExercisePicker) {
-            NavigationStack {
-                ExercisePickerView { exercise in
-                    let templateExercise = MockTemplateExercise(
-                        exerciseName: exercise.name,
-                        exerciseType: exercise.type,
-                        order: exercises.count,
-                        targetSets: 3,
-                        targetReps: exercise.type == .weightAndReps || exercise.type == .bodyweightAndReps ? 10 : nil
-                    )
-                    exercises.append(templateExercise)
-                }
-            }
-        }
-        .errorAlert($errorMessage)
-    }
-
-    private func reorderExercises() {
-        for (index, _) in exercises.enumerated() {
-            exercises[index].order = index
-        }
-    }
-
-    private func save() {
-        guard canSave else {
-            errorMessage = "Please enter a template name."
-            return
-        }
-        dismiss()
+        .errorAlert(Binding(
+            get: { viewModel.errorMessage },
+            set: { viewModel.errorMessage = $0 }
+        ))
+        .task { await viewModel.load() }
     }
 }
 
 private struct TemplateExerciseEditRow: View {
-    let exercise: MockTemplateExercise
+    let exercise: SchemaV1.TemplateExercise
     let onUpdateSets: (Int?) -> Void
     let onUpdateReps: (Int?) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(exercise.exerciseName)
+                Text(exercise.exercise?.name ?? "Unknown")
                     .font(.body)
                 Spacer()
-                Text(exercise.exerciseType.displayName)
+                Text(exercise.exercise?.type.displayName ?? "")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -162,7 +137,8 @@ private struct TemplateExerciseEditRow: View {
                         .frame(minWidth: 20)
                 }
 
-                if exercise.exerciseType == .weightAndReps || exercise.exerciseType == .bodyweightAndReps || exercise.exerciseType == .reps {
+                if let exerciseType = exercise.exercise?.type,
+                   exerciseType == .weightAndReps || exerciseType == .bodyweightAndReps || exerciseType == .reps {
                     HStack(spacing: 8) {
                         Text("Reps:")
                             .font(.caption)
@@ -184,26 +160,5 @@ private struct TemplateExerciseEditRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-#Preview("Create") {
-    NavigationStack {
-        TemplateFormView(template: nil)
-    }
-}
-
-#Preview("Edit") {
-    NavigationStack {
-        TemplateFormView(
-            template: MockTemplate(
-                name: "Push Day",
-                notes: "Chest focus",
-                exercises: [
-                    MockTemplateExercise(exerciseName: "Bench Press", exerciseType: .weightAndReps, order: 0, targetSets: 4, targetReps: 8),
-                    MockTemplateExercise(exerciseName: "Dips", exerciseType: .bodyweightAndReps, order: 1, targetSets: 3, targetReps: 12),
-                ]
-            )
-        )
     }
 }

@@ -112,6 +112,10 @@ This document defines the interface between Views and ViewModels, including stat
 
 ---
 
+---
+
+## Routines Tab
+
 ### TemplateListViewModel
 
 #### State (ViewModel → View)
@@ -126,8 +130,8 @@ This document defines the interface between Views and ViewModels, including stat
 - **deleteTemplate(template:)** — Delete template → removes from templates
 
 #### Side Effects
-- **navigateToTemplateDetail** — Navigate to template detail screen
-- **navigateToCreateTemplate** — Navigate to template form (create mode)
+- **navigateToTemplateDetail** — Navigate to template detail screen (via RoutinesRouter)
+- **navigateToCreateTemplate** — Navigate to template form (create mode) (via RoutinesRouter)
 - **showDeleteConfirmation** — Show delete confirmation alert
 - **showError** — Display error alert
 
@@ -152,8 +156,8 @@ This document defines the interface between Views and ViewModels, including stat
 - **deleteTemplate()** — Delete template → triggers navigation back
 
 #### Side Effects
-- **navigateToActiveWorkout** — Navigate to active workout screen
-- **navigateToEditTemplate** — Navigate to template form (edit mode)
+- **navigateToActiveWorkout** — Navigate to active workout screen (via RoutinesRouter)
+- **navigateToEditTemplate** — Navigate to template form (edit mode) (via RoutinesRouter)
 - **navigateToTemplateCopy** — Navigate to duplicated template
 - **navigateBack** — Pop to previous screen after delete
 - **showDeleteConfirmation** — Show delete confirmation alert
@@ -178,7 +182,7 @@ This document defines the interface between Views and ViewModels, including stat
 #### Intents (View → ViewModel)
 - **updateName(name:)** — User types name → updates name
 - **updateNotes(notes:)** — User types notes → updates notes
-- **addExercise()** — User taps add exercise → triggers navigation to picker
+- **addExercise()** — User taps add exercise → presents exercise picker (via RoutinesRouter)
 - **removeExercise(exercise:)** — Remove exercise from template → updates exercises
 - **reorderExercises(from:to:)** — Drag to reorder → updates exercises order
 - **updateTargets(exercise:sets:reps:)** — Update target sets/reps → updates exercise
@@ -186,7 +190,7 @@ This document defines the interface between Views and ViewModels, including stat
 - **cancel()** — Discard changes → triggers navigation back
 
 #### Side Effects
-- **navigateToExercisePicker** — Navigate to exercise picker
+- **navigateToExercisePicker** — Present exercise picker (via RoutinesRouter)
 - **navigateBack** — Pop to previous screen after save/cancel
 - **showValidationError** — Show inline validation feedback
 - **showError** — Display error alert
@@ -195,8 +199,6 @@ This document defines the interface between Views and ViewModels, including stat
 - TemplateService: create(), update()
 
 ---
-
-## Active Workout
 
 ### ActiveWorkoutViewModel
 
@@ -208,11 +210,14 @@ This document defines the interface between Views and ViewModels, including stat
 - **fromTemplate:** WorkoutTemplate? — Source template (if any)
 - **isLoading:** Bool — Whether data is being saved
 - **errorMessage:** String? — Error message if operation failed
+- **showSaveAsTemplatePrompt:** Bool — Whether save-as-template prompt is showing
+- **templateName:** String — Name for the new template
+- **didSaveAsTemplate:** Bool — Whether template was saved successfully
 
 #### Intents (View → ViewModel)
 - **loadWorkout()** — Load active workout data → updates workout, exercises
 - **loadPreviousPerformance(for exercise:)** — Fetch last completed sets for exercise → updates previousPerformance
-- **addExercise()** — User taps add exercise → triggers navigation to picker
+- **addExercise()** — User taps add exercise → presents exercise picker (via RoutinesRouter)
 - **removeExercise(exercise:)** — Remove exercise from workout → updates exercises
 - **reorderExercises(from:to:)** — Drag to reorder → updates exercises order
 - **addSet(exercise:)** — Add new set to exercise → updates exercise.sets
@@ -220,19 +225,22 @@ This document defines the interface between Views and ViewModels, including stat
 - **deleteSet(set:)** — Remove set → updates exercise.sets
 - **updateExerciseNotes(exercise:notes:)** — Update exercise notes → updates exercise
 - **updateWorkoutNotes(notes:)** — Update workout notes → updates workout
-- **completeWorkout()** — Finish and save workout → triggers navigation
+- **completeWorkout()** — Finish and save workout → shows save-as-template prompt or pops to root
+- **saveAsTemplate()** — Save current workout exercises as a new template
+- **skipSaveAsTemplate()** — Skip saving as template and pop to root
 - **cancelWorkout()** — Discard workout → triggers navigation
 
 #### Side Effects
-- **navigateToExercisePicker** — Navigate to exercise picker
-- **navigateToHistory** — Navigate to history tab after completion
-- **navigateToLibrary** — Navigate to library tab after cancel
+- **navigateToExercisePicker** — Present exercise picker (via RoutinesRouter)
+- **navigateToRoutines** — Pop to routines root after completion/cancel
 - **showCompleteConfirmation** — Show completion confirmation
+- **showSaveAsTemplatePrompt** — Show prompt to save workout as template
 - **showCancelConfirmation** — Show discard confirmation alert
 - **showError** — Display error alert
 
 #### Services
 - WorkoutService: fetch(), update(), complete(), cancel(), lastPerformedSets(for:)
+- TemplateService: create(), addExercise()
 - LoggedExerciseService: create(), update(), delete(), reorder()
 - LoggedSetService: create(), update(), delete()
 

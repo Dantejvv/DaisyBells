@@ -31,29 +31,3 @@ extension View {
         modifier(ErrorAlertModifier(errorMessage: errorMessage, title: title))
     }
 }
-
-// MARK: - Preview Helper
-
-private struct ErrorAlertPreview: View {
-    @State private var errorMessage: String? = "Failed to load exercises. Please try again."
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("Error Alert Demo")
-                .font(.headline)
-
-            Button("Show Error") {
-                errorMessage = "Something went wrong. Please check your connection and try again."
-            }
-
-            Button("Show Different Error") {
-                errorMessage = "Failed to save workout."
-            }
-        }
-        .errorAlert($errorMessage)
-    }
-}
-
-#Preview {
-    ErrorAlertPreview()
-}

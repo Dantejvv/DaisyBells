@@ -2,35 +2,38 @@ import SwiftUI
 
 /// Chronological list of completed workouts
 struct HistoryListView: View {
-    @State private var workouts = MockWorkoutHistory.workouts
+    @State private var viewModel: HistoryListViewModel
     @State private var deleteConfig: ConfirmationDialogConfig?
     @State private var clearAllConfig: ConfirmationDialogConfig?
 
+    init(viewModel: HistoryListViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
     // MARK: - Grouped Workouts
 
-    private var groupedWorkouts: [(key: String, workouts: [MockCompletedWorkout])] {
+    private var groupedWorkouts: [(key: String, workouts: [SchemaV1.Workout])] {
         let calendar = Calendar.current
         let now = Date()
 
-        var groups: [String: [MockCompletedWorkout]] = [:]
+        var groups: [String: [SchemaV1.Workout]] = [:]
 
-        for workout in workouts {
+        for workout in viewModel.workouts {
+            let date = workout.completedAt ?? workout.startedAt
             let key: String
 
-            if calendar.isDateInToday(workout.completedAt) {
+            if calendar.isDateInToday(date) {
                 key = "Today"
-            } else if calendar.isDateInYesterday(workout.completedAt) {
+            } else if calendar.isDateInYesterday(date) {
                 key = "Yesterday"
-            } else if let daysAgo = calendar.dateComponents([.day], from: workout.completedAt, to: now).day,
+            } else if let daysAgo = calendar.dateComponents([.day], from: date, to: now).day,
                       daysAgo < 7 {
                 key = "This Week"
-            } else if let weeksAgo = calendar.dateComponents([.weekOfYear], from: workout.completedAt, to: now).weekOfYear,
+            } else if let weeksAgo = calendar.dateComponents([.weekOfYear], from: date, to: now).weekOfYear,
                       weeksAgo < 4 {
                 key = "This Month"
             } else {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMMM yyyy"
-                key = formatter.string(from: workout.completedAt)
+                key = date.monthYearFormat
             }
 
             groups[key, default: []].append(workout)
@@ -47,14 +50,16 @@ struct HistoryListView: View {
                     return index1 < index2
                 }
 
-                // Month sections sorted by most recent workout
-                return (first.value.first?.completedAt ?? .distantPast) >
-                       (second.value.first?.completedAt ?? .distantPast)
+                let date1 = first.value.first.flatMap { $0.completedAt ?? $0.startedAt } ?? .distantPast
+                let date2 = second.value.first.flatMap { $0.completedAt ?? $0.startedAt } ?? .distantPast
+                return date1 > date2
             }
             .map {
                 (
                     key: $0.key,
-                    workouts: $0.value.sorted { $0.completedAt > $1.completedAt }
+                    workouts: $0.value.sorted {
+                        ($0.completedAt ?? $0.startedAt) > ($1.completedAt ?? $1.startedAt)
+                    }
                 )
             }
     }
@@ -63,7 +68,9 @@ struct HistoryListView: View {
 
     var body: some View {
         Group {
-            if workouts.isEmpty {
+            if viewModel.isLoading {
+                LoadingSpinnerView(message: "Loading history...")
+            } else if viewModel.workouts.isEmpty {
                 EmptyStateView(
                     systemImage: "calendar",
                     title: "No Workout History",
@@ -74,8 +81,8 @@ struct HistoryListView: View {
                     ForEach(groupedWorkouts, id: \.key) { section in
                         Section(section.key) {
                             ForEach(section.workouts) { workout in
-                                NavigationLink {
-                                    CompletedWorkoutDetailView(workout: workout)
+                                Button {
+                                    viewModel.selectWorkout(workout)
                                 } label: {
                                     WorkoutHistoryRow(workout: workout)
                                 }
@@ -86,9 +93,7 @@ struct HistoryListView: View {
                                             message: "This workout will be permanently deleted from your history.",
                                             confirmTitle: "Delete"
                                         ) {
-                                            withAnimation {
-                                                workouts.removeAll { $0.id == workout.id }
-                                            }
+                                            Task { await viewModel.deleteWorkout(workout) }
                                         }
                                     }
                                 }
@@ -100,7 +105,7 @@ struct HistoryListView: View {
         }
         .navigationTitle("History")
         .toolbar {
-            if !workouts.isEmpty {
+            if !viewModel.workouts.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(role: .destructive) {
@@ -109,9 +114,7 @@ struct HistoryListView: View {
                                 message: "This will permanently delete all your workout history. This action cannot be undone.",
                                 confirmTitle: "Clear All"
                             ) {
-                                withAnimation {
-                                    workouts.removeAll()
-                                }
+                                Task { await viewModel.clearAllHistory() }
                             }
                         } label: {
                             Label("Clear All History", systemImage: "trash")
@@ -124,24 +127,47 @@ struct HistoryListView: View {
         }
         .confirmationDialog($deleteConfig)
         .confirmationDialog($clearAllConfig)
+        .errorAlert(Binding(
+            get: { viewModel.errorMessage },
+            set: { viewModel.errorMessage = $0 }
+        ))
+        .task { await viewModel.loadWorkouts() }
     }
 }
 
 // MARK: - Row
 
 private struct WorkoutHistoryRow: View {
-    let workout: MockCompletedWorkout
+    let workout: SchemaV1.Workout
+
+    private var workoutName: String {
+        workout.fromTemplate?.name ?? "Workout"
+    }
+
+    private var completionDate: Date {
+        workout.completedAt ?? workout.startedAt
+    }
+
+    private var duration: TimeInterval {
+        guard let completedAt = workout.completedAt else { return 0 }
+        return completedAt.timeIntervalSince(workout.startedAt)
+    }
+
+    private var totalSets: Int {
+        workout.loggedExercises.reduce(0) { $0 + $1.sets.count }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(workout.name)
+                Text(workoutName)
                     .font(.body)
                     .fontWeight(.medium)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
-                Text(formattedDuration)
+                Text(duration.durationString)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -149,9 +175,9 @@ private struct WorkoutHistoryRow: View {
             HStack(spacing: 8) {
                 Text(formattedDate)
                 Text("•")
-                Text("\(workout.exerciseCount) exercises")
+                Text("\(workout.loggedExercises.count) exercises")
                 Text("•")
-                Text("\(workout.totalSets) sets")
+                Text("\(totalSets) sets")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -160,31 +186,13 @@ private struct WorkoutHistoryRow: View {
     }
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
         let calendar = Calendar.current
 
-        if calendar.isDateInToday(workout.completedAt) ||
-           calendar.isDateInYesterday(workout.completedAt) {
-            formatter.dateFormat = "h:mm a"
+        if calendar.isDateInToday(completionDate) ||
+           calendar.isDateInYesterday(completionDate) {
+            return completionDate.timeFormat
         } else {
-            formatter.dateFormat = "E, MMM d"
+            return completionDate.workoutListFormat
         }
-
-        return formatter.string(from: workout.completedAt)
-    }
-
-    private var formattedDuration: String {
-        let hours = Int(workout.duration) / 3600
-        let minutes = (Int(workout.duration) % 3600) / 60
-
-        return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
-    }
-}
-
-// MARK: - Preview
-
-#Preview("With History") {
-    NavigationStack {
-        HistoryListView()
     }
 }

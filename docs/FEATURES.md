@@ -54,6 +54,7 @@
 - Exercise-level notes during workout
 - Workout-level notes
 - Complete workout (records end time)
+- Save completed workout as a reusable template
 - Cancel/discard workout
 
 ---
@@ -93,9 +94,13 @@
 - Exercise categories
 - Exercise library
 - Exercise creation, editing, and deleting
+
+## Routines
 - Workout templates list
-- Start empty workout
+- Create, edit, duplicate, delete templates
 - Start workout from template
+- Start blank workout
+- Save completed workout as template
 
 ## History
 - Past workouts (chronological)

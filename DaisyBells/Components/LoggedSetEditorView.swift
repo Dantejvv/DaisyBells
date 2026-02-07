@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Dynamic input fields for logging a set based on exercise type
 struct LoggedSetEditorView: View {
-    let exerciseType: MockExerciseType
+    let exerciseType: ExerciseType
     let setNumber: Int
 
     @Binding var weight: Double?
@@ -160,75 +160,4 @@ struct LoggedSetEditorView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
         }
     }
-
-}
-
-// MARK: - Preview Helper
-
-private struct LoggedSetEditorPreview: View {
-    @State private var weight: Double? = 135
-    @State private var reps: Int? = 10
-    @State private var bodyweightModifier: Double? = nil
-    @State private var time: TimeInterval? = nil
-    @State private var distance: Double? = nil
-    @State private var notes: String = ""
-
-    let exerciseType: MockExerciseType
-
-    var body: some View {
-        LoggedSetEditorView(
-            exerciseType: exerciseType,
-            setNumber: 1,
-            weight: $weight,
-            reps: $reps,
-            bodyweightModifier: $bodyweightModifier,
-            time: $time,
-            distance: $distance,
-            notes: $notes
-        )
-    }
-}
-
-#Preview("Weight & Reps") {
-    VStack {
-        LoggedSetEditorPreview(exerciseType: .weightAndReps)
-        LoggedSetEditorPreview(exerciseType: .weightAndReps)
-        LoggedSetEditorPreview(exerciseType: .weightAndReps)
-    }
-    .padding()
-}
-
-#Preview("Bodyweight & Reps") {
-    VStack {
-        LoggedSetEditorPreview(exerciseType: .bodyweightAndReps)
-    }
-    .padding()
-}
-
-#Preview("Reps Only") {
-    VStack {
-        LoggedSetEditorPreview(exerciseType: .reps)
-    }
-    .padding()
-}
-
-#Preview("Time") {
-    VStack {
-        LoggedSetEditorPreview(exerciseType: .time)
-    }
-    .padding()
-}
-
-#Preview("Distance & Time") {
-    VStack {
-        LoggedSetEditorPreview(exerciseType: .distanceAndTime)
-    }
-    .padding()
-}
-
-#Preview("Weight & Time") {
-    VStack {
-        LoggedSetEditorPreview(exerciseType: .weightAndTime)
-    }
-    .padding()
 }

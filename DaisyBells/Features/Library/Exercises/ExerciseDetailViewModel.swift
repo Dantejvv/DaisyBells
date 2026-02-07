@@ -7,7 +7,7 @@ final class ExerciseDetailViewModel {
 
     private(set) var exercise: SchemaV1.Exercise?
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
     private(set) var canDelete = true
 
     // MARK: - Dependencies

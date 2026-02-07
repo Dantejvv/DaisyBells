@@ -9,7 +9,7 @@ final class SettingsViewModel {
     private(set) var appVersion: String = ""
     private(set) var isExporting = false
     private(set) var isImporting = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 

@@ -2,40 +2,24 @@ import SwiftUI
 
 /// Browse exercises with search and favorites filter
 struct ExerciseListView: View {
-    var filterCategory: MockCategory?
+    @State private var viewModel: ExerciseListViewModel
 
-    @State private var exercises = MockExerciseData.exercises
-    @State private var searchQuery = ""
-    @State private var showFavoritesOnly = false
-
-    private var filteredExercises: [MockExercise] {
-        var result = exercises
-
-        if let category = filterCategory {
-            result = result.filter { $0.categoryNames.contains(category.name) }
-        }
-
-        if showFavoritesOnly {
-            result = result.filter { $0.isFavorite }
-        }
-
-        if !searchQuery.isEmpty {
-            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchQuery) }
-        }
-
-        return result
+    init(viewModel: ExerciseListViewModel) {
+        _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
         Group {
-            if filteredExercises.isEmpty {
-                if !searchQuery.isEmpty {
+            if viewModel.isLoading {
+                LoadingSpinnerView(message: "Loading exercises...")
+            } else if viewModel.exercises.isEmpty {
+                if !viewModel.searchQuery.isEmpty {
                     EmptyStateView(
                         systemImage: "magnifyingglass",
                         title: "No Results",
-                        message: "No exercises match \"\(searchQuery)\"."
+                        message: "No exercises match \"\(viewModel.searchQuery)\"."
                     )
-                } else if showFavoritesOnly {
+                } else if viewModel.showFavoritesOnly {
                     EmptyStateView(
                         systemImage: "star",
                         title: "No Favorites",
@@ -48,46 +32,54 @@ struct ExerciseListView: View {
                         message: "Add your first exercise to get started.",
                         buttonTitle: "Add Exercise"
                     ) {
-                        // Add exercise action
+                        viewModel.createExercise()
                     }
                 }
             } else {
-                List(filteredExercises) { exercise in
-                    NavigationLink {
-                        ExerciseDetailView(exercise: exercise)
+                List(viewModel.exercises) { exercise in
+                    Button {
+                        viewModel.selectExercise(exercise)
                     } label: {
                         ExerciseRow(exercise: exercise)
                     }
                 }
             }
         }
-        .navigationTitle(filterCategory?.name ?? "Exercises")
-        .searchable(text: $searchQuery, prompt: "Search exercises")
+        .navigationTitle(viewModel.selectedCategoryId != nil ? "Exercises" : "Exercises")
+        .searchable(text: Binding(
+            get: { viewModel.searchQuery },
+            set: { newValue in
+                Task { await viewModel.search(query: newValue) }
+            }
+        ), prompt: "Search exercises")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 16) {
                     Button {
-                        withAnimation {
-                            showFavoritesOnly.toggle()
-                        }
+                        Task { await viewModel.toggleFavoritesFilter() }
                     } label: {
-                        Image(systemName: showFavoritesOnly ? "star.fill" : "star")
-                            .foregroundStyle(showFavoritesOnly ? .yellow : .primary)
+                        Image(systemName: viewModel.showFavoritesOnly ? "star.fill" : "star")
+                            .foregroundStyle(viewModel.showFavoritesOnly ? .yellow : .primary)
                     }
 
-                    NavigationLink {
-                        ExerciseFormView(exercise: nil)
+                    Button {
+                        viewModel.createExercise()
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
             }
         }
+        .errorAlert(Binding(
+            get: { viewModel.errorMessage },
+            set: { viewModel.errorMessage = $0 }
+        ))
+        .task { await viewModel.loadExercises() }
     }
 }
 
 private struct ExerciseRow: View {
-    let exercise: MockExercise
+    let exercise: SchemaV1.Exercise
 
     var body: some View {
         HStack {
@@ -95,6 +87,7 @@ private struct ExerciseRow: View {
                 HStack(spacing: 6) {
                     Text(exercise.name)
                         .font(.body)
+                        .foregroundStyle(.primary)
 
                     if exercise.isFavorite {
                         Image(systemName: "star.fill")
@@ -121,17 +114,5 @@ private struct ExerciseRow: View {
             }
         }
         .padding(.vertical, 2)
-    }
-}
-
-#Preview("All Exercises") {
-    NavigationStack {
-        ExerciseListView()
-    }
-}
-
-#Preview("Filtered by Category") {
-    NavigationStack {
-        ExerciseListView(filterCategory: MockCategory(name: "Upper Body", exerciseCount: 6))
     }
 }

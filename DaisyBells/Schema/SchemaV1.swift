@@ -179,6 +179,7 @@ enum SchemaV1: VersionedSchema {
         var bodyweightModifier: Double?
         var time: TimeInterval?
         var distance: Double?
+        var notes: String?
 
         // Denormalized for direct queries (set on workout completion)
         var exerciseId: UUID?

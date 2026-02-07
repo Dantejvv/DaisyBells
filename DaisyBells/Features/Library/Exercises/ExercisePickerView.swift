@@ -1,29 +1,13 @@
 import SwiftUI
+import SwiftData
 
 /// Sheet to select an exercise (used by template form and active workout)
 struct ExercisePickerView: View {
-    let onSelect: (MockExercise) -> Void
-
+    @State private var viewModel: ExercisePickerViewModel
     @Environment(\.dismiss) private var dismiss
 
-    @State private var exercises = MockExerciseData.exercises.filter { !$0.isArchived }
-    @State private var searchQuery = ""
-    @State private var selectedCategory: String?
-
-    private let categories = ["All", "Upper Body", "Lower Body", "Core", "Cardio"]
-
-    private var filteredExercises: [MockExercise] {
-        var result = exercises
-
-        if let category = selectedCategory, category != "All" {
-            result = result.filter { $0.categoryNames.contains(category) }
-        }
-
-        if !searchQuery.isEmpty {
-            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchQuery) }
-        }
-
-        return result
+    init(viewModel: ExercisePickerViewModel) {
+        _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
@@ -31,13 +15,22 @@ struct ExercisePickerView: View {
             // Category filter chips
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(categories, id: \.self) { category in
+                    CategoryChip(
+                        title: "All",
+                        isSelected: viewModel.selectedCategoryId == nil
+                    ) {
+                        withAnimation {
+                            viewModel.filterByCategory(nil)
+                        }
+                    }
+
+                    ForEach(viewModel.categories) { category in
                         CategoryChip(
-                            title: category,
-                            isSelected: selectedCategory == category || (selectedCategory == nil && category == "All")
+                            title: category.name,
+                            isSelected: viewModel.selectedCategoryId == category.persistentModelID
                         ) {
                             withAnimation {
-                                selectedCategory = category == "All" ? nil : category
+                                viewModel.filterByCategory(category.persistentModelID)
                             }
                         }
                     }
@@ -49,12 +42,12 @@ struct ExercisePickerView: View {
 
             Divider()
 
-            if filteredExercises.isEmpty {
-                if !searchQuery.isEmpty {
+            if viewModel.exercises.isEmpty {
+                if !viewModel.searchQuery.isEmpty {
                     EmptyStateView(
                         systemImage: "magnifyingglass",
                         title: "No Results",
-                        message: "No exercises match \"\(searchQuery)\"."
+                        message: "No exercises match \"\(viewModel.searchQuery)\"."
                     )
                 } else {
                     EmptyStateView(
@@ -64,10 +57,9 @@ struct ExercisePickerView: View {
                     )
                 }
             } else {
-                List(filteredExercises) { exercise in
+                List(viewModel.exercises) { exercise in
                     Button {
-                        onSelect(exercise)
-                        dismiss()
+                        viewModel.selectExercise(exercise)
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -99,7 +91,10 @@ struct ExercisePickerView: View {
         }
         .navigationTitle("Select Exercise")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchQuery, prompt: "Search exercises")
+        .searchable(text: Binding(
+            get: { viewModel.searchQuery },
+            set: { viewModel.search(query: $0) }
+        ), prompt: "Search exercises")
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
@@ -107,6 +102,10 @@ struct ExercisePickerView: View {
                 }
             }
         }
+        .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss { dismiss() }
+        }
+        .task { await viewModel.loadExercises() }
     }
 }
 
@@ -125,14 +124,6 @@ private struct CategoryChip: View {
                 .background(isSelected ? Color.accentColor : Color(.secondarySystemBackground))
                 .foregroundStyle(isSelected ? .white : .primary)
                 .clipShape(Capsule())
-        }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ExercisePickerView { exercise in
-            print("Selected: \(exercise.name)")
         }
     }
 }

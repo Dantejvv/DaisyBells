@@ -7,7 +7,7 @@ final class CategoryListViewModel {
 
     private(set) var categories: [SchemaV1.ExerciseCategory] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 

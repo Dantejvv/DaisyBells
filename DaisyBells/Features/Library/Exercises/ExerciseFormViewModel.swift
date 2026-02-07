@@ -12,7 +12,7 @@ final class ExerciseFormViewModel {
     private(set) var availableCategories: [SchemaV1.ExerciseCategory] = []
     private(set) var isEditing = false
     private(set) var isSaving = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 

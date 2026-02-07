@@ -2,26 +2,46 @@ import SwiftUI
 
 /// Read-only view of a completed workout, matching ActiveWorkoutView layout
 struct CompletedWorkoutDetailView: View {
-    let workout: MockCompletedWorkout
-
-    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel: CompletedWorkoutDetailViewModel
     @State private var deleteConfig: ConfirmationDialogConfig?
 
+    init(viewModel: CompletedWorkoutDetailViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
     var body: some View {
+        Group {
+            if viewModel.isLoading {
+                LoadingSpinnerView(message: "Loading workout...")
+            } else if let workout = viewModel.workout {
+                workoutContent(workout)
+            }
+        }
+        .errorAlert(Binding(
+            get: { viewModel.errorMessage },
+            set: { viewModel.errorMessage = $0 }
+        ))
+        .task { await viewModel.loadWorkout() }
+    }
+
+    @ViewBuilder
+    private func workoutContent(_ workout: SchemaV1.Workout) -> some View {
         List {
             // MARK: - Header Section
             Section {
                 // Title
-                Text(workout.name)
+                Text(workout.fromTemplate?.name ?? "Workout")
                     .font(.title2.weight(.semibold))
                     .frame(maxWidth: .infinity, alignment: .center)
 
                 // Date and Duration
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(workout.completedAt, format: .dateTime.month(.abbreviated).day().hour().minute())
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                        if let completedAt = workout.completedAt {
+                            Text(completedAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
                         Text("Completed")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -30,7 +50,7 @@ struct CompletedWorkoutDetailView: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 4) {
-                        Text(formattedDuration)
+                        Text(viewModel.duration.timerString)
                             .font(.system(.title, design: .monospaced))
                             .fontWeight(.medium)
                         Text("Duration")
@@ -51,11 +71,12 @@ struct CompletedWorkoutDetailView: View {
             }
 
             // MARK: - Exercise Sections
-            ForEach(workout.exercises) { exercise in
+            ForEach(viewModel.exercises) { exercise in
                 Section {
-                    ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { index, set in
+                    let sortedSets = exercise.sets.sorted { $0.order < $1.order }
+                    ForEach(Array(sortedSets.enumerated()), id: \.element.id) { index, set in
                         LoggedSetDisplayView(
-                            exerciseType: exercise.exerciseType,
+                            exerciseType: exercise.exercise?.type ?? .weightAndReps,
                             setNumber: index + 1,
                             weight: set.weight,
                             reps: set.reps,
@@ -78,7 +99,7 @@ struct CompletedWorkoutDetailView: View {
                         message: "This workout will be permanently deleted from your history.",
                         confirmTitle: "Delete"
                     ) {
-                        dismiss()
+                        Task { await viewModel.deleteWorkout() }
                     }
                 } label: {
                     HStack {
@@ -99,27 +120,15 @@ struct CompletedWorkoutDetailView: View {
 
     // MARK: - Helpers
 
-    private var formattedDuration: String {
-        let hours = Int(workout.duration) / 3600
-        let minutes = (Int(workout.duration) % 3600) / 60
-        let seconds = Int(workout.duration) % 60
-
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            return String(format: "%02d:%02d", minutes, seconds)
-        }
-    }
-
     @ViewBuilder
-    private func exerciseHeader(for exercise: MockCompletedExercise) -> some View {
+    private func exerciseHeader(for exercise: SchemaV1.LoggedExercise) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(exercise.exerciseName)
+                Text(exercise.exercise?.name ?? "Exercise")
                     .font(.headline)
                     .textCase(nil)
                     .foregroundStyle(Color(.label))
-                Text(exercise.exerciseType.displayName)
+                Text(exercise.exercise?.type.displayName ?? "")
                     .font(.caption)
                     .textCase(nil)
                     .foregroundStyle(.secondary)
@@ -132,7 +141,7 @@ struct CompletedWorkoutDetailView: View {
 
 /// Read-only display of a logged set, matching LoggedSetEditorView layout
 private struct LoggedSetDisplayView: View {
-    let exerciseType: MockExerciseType
+    let exerciseType: ExerciseType
     let setNumber: Int
     let weight: Double?
     let reps: Int?
@@ -226,110 +235,11 @@ private struct LoggedSetDisplayView: View {
     private func formatTime(_ time: TimeInterval?) -> String {
         guard let time else { return "—" }
         let minutes = time / 60
-        if minutes < 1 {
-            return String(format: "%.1f", minutes)
-        }
         return String(format: "%.1f", minutes)
     }
 
     private func formatDistance(_ distance: Double?) -> String {
         guard let distance else { return "—" }
         return String(format: "%.2f", distance)
-    }
-}
-
-// MARK: - Previews
-
-#Preview("Full Workout") {
-    NavigationStack {
-        CompletedWorkoutDetailView(
-            workout: MockCompletedWorkout(
-                name: "Push Day",
-                completedAt: Date(),
-                duration: 3600,
-                notes: "Felt strong today. Increased bench by 5 lbs. Good pump on triceps.",
-                exerciseCount: 3,
-                totalSets: 10,
-                exercises: [
-                    MockCompletedExercise(
-                        exerciseName: "Bench Press",
-                        exerciseType: .weightAndReps,
-                        sets: [
-                            MockCompletedSet(order: 0, weight: 185, reps: 8),
-                            MockCompletedSet(order: 1, weight: 185, reps: 8),
-                            MockCompletedSet(order: 2, weight: 185, reps: 7),
-                            MockCompletedSet(order: 3, weight: 185, reps: 6),
-                        ]
-                    ),
-                    MockCompletedExercise(
-                        exerciseName: "Dips",
-                        exerciseType: .bodyweightAndReps,
-                        sets: [
-                            MockCompletedSet(order: 0, reps: 15),
-                            MockCompletedSet(order: 1, reps: 10),
-                            MockCompletedSet(order: 2, reps: 8, bodyweightModifier: 25),
-                        ]
-                    ),
-                    MockCompletedExercise(
-                        exerciseName: "Plank",
-                        exerciseType: .time,
-                        sets: [
-                            MockCompletedSet(order: 0, time: 60),
-                            MockCompletedSet(order: 1, time: 45),
-                            MockCompletedSet(order: 2, time: 30),
-                        ]
-                    ),
-                ]
-            )
-        )
-    }
-}
-
-#Preview("No Notes") {
-    NavigationStack {
-        CompletedWorkoutDetailView(
-            workout: MockCompletedWorkout(
-                name: "Quick Workout",
-                completedAt: Date(),
-                duration: 1800,
-                exerciseCount: 1,
-                totalSets: 3,
-                exercises: [
-                    MockCompletedExercise(
-                        exerciseName: "Pull-ups",
-                        exerciseType: .bodyweightAndReps,
-                        sets: [
-                            MockCompletedSet(order: 0, reps: 10),
-                            MockCompletedSet(order: 1, reps: 8),
-                            MockCompletedSet(order: 2, reps: 6),
-                        ]
-                    )
-                ]
-            )
-        )
-    }
-}
-
-#Preview("Cardio Workout") {
-    NavigationStack {
-        CompletedWorkoutDetailView(
-            workout: MockCompletedWorkout(
-                name: "Morning Run",
-                completedAt: Date(),
-                duration: 2700,
-                notes: "Easy pace, felt good.",
-                exerciseCount: 1,
-                totalSets: 1,
-                exercises: [
-                    MockCompletedExercise(
-                        exerciseName: "Running",
-                        exerciseType: .distanceAndTime,
-                        sets: [
-                            MockCompletedSet(order: 0, time: 2700, distance: 3.5)
-                        ]
-                    )
-                ]
-            )
-        )
     }
 }

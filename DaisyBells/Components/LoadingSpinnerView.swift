@@ -18,11 +18,3 @@ struct LoadingSpinnerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
-
-#Preview("Default") {
-    LoadingSpinnerView()
-}
-
-#Preview("With Message") {
-    LoadingSpinnerView(message: "Loading exercises...")
-}

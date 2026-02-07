@@ -10,7 +10,7 @@ final class AnalyticsDashboardViewModel {
     private(set) var recentExercises: [SchemaV1.Exercise] = []
     private(set) var personalRecords: [PersonalRecord] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 

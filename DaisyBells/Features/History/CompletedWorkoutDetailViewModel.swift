@@ -9,7 +9,7 @@ final class CompletedWorkoutDetailViewModel {
     private(set) var exercises: [SchemaV1.LoggedExercise] = []
     private(set) var duration: TimeInterval = 0
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 

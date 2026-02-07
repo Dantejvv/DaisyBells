@@ -16,6 +16,7 @@ final class DependencyContainer {
 
     // Routers
     let libraryRouter: LibraryRouter
+    let routinesRouter: RoutinesRouter
     let historyRouter: HistoryRouter
     let analyticsRouter: AnalyticsRouter
 
@@ -40,6 +41,7 @@ final class DependencyContainer {
 
         // Initialize routers
         self.libraryRouter = LibraryRouter()
+        self.routinesRouter = RoutinesRouter()
         self.historyRouter = HistoryRouter()
         self.analyticsRouter = AnalyticsRouter()
     }

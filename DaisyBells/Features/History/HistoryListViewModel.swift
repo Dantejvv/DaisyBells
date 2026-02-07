@@ -7,7 +7,7 @@ final class HistoryListViewModel {
 
     private(set) var workouts: [SchemaV1.Workout] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     var isEmpty: Bool {
         workouts.isEmpty

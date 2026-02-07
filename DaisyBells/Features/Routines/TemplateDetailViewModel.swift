@@ -8,13 +8,13 @@ final class TemplateDetailViewModel {
     private(set) var template: SchemaV1.WorkoutTemplate?
     private(set) var exercises: [SchemaV1.TemplateExercise] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
     private let templateService: TemplateServiceProtocol
     private let workoutService: WorkoutServiceProtocol
-    private let router: LibraryRouter
+    private let router: RoutinesRouter
     private let templateId: PersistentIdentifier
 
     // MARK: - Init
@@ -22,7 +22,7 @@ final class TemplateDetailViewModel {
     init(
         templateService: TemplateServiceProtocol,
         workoutService: WorkoutServiceProtocol,
-        router: LibraryRouter,
+        router: RoutinesRouter,
         templateId: PersistentIdentifier
     ) {
         self.templateService = templateService

@@ -2,13 +2,30 @@ import SwiftUI
 
 /// View template details, start workout, duplicate, or delete
 struct TemplateDetailView: View {
-    let template: MockTemplate
-
-    @Environment(\.dismiss) private var dismiss
+    @State private var viewModel: TemplateDetailViewModel
     @State private var deleteConfig: ConfirmationDialogConfig?
-    @State private var showingActiveWorkout = false
+
+    init(viewModel: TemplateDetailViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
+        Group {
+            if viewModel.isLoading {
+                LoadingSpinnerView(message: "Loading template...")
+            } else if let template = viewModel.template {
+                templateContent(template)
+            }
+        }
+        .errorAlert(Binding(
+            get: { viewModel.errorMessage },
+            set: { viewModel.errorMessage = $0 }
+        ))
+        .task { await viewModel.loadTemplate() }
+    }
+
+    @ViewBuilder
+    private func templateContent(_ template: SchemaV1.WorkoutTemplate) -> some View {
         List {
             if let notes = template.notes, !notes.isEmpty {
                 Section("Notes") {
@@ -18,12 +35,12 @@ struct TemplateDetailView: View {
             }
 
             Section("Exercises") {
-                if template.exercises.isEmpty {
+                if viewModel.exercises.isEmpty {
                     Text("No exercises added")
                         .foregroundStyle(.secondary)
                         .italic()
                 } else {
-                    ForEach(template.exercises) { exercise in
+                    ForEach(viewModel.exercises) { exercise in
                         TemplateExerciseRow(exercise: exercise)
                     }
                 }
@@ -31,7 +48,7 @@ struct TemplateDetailView: View {
 
             Section {
                 Button {
-                    showingActiveWorkout = true
+                    Task { await viewModel.startWorkout() }
                 } label: {
                     HStack {
                         Image(systemName: "play.fill")
@@ -46,7 +63,7 @@ struct TemplateDetailView: View {
 
             Section {
                 Button {
-                    // Duplicate action
+                    Task { await viewModel.duplicateTemplate() }
                 } label: {
                     HStack {
                         Image(systemName: "doc.on.doc")
@@ -60,7 +77,7 @@ struct TemplateDetailView: View {
                         message: "This template will be permanently deleted. Your workout history will not be affected.",
                         confirmTitle: "Delete"
                     ) {
-                        dismiss()
+                        Task { await viewModel.deleteTemplate() }
                     }
                 } label: {
                     HStack {
@@ -73,32 +90,25 @@ struct TemplateDetailView: View {
         .navigationTitle(template.name)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    TemplateFormView(template: template)
-                } label: {
-                    Text("Edit")
+                Button("Edit") {
+                    viewModel.editTemplate()
                 }
             }
         }
         .confirmationDialog($deleteConfig)
-        .fullScreenCover(isPresented: $showingActiveWorkout) {
-            NavigationStack {
-                ActiveWorkoutView(templateName: template.name, exercises: template.exercises)
-            }
-        }
     }
 }
 
 private struct TemplateExerciseRow: View {
-    let exercise: MockTemplateExercise
+    let exercise: SchemaV1.TemplateExercise
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(exercise.exerciseName)
+                Text(exercise.exercise?.name ?? "Unknown")
                     .font(.body)
 
-                Text(exercise.exerciseType.displayName)
+                Text(exercise.exercise?.type.displayName ?? "")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -116,29 +126,5 @@ private struct TemplateExerciseRow: View {
             }
         }
         .padding(.vertical, 2)
-    }
-}
-
-#Preview("Full Template") {
-    NavigationStack {
-        TemplateDetailView(
-            template: MockTemplate(
-                name: "Push Day",
-                notes: "Focus on progressive overload. Rest 2-3 min between sets.",
-                exercises: [
-                    MockTemplateExercise(exerciseName: "Bench Press", exerciseType: .weightAndReps, order: 0, targetSets: 4, targetReps: 8),
-                    MockTemplateExercise(exerciseName: "Overhead Press", exerciseType: .weightAndReps, order: 1, targetSets: 3, targetReps: 10),
-                    MockTemplateExercise(exerciseName: "Dips", exerciseType: .bodyweightAndReps, order: 2, targetSets: 3, targetReps: 12),
-                ]
-            )
-        )
-    }
-}
-
-#Preview("Empty Template") {
-    NavigationStack {
-        TemplateDetailView(
-            template: MockTemplate(name: "New Template")
-        )
     }
 }

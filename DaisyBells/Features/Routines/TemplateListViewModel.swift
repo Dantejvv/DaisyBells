@@ -7,16 +7,16 @@ final class TemplateListViewModel {
 
     private(set) var templates: [SchemaV1.WorkoutTemplate] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
     private let templateService: TemplateServiceProtocol
-    private let router: LibraryRouter
+    private let router: RoutinesRouter
 
     // MARK: - Init
 
-    init(templateService: TemplateServiceProtocol, router: LibraryRouter) {
+    init(templateService: TemplateServiceProtocol, router: RoutinesRouter) {
         self.templateService = templateService
         self.router = router
     }

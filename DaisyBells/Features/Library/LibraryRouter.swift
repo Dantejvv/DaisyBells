@@ -8,24 +8,15 @@ enum LibraryRoute: Hashable {
     case exerciseList(categoryId: PersistentIdentifier?)
     case exerciseDetail(exerciseId: PersistentIdentifier)
     case exerciseForm(exerciseId: PersistentIdentifier?) // nil = create, non-nil = edit
-
-    // Template routes
-    case templateDetail(templateId: PersistentIdentifier)
-    case templateForm(templateId: PersistentIdentifier?) // nil = create, non-nil = edit
-
-    // Workout routes
-    case activeWorkout(workoutId: PersistentIdentifier)
 }
 
 // MARK: - Sheet Enum
 
 enum LibrarySheet: Identifiable {
-    case exercisePicker
     case settings
 
     var id: String {
         switch self {
-        case .exercisePicker: return "exercisePicker"
         case .settings: return "settings"
         }
     }
@@ -38,9 +29,6 @@ enum LibrarySheet: Identifiable {
 final class LibraryRouter {
     var path: [LibraryRoute] = []
     var presentedSheet: LibrarySheet?
-
-    // Callback for exercise picker selection
-    var onExerciseSelected: ((PersistentIdentifier) -> Void)?
 
     // MARK: - Stack Navigation
 
@@ -59,18 +47,12 @@ final class LibraryRouter {
 
     // MARK: - Sheet Presentation
 
-    func presentExercisePicker(onSelect: @escaping (PersistentIdentifier) -> Void) {
-        onExerciseSelected = onSelect
-        presentedSheet = .exercisePicker
-    }
-
     func presentSettings() {
         presentedSheet = .settings
     }
 
     func dismissSheet() {
         presentedSheet = nil
-        onExerciseSelected = nil
     }
 
     // MARK: - Convenience Navigation
@@ -89,21 +71,5 @@ final class LibraryRouter {
 
     func navigateToEditExercise(exerciseId: PersistentIdentifier) {
         push(.exerciseForm(exerciseId: exerciseId))
-    }
-
-    func navigateToTemplateDetail(templateId: PersistentIdentifier) {
-        push(.templateDetail(templateId: templateId))
-    }
-
-    func navigateToCreateTemplate() {
-        push(.templateForm(templateId: nil))
-    }
-
-    func navigateToEditTemplate(templateId: PersistentIdentifier) {
-        push(.templateForm(templateId: templateId))
-    }
-
-    func navigateToActiveWorkout(workoutId: PersistentIdentifier) {
-        push(.activeWorkout(workoutId: workoutId))
     }
 }

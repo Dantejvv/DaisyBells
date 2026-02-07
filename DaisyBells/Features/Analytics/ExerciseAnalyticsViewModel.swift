@@ -11,7 +11,7 @@ final class ExerciseAnalyticsViewModel {
     private(set) var lastPerformed: Date?
     private(set) var recentSets: [SchemaV1.LoggedSet] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    var errorMessage: String?
 
     // MARK: - Dependencies
 
