@@ -7,6 +7,7 @@ final class TemplateDetailViewModel {
 
     private(set) var template: SchemaV1.WorkoutTemplate?
     private(set) var exercises: [SchemaV1.TemplateExercise] = []
+    private(set) var assignedSplitDays: [SchemaV1.SplitDay] = []
     private(set) var isLoading = false
     var errorMessage: String?
 
@@ -14,7 +15,8 @@ final class TemplateDetailViewModel {
 
     private let templateService: TemplateServiceProtocol
     private let workoutService: WorkoutServiceProtocol
-    private let router: RoutinesRouter
+    private let splitDayService: SplitDayServiceProtocol
+    private let router: HomeRouter
     private let templateId: PersistentIdentifier
 
     // MARK: - Init
@@ -22,11 +24,13 @@ final class TemplateDetailViewModel {
     init(
         templateService: TemplateServiceProtocol,
         workoutService: WorkoutServiceProtocol,
-        router: RoutinesRouter,
+        splitDayService: SplitDayServiceProtocol,
+        router: HomeRouter,
         templateId: PersistentIdentifier
     ) {
         self.templateService = templateService
         self.workoutService = workoutService
+        self.splitDayService = splitDayService
         self.router = router
         self.templateId = templateId
     }
@@ -45,6 +49,15 @@ final class TemplateDetailViewModel {
 
         template = templateModel
         exercises = templateModel.templateExercises.sorted { $0.order < $1.order }
+
+        // Load assigned split days
+        do {
+            assignedSplitDays = try await splitDayService.fetchBySplitTemplate(templateModel)
+        } catch {
+            // Don't fail loading if split days can't be loaded
+            assignedSplitDays = []
+        }
+
         isLoading = false
     }
 
@@ -82,6 +95,37 @@ final class TemplateDetailViewModel {
             router.pop()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    func assignToSplit() {
+        router.presentSplitDayPicker { [weak self] dayId in
+            guard let self else { return }
+            Task {
+                await self.handleSplitDaySelection(dayId)
+            }
+        }
+    }
+
+    // MARK: - Private
+
+    private func handleSplitDaySelection(_ dayId: PersistentIdentifier) async {
+        guard let template else { return }
+
+        guard let day = splitDayService.fetch(by: dayId) else {
+            errorMessage = "Split day not found"
+            router.dismissSheet()
+            return
+        }
+
+        errorMessage = nil
+        do {
+            try await splitDayService.assignWorkout(template, to: day)
+            await loadTemplate()
+            router.dismissSheet()
+        } catch {
+            errorMessage = error.localizedDescription
+            router.dismissSheet()
         }
     }
 }

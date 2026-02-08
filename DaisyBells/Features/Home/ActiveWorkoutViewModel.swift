@@ -25,7 +25,7 @@ final class ActiveWorkoutViewModel {
     private let loggedExerciseService: LoggedExerciseServiceProtocol
     private let loggedSetService: LoggedSetServiceProtocol
     private let templateService: TemplateServiceProtocol
-    private let router: RoutinesRouter
+    private let router: HomeRouter
     private let workoutId: PersistentIdentifier
     private var timerTask: Task<Void, Never>? {
         willSet {
@@ -41,7 +41,7 @@ final class ActiveWorkoutViewModel {
         loggedExerciseService: LoggedExerciseServiceProtocol,
         loggedSetService: LoggedSetServiceProtocol,
         templateService: TemplateServiceProtocol,
-        router: RoutinesRouter,
+        router: HomeRouter,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService

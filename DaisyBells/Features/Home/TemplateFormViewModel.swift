@@ -17,7 +17,7 @@ final class TemplateFormViewModel {
 
     private let templateService: TemplateServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
-    private let router: RoutinesRouter
+    private let router: HomeRouter
     private let templateId: PersistentIdentifier?
     private var template: SchemaV1.WorkoutTemplate?
 
@@ -26,7 +26,7 @@ final class TemplateFormViewModel {
     init(
         templateService: TemplateServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
-        router: RoutinesRouter,
+        router: HomeRouter,
         templateId: PersistentIdentifier? = nil
     ) {
         self.templateService = templateService

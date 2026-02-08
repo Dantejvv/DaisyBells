@@ -10,6 +10,7 @@ final class ExerciseListViewModel {
     var errorMessage: String?
     var searchQuery: String = ""
     var showFavoritesOnly = false
+    var showArchived: Bool = false
     let selectedCategoryId: PersistentIdentifier?
 
     // MARK: - Dependencies
@@ -72,10 +73,19 @@ final class ExerciseListViewModel {
         router.navigateToCreateExercise()
     }
 
+    func toggleArchivedFilter() async {
+        showArchived.toggle()
+        await loadExercises()
+    }
+
     // MARK: - Private
 
     private func filterExercises(_ allExercises: [SchemaV1.Exercise]) -> [SchemaV1.Exercise] {
-        var filtered = allExercises.filter { !$0.isArchived }
+        var filtered = allExercises
+
+        if !showArchived {
+            filtered = filtered.filter { !$0.isArchived }
+        }
 
         if showFavoritesOnly {
             filtered = filtered.filter { $0.isFavorite }

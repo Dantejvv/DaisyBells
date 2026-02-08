@@ -1,6 +1,12 @@
 import Foundation
 import SwiftData
 
+struct ExerciseStats {
+    let lastPerformed: Date?
+    let personalRecord: PersonalRecord?
+    let totalVolume: Double
+}
+
 @MainActor @Observable
 final class ExerciseDetailViewModel {
     // MARK: - State
@@ -9,10 +15,12 @@ final class ExerciseDetailViewModel {
     private(set) var isLoading = false
     var errorMessage: String?
     private(set) var canDelete = true
+    private(set) var performanceStats: ExerciseStats?
 
     // MARK: - Dependencies
 
     private let exerciseService: ExerciseServiceProtocol
+    private let analyticsService: AnalyticsServiceProtocol
     private let router: LibraryRouter
     private let exerciseId: PersistentIdentifier
 
@@ -20,10 +28,12 @@ final class ExerciseDetailViewModel {
 
     init(
         exerciseService: ExerciseServiceProtocol,
+        analyticsService: AnalyticsServiceProtocol,
         router: LibraryRouter,
         exerciseId: PersistentIdentifier
     ) {
         self.exerciseService = exerciseService
+        self.analyticsService = analyticsService
         self.router = router
         self.exerciseId = exerciseId
     }
@@ -43,6 +53,17 @@ final class ExerciseDetailViewModel {
             exercise = exerciseModel
             let hasHistory = try await exerciseService.hasHistory(exerciseModel)
             canDelete = !hasHistory
+
+            // Load performance stats
+            let lastPerformed = try await analyticsService.lastPerformedDate(exerciseModel)
+            let personalRecord = try await analyticsService.personalBestForExercise(exerciseModel)
+            let totalVolume = try await analyticsService.volumeForExercise(exerciseModel)
+
+            performanceStats = ExerciseStats(
+                lastPerformed: lastPerformed,
+                personalRecord: personalRecord,
+                totalVolume: totalVolume
+            )
         } catch {
             errorMessage = error.localizedDescription
         }

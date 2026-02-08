@@ -14,8 +14,8 @@ final class TemplateListViewModel {
 
     private let templateService: TemplateServiceProtocol
     private let workoutService: WorkoutServiceProtocol
-    private let router: RoutinesRouter
-    
+    private let router: HomeRouter
+
     // MARK - RecentWorkout Projection
     struct RecentWorkout: Identifiable {
         let id: PersistentIdentifier
@@ -23,10 +23,10 @@ final class TemplateListViewModel {
         let date: Date
         let templateId: PersistentIdentifier?
     }
-    
+
     // MARK: - Init
 
-    init(templateService: TemplateServiceProtocol, workoutService: WorkoutServiceProtocol, router: RoutinesRouter) {
+    init(templateService: TemplateServiceProtocol, workoutService: WorkoutServiceProtocol, router: HomeRouter) {
         self.templateService = templateService
         self.workoutService = workoutService
         self.router = router
@@ -44,7 +44,7 @@ final class TemplateListViewModel {
         }
         isLoading = false
     }
-    
+
     func loadRecentWorkouts(limit: Int = 7) async {
             errorMessage = nil
             do {
@@ -80,7 +80,7 @@ final class TemplateListViewModel {
             errorMessage = error.localizedDescription
         }
     }
-    
+
     func startWorkout(_ workout: RecentWorkout) {
         router.navigateToActiveWorkout(workoutId: workout.id)
     }

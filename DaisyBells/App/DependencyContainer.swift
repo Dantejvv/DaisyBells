@@ -19,8 +19,8 @@ final class DependencyContainer {
     let seedingService: SeedingService
 
     // Routers
+    let homeRouter: HomeRouter
     let libraryRouter: LibraryRouter
-    let routinesRouter: RoutinesRouter
     let historyRouter: HistoryRouter
     let analyticsRouter: AnalyticsRouter
 
@@ -53,8 +53,8 @@ final class DependencyContainer {
         self.seedingService = SeedingService(modelContext: modelContext)
 
         // Initialize routers
+        self.homeRouter = HomeRouter()
         self.libraryRouter = LibraryRouter()
-        self.routinesRouter = RoutinesRouter()
         self.historyRouter = HistoryRouter()
         self.analyticsRouter = AnalyticsRouter()
     }

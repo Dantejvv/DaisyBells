@@ -1,26 +1,35 @@
 import SwiftUI
 
-/// Temporary stub view for data layer refactoring
-/// Will be replaced with full implementation in Phase 7+
+@MainActor
 struct MainTabView: View {
+    @Environment(DependencyContainer.self) private var container
+
     var body: some View {
         TabView {
-            Text("Home")
+            HomeTabRootView()
+                .environment(container.homeRouter)
+                .environment(container)
                 .tabItem {
                     Label("Home", systemImage: "house")
                 }
 
-            Text("Library")
+            LibraryTabRootView()
+                .environment(container.libraryRouter)
+                .environment(container)
                 .tabItem {
                     Label("Library", systemImage: "book")
                 }
 
-            Text("History")
+            HistoryTabRootView()
+                .environment(container.historyRouter)
+                .environment(container)
                 .tabItem {
                     Label("History", systemImage: "clock")
                 }
 
-            Text("Analytics")
+            AnalyticsTabRootView()
+                .environment(container.analyticsRouter)
+                .environment(container)
                 .tabItem {
                     Label("Analytics", systemImage: "chart.bar")
                 }

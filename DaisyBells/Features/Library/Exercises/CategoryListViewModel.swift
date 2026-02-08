@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import SwiftData
 
 @MainActor @Observable
@@ -56,5 +57,27 @@ final class CategoryListViewModel {
 
     func selectCategory(_ category: SchemaV1.ExerciseCategory) {
         router.navigateToExerciseList(categoryId: category.persistentModelID)
+    }
+
+    func updateCategory(_ category: SchemaV1.ExerciseCategory, name: String) async {
+        errorMessage = nil
+        do {
+            try await categoryService.update(category, name: name)
+            await loadCategories()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func reorderCategories(from source: IndexSet, to destination: Int) async {
+        categories.move(fromOffsets: source, toOffset: destination)
+
+        errorMessage = nil
+        do {
+            try await categoryService.reorder(categories: categories)
+        } catch {
+            errorMessage = error.localizedDescription
+            await loadCategories() // Reload to restore original order
+        }
     }
 }
