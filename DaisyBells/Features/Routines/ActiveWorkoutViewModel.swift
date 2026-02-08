@@ -22,6 +22,8 @@ final class ActiveWorkoutViewModel {
 
     private let workoutService: WorkoutServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
+    private let loggedExerciseService: LoggedExerciseServiceProtocol
+    private let loggedSetService: LoggedSetServiceProtocol
     private let templateService: TemplateServiceProtocol
     private let router: RoutinesRouter
     private let workoutId: PersistentIdentifier
@@ -36,12 +38,16 @@ final class ActiveWorkoutViewModel {
     init(
         workoutService: WorkoutServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
+        loggedExerciseService: LoggedExerciseServiceProtocol,
+        loggedSetService: LoggedSetServiceProtocol,
         templateService: TemplateServiceProtocol,
         router: RoutinesRouter,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService
         self.exerciseService = exerciseService
+        self.loggedExerciseService = loggedExerciseService
+        self.loggedSetService = loggedSetService
         self.templateService = templateService
         self.router = router
         self.workoutId = workoutId
@@ -98,13 +104,11 @@ final class ActiveWorkoutViewModel {
 
         errorMessage = nil
         do {
-            let loggedExercise = try await workoutService.addExercise(exercise, to: workout)
+            let maxOrder = workout.loggedExercises.map(\.order).max() ?? -1
+            _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: maxOrder + 1)
             exercises = workout.loggedExercises.sorted { $0.order < $1.order }
 
             await loadPreviousPerformance(for: exercise)
-
-            // Add initial set
-            _ = try await workoutService.addSet(to: loggedExercise)
             refreshExercises()
         } catch {
             errorMessage = error.localizedDescription
@@ -117,7 +121,7 @@ final class ActiveWorkoutViewModel {
         guard let workout else { return }
         errorMessage = nil
         do {
-            try await workoutService.removeExercise(loggedExercise, from: workout)
+            try await loggedExerciseService.delete(loggedExercise)
             exercises = workout.loggedExercises.sorted { $0.order < $1.order }
         } catch {
             errorMessage = error.localizedDescription
@@ -135,7 +139,8 @@ final class ActiveWorkoutViewModel {
     func addSet(to loggedExercise: SchemaV1.LoggedExercise) async {
         errorMessage = nil
         do {
-            _ = try await workoutService.addSet(to: loggedExercise)
+            let maxOrder = loggedExercise.sets.map(\.order).max() ?? -1
+            _ = try await loggedSetService.create(loggedExercise: loggedExercise, order: maxOrder + 1)
             refreshExercises()
         } catch {
             errorMessage = error.localizedDescription
@@ -151,16 +156,17 @@ final class ActiveWorkoutViewModel {
         bodyweightModifier: Double?,
         notes: String? = nil
     ) async {
-        set.weight = weight
-        set.reps = reps
-        set.time = time
-        set.distance = distance
-        set.bodyweightModifier = bodyweightModifier
-        set.notes = notes
-
         errorMessage = nil
         do {
-            try await workoutService.updateSet(set)
+            try await loggedSetService.update(
+                set,
+                weight: weight,
+                reps: reps,
+                bodyweightModifier: bodyweightModifier,
+                time: time,
+                distance: distance,
+                notes: notes
+            )
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -169,7 +175,7 @@ final class ActiveWorkoutViewModel {
     func deleteSet(_ set: SchemaV1.LoggedSet, from loggedExercise: SchemaV1.LoggedExercise) async {
         errorMessage = nil
         do {
-            try await workoutService.removeSet(set, from: loggedExercise)
+            try await loggedSetService.delete(set)
             refreshExercises()
         } catch {
             errorMessage = error.localizedDescription

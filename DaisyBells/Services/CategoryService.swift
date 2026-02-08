@@ -27,6 +27,18 @@ final class CategoryService: CategoryServiceProtocol {
         return category
     }
 
+    func update(_ category: SchemaV1.ExerciseCategory, name: String) async throws {
+        category.name = name
+        try modelContext.save()
+    }
+
+    func reorder(categories: [SchemaV1.ExerciseCategory]) async throws {
+        for (index, category) in categories.enumerated() {
+            category.order = index
+        }
+        try modelContext.save()
+    }
+
     func delete(_ category: SchemaV1.ExerciseCategory) async throws {
         if category.isDefault {
             throw ServiceError.invalidOperation("Cannot delete default categories")

@@ -24,6 +24,15 @@ final class SplitDayService: SplitDayServiceProtocol {
         modelContext.model(for: persistentId) as? SchemaV1.SplitDay
     }
 
+    func fetchBySplitTemplate(_ template: SchemaV1.WorkoutTemplate) async throws -> [SchemaV1.SplitDay] {
+        let descriptor = FetchDescriptor<SchemaV1.SplitDay>()
+        let allDays = try modelContext.fetch(descriptor)
+
+        return allDays.filter { day in
+            day.assignedWorkouts.contains(where: { $0.id == template.id })
+        }
+    }
+
     func create(name: String, split: SchemaV1.Split) async throws -> SchemaV1.SplitDay {
         // Determine next order value
         let nextOrder = split.days.count

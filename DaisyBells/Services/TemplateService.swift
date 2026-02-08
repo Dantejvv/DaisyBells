@@ -31,6 +31,20 @@ final class TemplateService: TemplateServiceProtocol {
         modelContext.model(for: persistentId) as? SchemaV1.WorkoutTemplate
     }
 
+    func search(query: String) async throws -> [SchemaV1.WorkoutTemplate] {
+        let descriptor = FetchDescriptor<SchemaV1.WorkoutTemplate>()
+        let allTemplates = try modelContext.fetch(descriptor)
+
+        if query.isEmpty {
+            return allTemplates
+        }
+
+        let lowercasedQuery = query.lowercased()
+        return allTemplates.filter { template in
+            template.name.lowercased().contains(lowercasedQuery)
+        }
+    }
+
     func create(name: String) async throws -> SchemaV1.WorkoutTemplate {
         let template = SchemaV1.WorkoutTemplate(name: name)
         modelContext.insert(template)

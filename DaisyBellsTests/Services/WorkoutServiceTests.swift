@@ -9,7 +9,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func createEmptyWorkout() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await service.createEmpty()
 
@@ -20,7 +20,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func fetchByIdReturnsWorkout() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let created = try await service.createEmpty()
         let fetched = try await service.fetch(id: created.id)
@@ -31,7 +31,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func fetchByIdThrowsWhenNotFound() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         await #expect(throws: ServiceError.self) {
             try await service.fetch(id: UUID())
@@ -41,7 +41,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func completeWorkout() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await service.createEmpty()
         try await service.complete(workout)
@@ -53,7 +53,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func cancelWorkout() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await service.createEmpty()
         try await service.cancel(workout)
@@ -64,7 +64,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func fetchCompletedReturnsOnlyCompleted() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout1 = try await service.createEmpty()
         _ = try await service.createEmpty() // Active workout
@@ -79,7 +79,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func fetchActiveReturnsActiveWorkout() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await service.createEmpty()
 
@@ -91,7 +91,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func fetchActiveReturnsNilWhenNoActive() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let active = try await service.fetchActive()
 
@@ -101,7 +101,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func deleteRemovesWorkout() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await service.createEmpty()
         let id = workout.id
@@ -115,13 +115,14 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func addExerciseToWorkout() async throws {
         let container = try makeTestModelContainer()
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
+        let loggedExerciseService = LoggedExerciseService(modelContext: container.mainContext)
 
         let workout = try await workoutService.createEmpty()
         let exercise = try await exerciseService.create(name: "Bench", type: .weightAndReps)
 
-        let logged = try await workoutService.addExercise(exercise, to: workout)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
 
         #expect(workout.loggedExercises.count == 1)
         #expect(logged.exercise?.name == "Bench")
@@ -131,14 +132,16 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func addSetToLoggedExercise() async throws {
         let container = try makeTestModelContainer()
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
+        let loggedExerciseService = LoggedExerciseService(modelContext: container.mainContext)
+        let loggedSetService = LoggedSetService(modelContext: container.mainContext)
 
         let workout = try await workoutService.createEmpty()
         let exercise = try await exerciseService.create(name: "Squat", type: .weightAndReps)
-        let logged = try await workoutService.addExercise(exercise, to: workout)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
 
-        _ = try await workoutService.addSet(to: logged)
+        _ = try await loggedSetService.create(loggedExercise: logged, order: 1)
 
         #expect(logged.sets.count == 2)
     }
@@ -146,17 +149,17 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func updateSet() async throws {
         let container = try makeTestModelContainer()
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
+        let loggedExerciseService = LoggedExerciseService(modelContext: container.mainContext)
+        let loggedSetService = LoggedSetService(modelContext: container.mainContext)
 
         let workout = try await workoutService.createEmpty()
         let exercise = try await exerciseService.create(name: "Deadlift", type: .weightAndReps)
-        let logged = try await workoutService.addExercise(exercise, to: workout)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
         let set = logged.sets[0]
 
-        set.weight = 225
-        set.reps = 5
-        try await workoutService.updateSet(set)
+        try await loggedSetService.update(set, weight: 225, reps: 5, bodyweightModifier: nil, time: nil, distance: nil, notes: nil)
 
         #expect(set.weight == 225)
         #expect(set.reps == 5)
@@ -165,7 +168,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func updateNotes() async throws {
         let container = try makeTestModelContainer()
-        let service = WorkoutService(modelContext: container.mainContext)
+        let service = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await service.createEmpty()
         try await service.updateNotes(workout, notes: "Great session")
@@ -176,7 +179,7 @@ struct WorkoutServiceTests {
     @Test @MainActor
     func createFromTemplate() async throws {
         let container = try makeTestModelContainer()
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let templateService = TemplateService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
 

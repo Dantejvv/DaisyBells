@@ -9,3 +9,17 @@ func makeTestModelContainer() throws -> ModelContainer {
     let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     return try ModelContainer(for: schema, configurations: config)
 }
+
+/// Creates a properly configured WorkoutService with all dependencies for testing
+@MainActor
+func makeWorkoutService(modelContext: ModelContext) -> WorkoutService {
+    let exerciseService = ExerciseService(modelContext: modelContext)
+    let loggedExerciseService = LoggedExerciseService(modelContext: modelContext)
+    let loggedSetService = LoggedSetService(modelContext: modelContext)
+    return WorkoutService(
+        modelContext: modelContext,
+        exerciseService: exerciseService,
+        loggedExerciseService: loggedExerciseService,
+        loggedSetService: loggedSetService
+    )
+}

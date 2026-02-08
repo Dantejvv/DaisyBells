@@ -16,10 +16,5 @@ protocol WorkoutServiceProtocol {
     func delete(_ workout: SchemaV1.Workout) async throws
     func deleteAll() async throws
     func updateNotes(_ workout: SchemaV1.Workout, notes: String?) async throws
-    func addExercise(_ exercise: SchemaV1.Exercise, to workout: SchemaV1.Workout) async throws -> SchemaV1.LoggedExercise
-    func removeExercise(_ loggedExercise: SchemaV1.LoggedExercise, from workout: SchemaV1.Workout) async throws
-    func addSet(to loggedExercise: SchemaV1.LoggedExercise) async throws -> SchemaV1.LoggedSet
-    func removeSet(_ set: SchemaV1.LoggedSet, from loggedExercise: SchemaV1.LoggedExercise) async throws
-    func updateSet(_ set: SchemaV1.LoggedSet) async throws
     func fetchRecent(limit: Int) async throws -> [SchemaV1.Workout]
 }

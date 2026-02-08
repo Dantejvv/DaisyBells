@@ -10,7 +10,7 @@ struct AnalyticsServiceTests {
     func workoutsThisWeekCountsCorrectly() async throws {
         let container = try makeTestModelContainer()
         let analyticsService = AnalyticsService(modelContext: container.mainContext)
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
 
         let workout = try await workoutService.createEmpty()
         try await workoutService.complete(workout)
@@ -24,7 +24,7 @@ struct AnalyticsServiceTests {
     func workoutsThisMonthCountsCorrectly() async throws {
         let container = try makeTestModelContainer()
         let analyticsService = AnalyticsService(modelContext: container.mainContext)
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
 
         let workout1 = try await workoutService.createEmpty()
         let workout2 = try await workoutService.createEmpty()
@@ -40,12 +40,13 @@ struct AnalyticsServiceTests {
     func recentExercisesReturnsUnique() async throws {
         let container = try makeTestModelContainer()
         let analyticsService = AnalyticsService(modelContext: container.mainContext)
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
+        let loggedExerciseService = LoggedExerciseService(modelContext: container.mainContext)
 
         let exercise = try await exerciseService.create(name: "Bench", type: .weightAndReps)
         let workout = try await workoutService.createEmpty()
-        _ = try await workoutService.addExercise(exercise, to: workout)
+        _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
         try await workoutService.complete(workout)
 
         let recent = try await analyticsService.recentExercises(limit: 10)
@@ -58,16 +59,16 @@ struct AnalyticsServiceTests {
     func volumeForExerciseCalculatesCorrectly() async throws {
         let container = try makeTestModelContainer()
         let analyticsService = AnalyticsService(modelContext: container.mainContext)
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
+        let loggedExerciseService = LoggedExerciseService(modelContext: container.mainContext)
+        let loggedSetService = LoggedSetService(modelContext: container.mainContext)
 
         let exercise = try await exerciseService.create(name: "Squat", type: .weightAndReps)
         let workout = try await workoutService.createEmpty()
-        let logged = try await workoutService.addExercise(exercise, to: workout)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
 
-        logged.sets[0].weight = 100
-        logged.sets[0].reps = 10
-        try await workoutService.updateSet(logged.sets[0])
+        try await loggedSetService.update(logged.sets[0], weight: 100, reps: 10, bodyweightModifier: nil, time: nil, distance: nil, notes: nil)
 
         try await workoutService.complete(workout)
 
@@ -80,12 +81,13 @@ struct AnalyticsServiceTests {
     func lastPerformedDateReturnsCorrectDate() async throws {
         let container = try makeTestModelContainer()
         let analyticsService = AnalyticsService(modelContext: container.mainContext)
-        let workoutService = WorkoutService(modelContext: container.mainContext)
+        let workoutService = makeWorkoutService(modelContext: container.mainContext)
         let exerciseService = ExerciseService(modelContext: container.mainContext)
+        let loggedExerciseService = LoggedExerciseService(modelContext: container.mainContext)
 
         let exercise = try await exerciseService.create(name: "Deadlift", type: .weightAndReps)
         let workout = try await workoutService.createEmpty()
-        _ = try await workoutService.addExercise(exercise, to: workout)
+        _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
         try await workoutService.complete(workout)
 
         let lastDate = try await analyticsService.lastPerformedDate(exercise)

@@ -4,9 +4,20 @@ import SwiftData
 @MainActor
 final class WorkoutService: WorkoutServiceProtocol {
     private let modelContext: ModelContext
+    private let exerciseService: ExerciseServiceProtocol
+    private let loggedExerciseService: LoggedExerciseServiceProtocol
+    private let loggedSetService: LoggedSetServiceProtocol
 
-    init(modelContext: ModelContext) {
+    init(
+        modelContext: ModelContext,
+        exerciseService: ExerciseServiceProtocol,
+        loggedExerciseService: LoggedExerciseServiceProtocol,
+        loggedSetService: LoggedSetServiceProtocol
+    ) {
         self.modelContext = modelContext
+        self.exerciseService = exerciseService
+        self.loggedExerciseService = loggedExerciseService
+        self.loggedSetService = loggedSetService
     }
 
     func createFromTemplate(_ template: SchemaV1.WorkoutTemplate) async throws -> SchemaV1.Workout {
@@ -200,58 +211,6 @@ final class WorkoutService: WorkoutServiceProtocol {
         try modelContext.save()
     }
 
-    func addExercise(_ exercise: SchemaV1.Exercise, to workout: SchemaV1.Workout) async throws -> SchemaV1.LoggedExercise {
-        let maxOrder = workout.loggedExercises.map(\.order).max() ?? -1
-        let loggedExercise = SchemaV1.LoggedExercise(
-            exercise: exercise,
-            order: maxOrder + 1
-        )
-        loggedExercise.workout = workout
-        modelContext.insert(loggedExercise)
-
-        let loggedSet = SchemaV1.LoggedSet(order: 0)
-        loggedSet.loggedExercise = loggedExercise
-        modelContext.insert(loggedSet)
-
-        try modelContext.save()
-        return loggedExercise
-    }
-
-    func removeExercise(_ loggedExercise: SchemaV1.LoggedExercise, from workout: SchemaV1.Workout) async throws {
-        let removedOrder = loggedExercise.order
-        modelContext.delete(loggedExercise)
-
-        for exercise in workout.loggedExercises where exercise.order > removedOrder {
-            exercise.order -= 1
-        }
-
-        try modelContext.save()
-    }
-
-    func addSet(to loggedExercise: SchemaV1.LoggedExercise) async throws -> SchemaV1.LoggedSet {
-        let maxOrder = loggedExercise.sets.map(\.order).max() ?? -1
-        let loggedSet = SchemaV1.LoggedSet(order: maxOrder + 1)
-        loggedSet.loggedExercise = loggedExercise
-        modelContext.insert(loggedSet)
-        try modelContext.save()
-        return loggedSet
-    }
-
-    func removeSet(_ set: SchemaV1.LoggedSet, from loggedExercise: SchemaV1.LoggedExercise) async throws {
-        let removedOrder = set.order
-        modelContext.delete(set)
-
-        for existingSet in loggedExercise.sets where existingSet.order > removedOrder {
-            existingSet.order -= 1
-        }
-
-        try modelContext.save()
-    }
-
-    func updateSet(_ set: SchemaV1.LoggedSet) async throws {
-        try modelContext.save()
-    }
-    
     func fetchRecent(limit: Int) async throws -> [SchemaV1.Workout] {
         let completedRawValue = WorkoutStatus.completed.rawValue
         var descriptor = FetchDescriptor<SchemaV1.Workout>(

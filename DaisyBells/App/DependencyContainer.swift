@@ -12,6 +12,8 @@ final class DependencyContainer {
     let templateService: TemplateService
     let splitService: SplitService
     let splitDayService: SplitDayService
+    let loggedExerciseService: LoggedExerciseService
+    let loggedSetService: LoggedSetService
     let workoutService: WorkoutService
     let analyticsService: AnalyticsService
     let seedingService: SeedingService
@@ -39,7 +41,14 @@ final class DependencyContainer {
         self.templateService = TemplateService(modelContext: modelContext)
         self.splitService = SplitService(modelContext: modelContext)
         self.splitDayService = SplitDayService(modelContext: modelContext)
-        self.workoutService = WorkoutService(modelContext: modelContext)
+        self.loggedExerciseService = LoggedExerciseService(modelContext: modelContext)
+        self.loggedSetService = LoggedSetService(modelContext: modelContext)
+        self.workoutService = WorkoutService(
+            modelContext: modelContext,
+            exerciseService: exerciseService,
+            loggedExerciseService: loggedExerciseService,
+            loggedSetService: loggedSetService
+        )
         self.analyticsService = AnalyticsService(modelContext: modelContext)
         self.seedingService = SeedingService(modelContext: modelContext)
 
