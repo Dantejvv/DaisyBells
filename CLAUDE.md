@@ -28,12 +28,24 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - **Workout Logging:** `Workout`, `LoggedExercise`, `LoggedSet`
 - **Enums:** `ExerciseType`, `WorkoutStatus`, `Units`, `Appearance`
 
+## Current Implementation Status
+**Completed Phases:**
+- ✅ Phase 1: Foundation (Enums, SchemaV1, MigrationPlan)
+- ✅ Phase 2: Services (11 services + protocols, fully tested)
+- ✅ Phase 3: Infrastructure (DependencyContainer, 4 Routers, extensions)
+- ✅ Phase 4: ViewModels (24+ ViewModels across all features)
+
+**Remaining Work:**
+- ❌ Phase 5: Production Views (no views exist beyond 4 tab root placeholders)
+- ❌ Phase 6: Polish + Testing
+
 ## Documentation
 - `docs/ARCHITECTURE.md` — Architecture decisions, MVVM rules, concurrency model
 - `docs/MODELS.md` — Data model definitions and relationships
 - `docs/FEATURES.md` — Feature specifications
 - `docs/CONTRACTS.md` — View-ViewModel contracts (state, intents, side effects)
 - `docs/USERFLOWS.md` — User flows and model lifecycle mappings
+- `docs/ROADMAP.md` — Implementation phases, build order, and Phase 5 guide
 
 ## Architecture Rules
 - **Views:** No business logic, no SwiftData access, call ViewModel intents only

@@ -1,10 +1,14 @@
 # DaisyBells Implementation Roadmap
 
-## Current State
-- **UI Prototypes:** Complete (19 views, 4 components in ViewTesting/)
-- **Mock Data:** Complete (MockTypes.swift with full model hierarchy)
-- **Documentation:** Complete (ARCHITECTURE, MODELS, CONTRACTS, FEATURES, USERFLOWS)
-- **Production Code:** Empty (Models/, Services/, Features/, Schema/ are empty shells)
+## Current State (Updated 2026-02-08)
+- ✅ **Phase 1: Foundation** — COMPLETE (Enums, SchemaV1, MigrationPlan)
+- ✅ **Phase 2: Services** — COMPLETE (11 services + protocols, all tested)
+- ✅ **Phase 3: Infrastructure** — COMPLETE (DependencyContainer, 4 Routers, tab root views, extensions)
+- ✅ **Phase 4: ViewModels** — COMPLETE (24+ ViewModels across all features)
+- ❌ **Phase 5: Production Views** — NOT STARTED (ViewTesting/ deleted, no views implemented)
+- ❌ **Phase 6: Polish + Testing** — NOT STARTED
+
+**Documentation:** Complete (ARCHITECTURE, MODELS, CONTRACTS, FEATURES, USERFLOWS, ROADMAP)
 
 ---
 
@@ -152,34 +156,63 @@ Build @MainActor, @Observable ViewModels per CONTRACTS.md.
 ---
 
 ### Phase 5: Production Views
-Migrate ViewTesting prototypes to production with real ViewModels.
+Build production SwiftUI views from scratch (ViewTesting prototypes were deleted).
 
-**Process per view:**
-1. Copy from ViewTesting/ to Features/
-2. Replace MockTypes with real SchemaV1 models
-3. Replace inline mock data with ViewModel bindings via `@State`
-4. Wire navigation through Router (use `NavigationLink(value:)`, not inline destinations)
-5. Remove `@EnvironmentObject` - ViewModels passed as `@State` init parameters
-6. Use `.environment()` modifier to inject dependencies from DependencyContainer
+**Implementation Strategy:**
+Since ViewTesting prototypes no longer exist, views will be built fresh using:
+1. CONTRACTS.md for state/intent specifications
+2. FEATURES.md for UI requirements
+3. USERFLOWS.md for interaction patterns
+4. Existing ViewModels for data binding
 
-**View Pattern:**
-- Views receive ViewModels as `@State` init parameters
+**View Pattern (Critical Architecture Rules):**
+- Views receive ViewModels as `@State` init parameters (NOT @EnvironmentObject)
 - ViewModels created in `navigationDestination(for:)` closures with injected dependencies
 - Navigation: `NavigationStack(path: $router.path)` + `.navigationDestination(for: Route.self)`
 - Sheets: `router.presentedSheet` drives `.sheet(item:)`
+- Use `NavigationLink(value:)`, NEVER `NavigationLink(destination:)` with inline views
 - No `@Query` - all data flows through ViewModels
+- Services/Routers accessed from DependencyContainer via `.environment()`
 
-**Order (dependencies first):**
-1. Components (EmptyStateView, LoadingSpinnerView, ConfirmationDialogModifier, ErrorAlertModifier)
-2. Home/Splits (SplitList → SplitDetail → SplitForm → SplitDayDetail → SplitDayForm)
-3. Library/Exercises (CategoryList → ExerciseList → ExerciseDetail → ExerciseForm)
-4. Library/Templates (TemplateList → TemplateDetail → TemplateForm)
-5. Shared Pickers (ExercisePicker, WorkoutPicker, SplitDayPicker)
-6. ActiveWorkout (depends on ExercisePicker)
-7. History (HistoryList → CompletedWorkoutDetail)
-8. Analytics (Dashboard → ExerciseAnalyticsDetail)
-9. Settings (modal)
-10. MainTabView (orchestrates all 4 tabs: Home, Library, History, Analytics)
+**Implementation Order (dependencies first):**
+1. **Components** (shared across features)
+   - `EmptyStateView` — Shows icon, title, message for empty states
+   - `LoadingSpinnerView` — Centered spinner for loading states
+   - `ErrorAlertModifier` — View modifier for error alerts bound to ViewModel.errorMessage
+   - `ConfirmationDialogModifier` — Reusable confirmation dialogs
+
+2. **Home/Splits** (split dashboard and management)
+   - `SplitListView` → `SplitDetailView` → `SplitFormView`
+   - `SplitDayDetailView` → `SplitDayFormView`
+
+3. **Library/Exercises** (exercise library management)
+   - `CategoryListView` → `ExerciseListView` → `ExerciseDetailView` → `ExerciseFormView`
+
+4. **Library/Templates** (workout template management)
+   - `TemplateListView` → `TemplateDetailView` → `TemplateFormView`
+
+5. **Shared Pickers** (presented as sheets)
+   - `ExercisePickerView`
+   - `WorkoutPickerView`
+   - `SplitDayPickerView`
+
+6. **ActiveWorkout** (workout logging, depends on ExercisePicker)
+   - `ActiveWorkoutView`
+
+7. **History** (completed workout viewing)
+   - `HistoryListView` → `CompletedWorkoutDetailView`
+
+8. **Analytics** (read-only dashboards)
+   - `AnalyticsDashboardView` → `ExerciseAnalyticsView`
+
+9. **Settings** (presented as sheet)
+   - `SettingsView`
+
+10. **Tab Root Views** (update from placeholders to real content)
+    - Update `HomeTabRootView` with SplitListView
+    - Update `LibraryTabRootView` with segmented control for Exercises/Templates
+    - Update `HistoryTabRootView` with HistoryListView
+    - Update `AnalyticsTabRootView` with AnalyticsDashboardView
 
 **Verification:**
 - All navigation flows work end-to-end per USERFLOWS.md
@@ -235,43 +268,139 @@ Final integration and quality assurance.
 | 21 | Date+Formatting | — | Small |
 | 22 | Double+Units | — | Small |
 | 23 | Seed JSON files | — | Small |
-| **Phase 4: ViewModels** |
-| 24 | SplitListViewModel | SplitService, HomeRouter | Small |
-| 25 | SplitDetailViewModel | SplitService, SplitDayService, HomeRouter | Medium |
-| 26 | SplitFormViewModel | SplitService, HomeRouter | Small |
-| 27 | SplitDayDetailViewModel | SplitDayService, WorkoutService, HomeRouter | Medium |
-| 28 | SplitDayFormViewModel | SplitDayService, HomeRouter | Small |
-| 29 | CategoryListViewModel | CategoryService, LibraryRouter | Small |
-| 30 | ExerciseListViewModel | ExerciseService, LibraryRouter | Medium |
-| 31 | ExerciseDetailViewModel | ExerciseService, AnalyticsService, LibraryRouter | Small |
-| 32 | ExerciseFormViewModel | ExerciseService, CategoryService, LibraryRouter | Medium |
-| 33 | TemplateListViewModel | TemplateService, LibraryRouter | Small |
-| 34 | TemplateDetailViewModel | TemplateService, SplitDayService, WorkoutService, LibraryRouter | Medium |
-| 35 | TemplateFormViewModel | TemplateService, LibraryRouter | Medium |
-| 36 | ExercisePickerViewModel | ExerciseService, CategoryService | Small |
-| 37 | WorkoutPickerViewModel | TemplateService | Small |
-| 38 | SplitDayPickerViewModel | SplitService | Small |
-| 39 | ActiveWorkoutViewModel | WorkoutService, TemplateService, LoggedExerciseService, LoggedSetService | Large |
-| 40 | HistoryListViewModel | WorkoutService, HistoryRouter | Small |
-| 41 | CompletedWorkoutDetailViewModel | WorkoutService, HistoryRouter | Small |
-| 42 | AnalyticsDashboardViewModel | AnalyticsService, AnalyticsRouter | Medium |
-| 43 | ExerciseAnalyticsViewModel | AnalyticsService, AnalyticsRouter | Small |
-| 44 | SettingsViewModel | SettingsService | Small |
-| **Phase 5: Views** |
-| 45 | Migrate Components (4) | — | Small |
-| 46 | Migrate Home Views (Splits) | Split ViewModels, HomeRouter | Large |
-| 47 | Migrate Library/Exercise Views | Exercise ViewModels, LibraryRouter | Large |
-| 48 | Migrate Library/Template Views | Template ViewModels, LibraryRouter | Large |
-| 49 | Migrate Shared Pickers | Picker ViewModels | Medium |
-| 50 | Migrate ActiveWorkout View | ActiveWorkoutViewModel, ExercisePicker | Large |
-| 51 | Migrate History Views | History ViewModels, HistoryRouter | Medium |
-| 52 | Migrate Analytics Views | Analytics ViewModels, AnalyticsRouter | Medium |
-| 53 | Migrate Settings View | SettingsViewModel | Small |
-| 54 | Migrate MainTabView | All Tabs | Medium |
+| **Phase 4: ViewModels** | ✅ COMPLETE |
+| 24 | SplitListViewModel | SplitService, HomeRouter | ✅ Done |
+| 25 | SplitDetailViewModel | SplitService, SplitDayService, HomeRouter | ✅ Done |
+| 26 | SplitFormViewModel | SplitService, HomeRouter | ✅ Done |
+| 27 | SplitDayDetailViewModel | SplitDayService, WorkoutService, HomeRouter | ✅ Done |
+| 28 | SplitDayFormViewModel | SplitDayService, HomeRouter | ✅ Done |
+| 29 | CategoryListViewModel | CategoryService, LibraryRouter | ✅ Done |
+| 30 | ExerciseListViewModel | ExerciseService, LibraryRouter | ✅ Done |
+| 31 | ExerciseDetailViewModel | ExerciseService, AnalyticsService, LibraryRouter | ✅ Done |
+| 32 | ExerciseFormViewModel | ExerciseService, CategoryService, LibraryRouter | ✅ Done |
+| 33 | TemplateListViewModel | TemplateService, LibraryRouter | ✅ Done |
+| 34 | TemplateDetailViewModel | TemplateService, SplitDayService, WorkoutService, LibraryRouter | ✅ Done |
+| 35 | TemplateFormViewModel | TemplateService, LibraryRouter | ✅ Done |
+| 36 | ExercisePickerViewModel | ExerciseService, CategoryService | ✅ Done |
+| 37 | WorkoutPickerViewModel | TemplateService | ✅ Done |
+| 38 | SplitDayPickerViewModel | SplitService | ✅ Done |
+| 39 | ActiveWorkoutViewModel | WorkoutService, TemplateService, LoggedExerciseService, LoggedSetService | ✅ Done |
+| 40 | HistoryListViewModel | WorkoutService, HistoryRouter | ✅ Done |
+| 41 | CompletedWorkoutDetailViewModel | WorkoutService, HistoryRouter | ✅ Done |
+| 42 | AnalyticsDashboardViewModel | AnalyticsService, AnalyticsRouter | ✅ Done |
+| 43 | ExerciseAnalyticsViewModel | AnalyticsService, AnalyticsRouter | ✅ Done |
+| 44 | SettingsViewModel | SettingsService | ✅ Done |
+| **Phase 5: Views** | ❌ NOT STARTED |
+| 45 | Build Components (4) | — | Small |
+| 46 | Build Home/Split Views (5 views) | Split ViewModels, HomeRouter | Large |
+| 47 | Build Library/Exercise Views (4 views) | Exercise ViewModels, LibraryRouter | Large |
+| 48 | Build Library/Template Views (3 views) | Template ViewModels, LibraryRouter | Large |
+| 49 | Build Shared Pickers (3 views) | Picker ViewModels | Medium |
+| 50 | Build ActiveWorkout View | ActiveWorkoutViewModel, ExercisePicker | Large |
+| 51 | Build History Views (2 views) | History ViewModels, HistoryRouter | Medium |
+| 52 | Build Analytics Views (2 views) | Analytics ViewModels, AnalyticsRouter | Medium |
+| 53 | Build Settings View | SettingsViewModel | Small |
+| 54 | Update Tab Root Views (4 views) | Replace placeholders with real content | Medium |
 | **Phase 6: Testing** |
 | 55 | Service Tests | Services | Medium |
 | 56 | ViewModel Tests | ViewModels | Medium |
 | 57 | End-to-End Testing | All | Large |
+
+---
+
+## Phase 5 Implementation Guide
+
+### Critical Architecture Patterns (Reference Before Building Each View)
+
+**1. ViewModel Injection Pattern**
+```swift
+struct SplitListView: View {
+    @State private var viewModel: SplitListViewModel
+
+    init(viewModel: SplitListViewModel) {
+        self._viewModel = State(initialValue: viewModel)
+    }
+
+    var body: some View {
+        // Use viewModel.state and call viewModel.intent()
+    }
+}
+```
+
+**2. Navigation Destination Pattern**
+```swift
+// In tab root view
+NavigationStack(path: $router.path) {
+    SplitListView(viewModel: SplitListViewModel(
+        splitService: container.splitService,
+        router: container.homeRouter
+    ))
+    .navigationDestination(for: HomeRoute.self) { route in
+        switch route {
+        case .splitDetail(let splitId):
+            SplitDetailView(viewModel: SplitDetailViewModel(
+                splitId: splitId,
+                splitService: container.splitService,
+                splitDayService: container.splitDayService,
+                router: container.homeRouter
+            ))
+        // ... other routes
+        }
+    }
+}
+```
+
+**3. Sheet Presentation Pattern**
+```swift
+.sheet(item: $router.presentedSheet) { sheet in
+    switch sheet {
+    case .exercisePicker(let callback):
+        ExercisePickerView(viewModel: ExercisePickerViewModel(
+            exerciseService: container.exerciseService,
+            categoryService: container.categoryService,
+            onSelect: callback
+        ))
+    }
+}
+```
+
+**4. Error Handling Pattern**
+```swift
+// In View
+.alert("Error", isPresented: Binding(
+    get: { viewModel.errorMessage != nil },
+    set: { if !$0 { viewModel.errorMessage = nil } }
+)) {
+    Button("OK") { viewModel.errorMessage = nil }
+} message: {
+    Text(viewModel.errorMessage ?? "")
+}
+```
+
+**5. Empty State Pattern**
+```swift
+if viewModel.items.isEmpty {
+    EmptyStateView(
+        icon: "tray",
+        title: "No Items",
+        message: "Tap + to create your first item"
+    )
+} else {
+    List { /* content */ }
+}
+```
+
+### View File Checklist (Use for Each View)
+- [ ] ViewModel injected as `@State` init parameter (NOT @EnvironmentObject)
+- [ ] Uses `NavigationLink(value:)` for navigation (NOT destination:)
+- [ ] Calls ViewModel intent methods for all actions
+- [ ] No direct SwiftData access (@Query forbidden)
+- [ ] Error handling via `viewModel.errorMessage` binding
+- [ ] Loading states via `viewModel.isLoading`
+- [ ] Empty states via `EmptyStateView` component
+- [ ] No business logic in View (only presentation)
+- [ ] Task { await viewModel.load() } in .task modifier for data loading
+- [ ] Destructive actions have confirmation dialogs
 
 ---
 

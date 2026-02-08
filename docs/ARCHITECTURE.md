@@ -69,16 +69,37 @@ Use Swift Concurrency (async/await, @MainActor, Task { }, actors, Sendable)
 - No business logic
 - No data mutation
 - No direct SwiftData access
+- No @Query usage
+- No @EnvironmentObject for ViewModels
 
 ### Allowed
 - Formatting and presentation logic
-- View-only state (@State for UI toggles)
+- View-only state (@State for UI toggles, animations)
 - Calling ViewModel intent methods
+- Receiving ViewModels as `@State` init parameters
 
 ### Not Allowed
 - Writing to models
 - Fetching or mutating persisted data
 - Performing business or analytics logic
+- Using @Query to fetch data directly
+- Creating ViewModels outside of init or navigationDestination
+
+### Implementation Pattern
+```swift
+struct MyView: View {
+    @State private var viewModel: MyViewModel
+
+    init(viewModel: MyViewModel) {
+        self._viewModel = State(initialValue: viewModel)
+    }
+
+    var body: some View {
+        // Call viewModel.intent() methods
+        // Display viewModel.state properties
+    }
+}
+```
 
 ---
 
