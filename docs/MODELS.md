@@ -94,6 +94,17 @@ class Exercise {
     var isFavorite: Bool
     var isArchived: Bool
 
+    // Performance cache fields (updated on workout completion)
+    var lastPerformedAt: Date?
+    var hasCompletedWorkout: Bool
+    var totalVolume: Double
+    var prWeight: Double?
+    var prReps: Int?
+    var prTime: TimeInterval?
+    var prDistance: Double?
+    var prEstimated1RM: Double?
+    var prAchievedAt: Date?
+
     @Relationship
     var categories: [ExerciseCategory]
 
@@ -104,6 +115,10 @@ class Exercise {
         self.notes = notes
         self.isFavorite = false
         self.isArchived = false
+        self.lastPerformedAt = nil
+        self.hasCompletedWorkout = false
+        self.totalVolume = 0
+        self.categories = []
     }
 }
 ```
@@ -257,6 +272,10 @@ class LoggedSet {
     var time: TimeInterval?
     var distance: Double?
     var notes: String?
+
+    // Denormalization for query performance
+    var exerciseId: UUID?
+    var completedAt: Date?
 
     @Relationship
     var loggedExercise: LoggedExercise?

@@ -56,7 +56,7 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - `SplitDayService` — Split day management, workout assignments
 - `LoggedExerciseService` — Exercise logging during workouts
 - `LoggedSetService` — Set logging and editing
-- `AnalyticsService` — Derived analytics (not persisted)
+- `AnalyticsService` — Aggregations and derived analytics (combines cached data with on-demand calculations)
 - `SettingsService` — UserDefaults access for app preferences
 
 ## File Structure

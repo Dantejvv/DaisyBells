@@ -41,7 +41,7 @@ final class SeedingService {
         let categoryDTOs = try JSONDecoder().decode([CategoryDTO].self, from: data)
 
         for dto in categoryDTOs {
-            let category = SchemaV1.ExerciseCategory(name: dto.name, isDefault: dto.isDefault)
+            let category = SchemaV1.ExerciseCategory(name: dto.name, isDefault: dto.isDefault, order: dto.order)
             modelContext.insert(category)
         }
 
@@ -80,6 +80,7 @@ final class SeedingService {
 private struct CategoryDTO: Decodable {
     let name: String
     let isDefault: Bool
+    let order: Int
 }
 
 private struct ExerciseDTO: Decodable {

@@ -10,6 +10,8 @@ enum SchemaV1: VersionedSchema {
             Exercise.self,
             WorkoutTemplate.self,
             TemplateExercise.self,
+            Split.self,
+            SplitDay.self,
             Workout.self,
             LoggedExercise.self,
             LoggedSet.self
@@ -21,14 +23,16 @@ enum SchemaV1: VersionedSchema {
         @Attribute(.unique) var id: UUID
         var name: String
         var isDefault: Bool
+        var order: Int
 
         @Relationship(inverse: \Exercise.categories)
         var exercises: [Exercise]
 
-        init(name: String, isDefault: Bool = false) {
+        init(name: String, isDefault: Bool = false, order: Int = 0) {
             self.id = UUID()
             self.name = name
             self.isDefault = isDefault
+            self.order = order
             self.exercises = []
         }
     }
@@ -114,6 +118,43 @@ enum SchemaV1: VersionedSchema {
             self.order = order
             self.targetSets = targetSets
             self.targetReps = targetReps
+        }
+    }
+
+    @Model
+    final class Split {
+        @Attribute(.unique) var id: UUID
+        var name: String
+        var createdAt: Date
+
+        @Relationship(deleteRule: .cascade, inverse: \SplitDay.split)
+        var days: [SplitDay]
+
+        init(name: String) {
+            self.id = UUID()
+            self.name = name
+            self.createdAt = Date()
+            self.days = []
+        }
+    }
+
+    @Model
+    final class SplitDay {
+        @Attribute(.unique) var id: UUID
+        var name: String
+        var order: Int
+
+        @Relationship
+        var split: Split?
+
+        @Relationship
+        var assignedWorkouts: [WorkoutTemplate]
+
+        init(name: String, order: Int) {
+            self.id = UUID()
+            self.name = name
+            self.order = order
+            self.assignedWorkouts = []
         }
     }
 

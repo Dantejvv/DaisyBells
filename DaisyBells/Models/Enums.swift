@@ -24,6 +24,14 @@ enum WorkoutStatus: String, Codable {
     case active
     case completed
     case cancelled
+
+    var displayName: String {
+        switch self {
+        case .active: "Active"
+        case .completed: "Completed"
+        case .cancelled: "Cancelled"
+        }
+    }
 }
 
 enum Units: String, Codable, CaseIterable {

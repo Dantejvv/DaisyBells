@@ -1,9 +1,9 @@
 [
-    { "name": "Chest", "isDefault": true },
-    { "name": "Back", "isDefault": true },
-    { "name": "Shoulders", "isDefault": true },
-    { "name": "Arms", "isDefault": true },
-    { "name": "Legs", "isDefault": true },
-    { "name": "Core", "isDefault": true },
-    { "name": "Cardio", "isDefault": true }
+    { "name": "Chest", "isDefault": true, "order": 0 },
+    { "name": "Back", "isDefault": true, "order": 1 },
+    { "name": "Shoulders", "isDefault": true, "order": 2 },
+    { "name": "Arms", "isDefault": true, "order": 3 },
+    { "name": "Legs", "isDefault": true, "order": 4 },
+    { "name": "Core", "isDefault": true, "order": 5 },
+    { "name": "Cardio", "isDefault": true, "order": 6 }
 ]

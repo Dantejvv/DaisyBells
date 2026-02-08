@@ -132,13 +132,52 @@ Use Swift Concurrency (async/await, @MainActor, Task { }, actors, Sendable)
 
 ---
 
+# Performance Optimization Fields
+## Decision
+The schema includes denormalized and cached fields for query performance
+
+## Exercise Cache Fields
+The Exercise model includes denormalized fields for performance:
+- `lastPerformedAt: Date?` — Quick access to last workout date
+- `hasCompletedWorkout: Bool` — Fast history check for archive logic
+- `totalVolume: Double` — Cached total volume across all workouts
+- PR fields (prWeight, prReps, prTime, prDistance, prEstimated1RM, prAchievedAt) — Cached personal records
+
+## LoggedSet Denormalization
+The LoggedSet model includes:
+- `exerciseId: UUID?` — Direct exercise reference for efficient queries
+- `completedAt: Date?` — Timestamp for workout completion queries
+
+## Rationale
+These fields enable fast analytics queries without complex relationship traversals. Updated by WorkoutService.complete() to maintain consistency.
+
+## Trade-off
+Adds some schema complexity but provides significant performance benefit for analytics features.
+
+---
+
+# SwiftData Predicate Limitations
+## WorkoutStatus Enum Storage Workaround
+- SwiftData #Predicate macros cannot query enum values directly
+- Workout model uses `statusValue: String` for persistence
+- Public API exposes computed `status: WorkoutStatus` property
+- This workaround required until SwiftData supports enum predicates
+
+## Rationale
+Querying workouts by status is essential (completed workouts, active workout detection). String-based storage enables predicate queries while maintaining type-safe public API.
+
+---
+
 # Analytics Modeling
 ## Decision
-Analytics are derived, not persisted
+Analytics use a hybrid approach: some data is cached for performance, some is derived on-demand
 
 ## Rules
-- All analytics logic lives in AnalyticsService
-- ViewModels only format analytics for presentation
+- Personal records, volume, and last performed dates are **cached** on Exercise model
+- Exercise performance data is **denormalized** on LoggedSet (exerciseId, completedAt) for efficient queries
+- Cache fields are updated by WorkoutService when workouts are completed
+- AnalyticsService provides aggregations and calculations beyond cached data
+- ViewModels only format analytics for presentation, never perform calculations
 
 ---
 
