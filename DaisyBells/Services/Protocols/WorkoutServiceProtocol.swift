@@ -21,4 +21,5 @@ protocol WorkoutServiceProtocol {
     func addSet(to loggedExercise: SchemaV1.LoggedExercise) async throws -> SchemaV1.LoggedSet
     func removeSet(_ set: SchemaV1.LoggedSet, from loggedExercise: SchemaV1.LoggedExercise) async throws
     func updateSet(_ set: SchemaV1.LoggedSet) async throws
+    func fetchRecent(limit: Int) async throws -> [SchemaV1.Workout]
 }

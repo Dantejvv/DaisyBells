@@ -1,111 +1,249 @@
-# Features
+# Feature & Component Specification
 
-## Exercise Library
-- Default exercise categories (legs, chest, back, shoulders, arms, core, cardio)
-- User-defined categories (create, edit, delete)
-- Create, edit, delete exercises
-- Exercises used in workout history are archived instead of deleted
-- Archived exercises are hidden from library but preserved in history
-- Exercises with no history are permanently deleted
-- Assign exercises to one or more categories
-- Favorite exercises for quick access
-- Exercise detail view
-- Exercise metadata:
-  - Name
-  - Type
-  - Categories
-  - Notes / form cues
-- Exercise types:
-  - Weight + Reps (e.g., bench press)
-  - Bodyweight + Reps with optional +/- weight modifier (e.g., pull-ups with +45 lbs, or -30 lbs assisted)
-  - Reps only (e.g., box jumps)
-  - Time (e.g., plank)
-  - Distance + Time (e.g., running)
-  - Weight + Time (e.g., farmer's carry)
-- Browse exercises by category
-- Search exercises
-- Filter by favorites
+## 1. Exercise Categories
+**Purpose:** Organization and discovery
+
+### Categories
+- System-defined categories:
+  - Legs
+  - Chest
+  - Back
+  - Shoulders
+  - Arms
+  - Core
+  - Cardio
+- User-defined categories:
+  - Create
+  - Rename
+  - Reorder
+  - Delete (only if unused)
+- Exercises may belong to **zero or more** categories
 
 ---
 
-## Workout Templates
-- Create workout templates
-- Edit workout templates
-- Rename workout
+## 2. Exercise
+**Purpose:** A reusable movement definition
+
+### Core Properties
+- Name
+- Exercise type
+- Categories (zero or more)
+- Exercise-level notes / form cues
+
+### Exercise Types
+- Reps
+- Weight + Reps
+- Bodyweight (+/- external load)
+- Time
+- Distance + Time
+- Weight + Time
+
+### Lifecycle Rules
+- Exercises referenced by workout history:
+  - Are **archived**, not deleted
+- Archived exercises:
+  - Hidden from the exercise library by default
+  - Preserved in workout history
+  - Can be shown via optional toggle filter
+- Exercises with no history:
+  - Permanently deletable
+
+### Quality of Life
+- Favorite / pinned exercises
+- Exercise detail view (metadata + read-only stats)
+
+---
+
+## 3. Workout (Template)
+**Purpose:** A reusable workout definition
+
+- Name
+- Ordered list of exercises
+- Workout-level notes
+- Supported actions:
+  - Add / remove exercises
+  - Reorder exercises
+  - Duplicate
+  - Rename
+  - Delete
+
+**Important Distinction**
+- **Workout** = template
+- **Completed Workout** = historical instance
+
+---
+
+## 4. Exercise Library
+**Purpose:** Central exercise management
+
+- List of exercises
+- Browse by category
+- Search by name
+- Filters:
+  - Favorites
+  - Archived (optional toggle)
+- Create, edit, archive exercises
+- Exercise detail view shows:
+  - Name, type, categories
+  - Exercise-level notes / form cues
+  - Read-only performance stats
+
+---
+
+## 5. Workout Library
+**Purpose:** Workout template management
+
+- List of workouts
+- Create, edit, duplicate, delete workouts
+- Quick-start workout from template
+- Assign workouts to Splits
+
+---
+
+## 6. Active Workout Session
+**Purpose:** Real-time workout execution
+
+### Session Lifecycle
+- Start workout:
+  - From template
+  - Or empty
+- Auto-record start time
+- Complete workout:
+  - Records end time
+  - Creates a Completed Workout
+- Cancel workout:
+  - No persistence
+
+### During Workout
+- Add / remove exercises
 - Reorder exercises
-- Add/remove exercises
-- Workout-level notes
-- Duplicate workout
-- Delete workout
+- Add / remove sets
+
+#### Set Fields (Dynamic by Exercise Type)
+- Weight
+- Reps
+- Time
+- Distance
+- Notes (per-set)
+
+### Smart Assistance
+- Previous performance shown as placeholder:
+  - Last weight / reps / time / distance
+  - Last set notes
+- Exercise-level notes visible
+- Workout-level notes editable
+
+### Completion Options
+- Complete workout
+- Save completed workout as a new template
+- Discard workout
 
 ---
 
-## Active Workout / Logging
-- Start workout from template
-- Start empty workout
-- Auto-record workout start time
-- Add/remove exercises during workout
-- Add/remove sets per exercise
-- Set fields:
-  - Weight
-  - Reps
-  - Time or distance (depending on exercise type)
-- Previous performance shown as placeholder text (weight, reps, time, distance from last completed workout for that exercise)
-- Exercise-level notes during workout
-- Workout-level notes
-- Complete workout (records end time)
-- Save completed workout as a reusable template
-- Cancel/discard workout
+## 7. Workout History
+**Purpose:** Immutable record of past training
 
----
-
-## Workout History
-- View workout history (chronological)
-- View completed workout details (read-only)
-- See exercises and sets performed
-- Edit notes on completed workouts (non-destructive)
-- Delete completed workouts
+- Chronological list of completed workouts
+- View completed workout details (read-only structure)
+- Displays:
+  - Exercises performed
+  - Sets with all recorded data
+  - Notes (workout-level and set-level)
+  - Start and end timestamps
+- Delete individual workouts
 - Clear all workout history
 
+**Read-Only Rules:**
+- Completed workouts are immutable historical records
+- No editing of sets, exercises, or notes after completion
+- Only action available: Delete
+
 ---
 
-## Analytics & Insights
-- Total workouts per week/month
-- Total volume per exercise
-- Personal bests (max weight, reps, or time)
-- Last performed date per exercise
+## 8. Splits
+**Purpose:** Planning and organization
+
+- Named split (e.g., Push / Pull / Legs)
+- Days:
+  - User-defined names (e.g., Day 1, Upper)
+  - Ordered
+- Assign workouts to days
+- Split dashboard:
+  - Day list
+  - Associated workouts per day
+- Actions:
+  - Create, edit, delete splits
+  - Add / remove days
+  - Reorder days
+  - Assign / unassign workouts to days
+
+---
+
+## 9. Analytics
+**Purpose:** Insight and reflection
+
+### Global Metrics
+- Workouts per week / month
+- Total training volume
+- Consistency metrics
+
+### Exercise Metrics
+- Personal bests:
+  - Max weight
+  - Max reps
+  - Longest time
+- Last performed date
+- Volume over time
 - Simple performance trends
 
 ---
 
-## App Management (Settings Modal)
-- Accessible from all tabs via settings icon
-- Units (lbs / kg)
-- Appearance (light / dark / system)
-- Data import/export (JSON)
-- Reset local data
-- About / version info
+## 10. App Management (Settings)
+
+- Units:
+  - lbs / kg
+- Appearance:
+  - Light
+  - Dark
+  - System
+- Data import / export (JSON)
+- Reset all local data
+- About / version information
 
 ---
 
 # Tab Structure
 
-## Library
-- Exercise categories
-- Exercise library
-- Exercise creation, editing, and deleting
-
-## Routines
-- Workout templates list
-- Create, edit, duplicate, delete templates
+## Home
+- Split dashboard
 - Start workout from template
-- Start blank workout
-- Save completed workout as template
+- Start empty workout
+- Recent or pinned workouts
+- Quick access to active workout (if in progress)
+
+---
+
+## Library
+- Exercise Library
+  - Browse, search, filter exercises
+  - Create, edit, archive exercises
+  - Exercise detail view
+- Workout Library
+  - Browse, search workout templates
+  - Create, edit, duplicate, delete workouts
+  - Assign workouts to splits
+
+---
 
 ## History
 - Past workouts (chronological)
-- View completed workout details
+- Completed workout detail view (read-only)
+- Delete workouts
+- Clear all history
+
+---
 
 ## Analytics
-- Read-only insights dashboard
+- Read-only insight dashboards
+- Global metrics
 - Exercise-specific analytics

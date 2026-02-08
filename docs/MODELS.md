@@ -72,14 +72,16 @@ class ExerciseCategory {
     @Attribute(.unique) var id: UUID
     var name: String
     var isDefault: Bool
+    var order: Int
 
     @Relationship(inverse: \Exercise.categories)
     var exercises: [Exercise]
 
-    init(name: String, isDefault: Bool = false) {
+    init(name: String, isDefault: Bool = false, order: Int = 0) {
         self.id = UUID()
         self.name = name
         self.isDefault = isDefault
+        self.order = order
     }
 }
 
@@ -153,6 +155,49 @@ class TemplateExercise {
 
 ---
 
+## Splits
+
+```swift
+@Model
+class Split {
+    @Attribute(.unique) var id: UUID
+    var name: String
+    var createdAt: Date
+
+    @Relationship(deleteRule: .cascade)
+    var days: [SplitDay]
+
+    init(name: String) {
+        self.id = UUID()
+        self.name = name
+        self.createdAt = Date()
+        self.days = []
+    }
+}
+
+@Model
+class SplitDay {
+    @Attribute(.unique) var id: UUID
+    var name: String
+    var order: Int
+
+    @Relationship
+    var split: Split?
+
+    @Relationship
+    var assignedWorkouts: [WorkoutTemplate]
+
+    init(name: String, order: Int) {
+        self.id = UUID()
+        self.name = name
+        self.order = order
+        self.assignedWorkouts = []
+    }
+}
+```
+
+---
+
 ## Workouts (Active + Completed)
 
 ```swift
@@ -211,6 +256,7 @@ class LoggedSet {
     var bodyweightModifier: Double?  // +/- lbs: -30 for assisted, +45 for weighted
     var time: TimeInterval?
     var distance: Double?
+    var notes: String?
 
     @Relationship
     var loggedExercise: LoggedExercise?
@@ -266,8 +312,8 @@ class SettingsService: SettingsServiceProtocol {
 │   │ id: UUID         │                             │ id: UUID         │    │
 │   │ name: String     │                             │ name: String     │    │
 │   │ isDefault: Bool  │                             │ type: ExerciseType│   │
-│   └──────────────────┘                             │ notes: String?   │    │
-│                                                    │ isFavorite: Bool │    │
+│   │ order: Int       │                             │ notes: String?   │    │
+│   └──────────────────┘                             │ isFavorite: Bool │    │
 │                                                    │ isArchived: Bool │    │
 │                                                    └────────┬─────────┘    │
 │                                                             │              │
@@ -301,27 +347,33 @@ class SettingsService: SettingsServiceProtocol {
 │  │ exercise ────────┼───────────────────┼────┼─▶│ exercise ────────┼───┐   │
 │  └──────────────────┘   references      │    │  │ order: Int       │   │   │
 │                         Exercise        │    │  │ notes: String?   │   │   │
-│                                         │    │  └────────┬─────────┘   │   │
-└─────────────────────────────────────────┘    │           │             │   │
-                                               │           │ one-to-many │   │
-                                               │           │ (cascade)   │   │
-                                               │           ▼             │   │
-                                               │  ┌──────────────────┐   │   │
-                                               │  │    LoggedSet     │   │   │
-                                               │  ├──────────────────┤   │   │
-                                               │  │ id: UUID         │   │   │
-                                               │  │ order: Int       │   │   │
-                                               │  │ weight: Double?  │   │   │
-                                               │  │ reps: Int?       │   │   │
-                                               │  │ time: Interval?  │   │   │
-                                               │  │ distance: Double?│   │   │
-                                               │  └──────────────────┘   │   │
-                                               │                         │   │
-                                               └─────────────────────────┼───┘
-                                                                         │
-                                                            references Exercise
-                                                            (why we archive,
-                                                             not delete)
+│                 │                       │    │  └────────┬─────────┘   │   │
+│                 │                       │    │           │             │   │
+│                 │                       │    │           │ one-to-many │   │
+│                 │  many-to-many         │    │           │ (cascade)   │   │
+│                 │                       │    │           ▼             │   │
+│                 ▼                       │    │  ┌──────────────────┐   │   │
+│  ┌────────────────────────┐             │    │  │    LoggedSet     │   │   │
+│  │      SplitDay          │             │    │  ├──────────────────┤   │   │
+│  ├────────────────────────┤             │    │  │ id: UUID         │   │   │
+│  │ id: UUID               │             │    │  │ order: Int       │   │   │
+│  │ name: String           │             │    │  │ weight: Double?  │   │   │
+│  │ order: Int             │             │    │  │ reps: Int?       │   │   │
+│  │ assignedWorkouts ◄─────┼─────────────┘    │  │ time: Interval?  │   │   │
+│  └──────────┬─────────────┘                  │  │ distance: Double?│   │   │
+│             │                                │  │ notes: String?   │   │   │
+│             │ many-to-one                    │  └──────────────────┘   │   │
+│             ▼                                │                         │   │
+│  ┌────────────────────────┐                  └─────────────────────────┼───┘
+│  │        Split           │                                            │
+│  ├────────────────────────┤                               references Exercise
+│  │ id: UUID               │                               (why we archive,
+│  │ name: String           │                                not delete)
+│  │ createdAt: Date        │
+│  └────────────────────────┘
+│
+│              SPLITS
+└─────────────────────────────────────────┘
 ```
 
 ---
@@ -339,6 +391,15 @@ class SettingsService: SettingsServiceProtocol {
 ### TemplateExercise → Exercise
 - **Type:** Many-to-One
 - **Delete Rule:** Nullify
+
+### Split → SplitDay
+- **Type:** One-to-Many
+- **Delete Rule:** Cascade
+
+### SplitDay ↔ WorkoutTemplate
+- **Type:** Many-to-Many
+- **Delete Rule:** Nullify
+- **Note:** A workout can be assigned to multiple split days, and a split day can have multiple workouts
 
 ### Workout → WorkoutTemplate
 - **Type:** Many-to-One (optional)

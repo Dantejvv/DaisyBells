@@ -7,7 +7,7 @@ This section maps data models to the user flows that create, read, update, or de
 ### ExerciseCategory
 - **Create:** Create Category
 - **Read:** Browse Categories, Browse Exercises
-- **Update:** Edit Category
+- **Update:** Edit Category, Reorder Categories
 - **Delete:** Delete Category
 
 ### Exercise
@@ -19,7 +19,7 @@ This section maps data models to the user flows that create, read, update, or de
 ### WorkoutTemplate
 - **Create:** Create Template
 - **Read:** Browse Templates, Template Detail
-- **Update:** Edit Template, Reorder Exercises
+- **Update:** Edit Template, Reorder Exercises, Assign to Split Day
 - **Delete:** Delete Template
 
 ### TemplateExercise
@@ -28,10 +28,22 @@ This section maps data models to the user flows that create, read, update, or de
 - **Update:** Reorder Exercises, Edit Template
 - **Delete:** Remove Exercise from Template
 
+### Split
+- **Create:** Create Split
+- **Read:** Browse Splits, Split Dashboard, View Split Detail
+- **Update:** Edit Split, Add/Remove Days, Reorder Days, Assign Workouts
+- **Delete:** Delete Split
+
+### SplitDay
+- **Create:** Add Day to Split
+- **Read:** Split Dashboard, Split Detail
+- **Update:** Edit Day Name, Reorder Days, Assign/Unassign Workouts
+- **Delete:** Remove Day from Split
+
 ### Workout
 - **Create:** Start Workout from Template, Start Empty Workout
 - **Read:** View History, View Workout Details, Active Workout
-- **Update:** Complete Workout, Add Workout Notes, Edit Workout Notes
+- **Update:** Complete Workout, Add Workout Notes
 - **Delete:** Cancel Workout, Delete Completed Workout
 
 ### LoggedExercise
@@ -58,19 +70,40 @@ Create Exercise → Edit Exercise → Favorite Exercise → Delete/Archive Exerc
                             Exercise Removed                                Exercise Archived
 ```
 
+**Split Lifecycle**
+```
+Create Split → Add Days → Assign Workouts to Days → View Split Dashboard
+                   │                                         │
+                   ▼                                         ▼
+            Reorder Days                            Start Workout from Split
+            Edit Day Names                          (via Home Tab)
+            Delete Days
+```
+
 **Template to Workout Flow**
 ```
-Create Template → Add Exercises → Start Workout from Template
+Create Template → Add Exercises → Assign to Split Day (optional)
                                           │
-                                          ▼
-                                  Workout created (status: active)
-                                  LoggedExercises created from TemplateExercises
-                                          │
-                        ┌─────────────────┴─────────────────┐
-                        ▼                                   ▼
-                Complete Workout                     Cancel Workout
-                (status: completed)                  (status: cancelled)
-                Saved to History                     Discarded
+                    ┌─────────────────────┴────────────────────────┐
+                    │                                              │
+                    ▼                                              ▼
+        Start from Split Dashboard               Start from Workout Library
+                    │                                              │
+                    └──────────────────┬───────────────────────────┘
+                                       ▼
+                              Workout created (status: active)
+                              LoggedExercises created from TemplateExercises
+                                       │
+                     ┌─────────────────┴─────────────────┐
+                     ▼                                   ▼
+             Complete Workout                     Cancel Workout
+             (status: completed)                  (status: cancelled)
+             Saved to History                     Discarded
+                     │
+       ┌─────────────┴─────────────┐
+       ▼                           ▼
+Save as Template          History Record Only
+(optional)
 ```
 
 **Analytics Data Sources**
@@ -84,60 +117,85 @@ Workout (completed) ──► LoggedExercise ──► LoggedSet
 
 ---
 
+## Home Tab
+
+### View Split Dashboard
+Home Tab → Split Dashboard → View All Splits → Days and Assigned Workouts
+
+### Start Workout from Split
+Home Tab → Split Dashboard → Select Split → Select Day → Select Workout → Start Workout → Active Workout Screen
+
+### Start Workout from Recent/Pinned
+Home Tab → Recent/Pinned Workouts → Select Workout → Start Workout → Active Workout Screen
+
+### Start Empty Workout
+Home Tab → Start Empty Workout Button → Active Workout Screen
+
+### Resume Active Workout
+Home Tab → Active Workout Banner (if workout in progress) → Active Workout Screen
+
+---
+
 ## Exercise Library
 
 ### Browse Exercises
-Library Tab → Categories List → Select Category → Exercise List → Exercise Detail
+Library Tab → Exercise Library → Categories List → Select Category → Exercise List → Exercise Detail
 
 ### Search Exercises
-Library Tab → Search Bar → Type Query → Filtered Results → Exercise Detail
+Library Tab → Exercise Library → Search Bar → Type Query → Filtered Results → Exercise Detail
 
 ### Create Exercise
-Library Tab → Categories List → "+" Button → Exercise Form → Fill Details → Select Categories → Save → Exercise List
+Library Tab → Exercise Library → "+" Button → Exercise Form → Fill Details → Select Categories → Save → Exercise List
 
 ### Edit Exercise
-Library Tab → Exercise Detail → Edit Button → Exercise Form → Modify Details → Save → Exercise Detail
+Library Tab → Exercise Library → Exercise Detail → Edit Button → Exercise Form → Modify Details → Save → Exercise Detail
 
 ### Delete Exercise (No History)
-Library Tab → Exercise Detail → Delete → Confirm → Exercise Removed
+Library Tab → Exercise Library → Exercise Detail → Delete → Confirm → Exercise Removed
 
 ### Archive Exercise (Has History)
-Library Tab → Exercise Detail → Delete → Confirm → Exercise Archived (hidden from library, preserved in history)
+Library Tab → Exercise Library → Exercise Detail → Delete → Confirm → Exercise Archived (hidden from library, preserved in history)
 
 ### Favorite Exercise
-Library Tab → Exercise Detail → Tap Favorite → Exercise Marked as Favorite
+Library Tab → Exercise Library → Exercise Detail → Tap Favorite → Exercise Marked as Favorite
 
 ### Filter by Favorites
-Library Tab → Favorites Filter → Favorite Exercises List
+Library Tab → Exercise Library → Favorites Filter → Favorite Exercises List
+
+### Toggle Archived Exercises
+Library Tab → Exercise Library → Show Archived Filter → Archived Exercises Visible
 
 ---
 
 ## Exercise Categories
 
 ### Browse Categories
-Library Tab → Categories List → View All Categories
+Library Tab → Exercise Library → Categories List → View All Categories
 
 ### Create Category
-Library Tab → Categories List → "+" Button → Enter Name → Save → Categories List
+Library Tab → Exercise Library → Categories List → "+" Button → Enter Name → Save → Categories List
 
 ### Edit Category
-Library Tab → Categories List → Category → Edit → Modify Name → Save
+Library Tab → Exercise Library → Categories List → Category → Edit → Modify Name → Save
+
+### Reorder Categories
+Library Tab → Exercise Library → Categories List → Edit Mode → Drag Category → Drop in New Position → Order Updated
 
 ### Delete Category
-Library Tab → Categories List → Category → Delete → Confirm → Category Removed
+Library Tab → Exercise Library → Categories List → Category → Delete → Confirm → Category Removed (only if no exercises assigned)
 
 ---
 
-## Workout Templates
+## Workout Library
 
 ### Browse Templates
-Library Tab → Templates Section → Template List
+Library Tab → Workout Library → Template List
 
 ### Create Template
-Library Tab → Templates Section → "+" Button → Template Form → Add Name → Add Exercises → Set Order → Save → Template List
+Library Tab → Workout Library → "+" Button → Template Form → Add Name → Add Exercises → Set Order → Save → Template List
 
 ### Edit Template
-Library Tab → Template List → Select Template → Template Detail → Edit → Modify Template → Save → Template Detail
+Library Tab → Workout Library → Select Template → Template Detail → Edit → Modify Template → Save → Template Detail
 
 ### Add Exercise to Template
 Template Edit → Add Exercise → Exercise Picker → Select Exercise → Set Target Sets/Reps → Exercise Added
@@ -154,21 +212,67 @@ Template Detail → Duplicate → New Template Created → Template List
 ### Delete Template
 Template Detail → Delete → Confirm → Template Removed
 
+### Assign Template to Split Day
+Template Detail → Assign to Split → Select Split → Select Day → Template Assigned
+
+### Start Workout from Template
+Library Tab → Workout Library → Select Template → Template Detail → Start Workout → Active Workout Screen
+
+---
+
+## Splits
+
+### Browse Splits
+Home Tab → Split Dashboard → View All Splits
+
+### Create Split
+Home Tab → Split Dashboard → "+" Button → Enter Split Name → Save → Split Created → Add Days
+
+### Edit Split
+Home Tab → Split Dashboard → Select Split → Split Detail → Edit → Modify Name → Save
+
+### Delete Split
+Home Tab → Split Dashboard → Select Split → Split Detail → Delete → Confirm → Split Removed
+
+### Add Day to Split
+Split Detail → Add Day → Enter Day Name → Save → Day Added to Split
+
+### Edit Day Name
+Split Detail → Select Day → Edit → Modify Name → Save
+
+### Reorder Days
+Split Detail → Edit Mode → Drag Day → Drop in New Position → Order Updated
+
+### Remove Day from Split
+Split Detail → Select Day → Delete → Confirm → Day Removed
+
+### Assign Workout to Day
+Split Detail → Select Day → Assign Workout → Select from Template List → Workout Assigned
+
+### Unassign Workout from Day
+Split Detail → Select Day → Assigned Workouts List → Select Workout → Unassign → Workout Removed from Day
+
+### View Split Day Workouts
+Split Detail → Select Day → View Assigned Workouts → Workout List
+
 ---
 
 ## Active Workout
 
 ### Start Workout from Template
-Library Tab → Templates Section → Select Template → Template Detail → Start Workout → Active Workout Screen
+Library Tab → Workout Library → Select Template → Template Detail → Start Workout → Active Workout Screen
+
+### Start Workout from Split
+Home Tab → Split Dashboard → Select Split → Select Day → Select Workout → Start Workout → Active Workout Screen
 
 ### Start Empty Workout
-Library Tab → Start Empty Workout → Active Workout Screen
+Home Tab → Start Empty Workout → Active Workout Screen
 
 ### Add Exercise During Workout
 Active Workout → Add Exercise → Exercise Picker → Select Exercise → Exercise Added to Workout
 
 ### Log a Set
-Active Workout → Select Exercise → Add Set → Enter Weight/Reps/Time → Set Logged
+Active Workout → Select Exercise → Add Set → Enter Weight/Reps/Time → Enter Notes (optional) → Set Logged
 
 ### Edit a Set
 Active Workout → Select Exercise → Tap Set → Modify Values → Set Updated
@@ -179,6 +283,9 @@ Active Workout → Select Exercise → Set Row → Delete → Set Removed
 ### Remove Exercise from Workout
 Active Workout → Exercise Row → Delete → Exercise Removed
 
+### Reorder Exercises During Workout
+Active Workout → Edit Mode → Drag Exercise → Drop in New Position → Order Updated
+
 ### Add Exercise Notes
 Active Workout → Select Exercise → Notes Field → Enter Notes → Notes Saved
 
@@ -188,8 +295,11 @@ Active Workout → Workout Notes Field → Enter Notes → Notes Saved
 ### Complete Workout
 Active Workout → Complete Button → Confirm → Workout Saved → History Tab
 
+### Save Completed Workout as Template
+Active Workout → Complete Button → Save as Template (optional) → Enter Template Name → Template Created → History Tab
+
 ### Cancel Workout
-Active Workout → Cancel Button → Confirm Discard → Workout Discarded → Library Tab
+Active Workout → Cancel Button → Confirm Discard → Workout Discarded → Home Tab
 
 ---
 
@@ -200,9 +310,6 @@ History Tab → Workout List (Chronological)
 
 ### View Workout Details
 History Tab → Select Workout → Completed Workout Detail (Read-Only)
-
-### Edit Workout Notes
-Completed Workout Detail → Notes Field → Edit Notes → Save → Notes Updated
 
 ### Delete Completed Workout
 Completed Workout Detail → Delete → Confirm → Workout Removed

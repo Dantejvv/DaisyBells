@@ -251,4 +251,20 @@ final class WorkoutService: WorkoutServiceProtocol {
     func updateSet(_ set: SchemaV1.LoggedSet) async throws {
         try modelContext.save()
     }
+    
+    func fetchRecent(limit: Int) async throws -> [SchemaV1.Workout] {
+        let completedRawValue = WorkoutStatus.completed.rawValue
+        var descriptor = FetchDescriptor<SchemaV1.Workout>(
+            sortBy: [
+                SortDescriptor(\.completedAt, order: .reverse)
+            ]
+        )
+        // Keep predicate simple for SwiftData reliability
+        descriptor.predicate = #Predicate<SchemaV1.Workout> { workout in
+            workout.completedAt != nil &&
+            workout.statusValue == completedRawValue
+        }
+        descriptor.fetchLimit = limit
+        return try modelContext.fetch(descriptor)
+    }
 }
