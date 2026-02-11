@@ -11,11 +11,8 @@
 		FE6C8B1F2F31C95E0075495F /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B1D2F31C95E0075495F /* LICENSE */; };
 		FE6C8B202F31C95E0075495F /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B1E2F31C95E0075495F /* README.md */; };
 		FE6C8B2A2F31C9680075495F /* MODELS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B252F31C9680075495F /* MODELS.md */; };
-		FE6C8B2B2F31C9680075495F /* FEATURES.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B242F31C9680075495F /* FEATURES.md */; };
-		FE6C8B2C2F31C9680075495F /* CONTRACTS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B232F31C9680075495F /* CONTRACTS.md */; };
-		FE6C8B2D2F31C9680075495F /* USERFLOWS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B262F31C9680075495F /* USERFLOWS.md */; };
 		FE6C8B2E2F31C9680075495F /* ARCHITECTURE.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B222F31C9680075495F /* ARCHITECTURE.md */; };
-		FE6C8B362F3325190075495F /* ROADMAP.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B352F3325190075495F /* ROADMAP.md */; };
+		FE6C8B372F31C9680075495F /* VIEWS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B382F31C9680075495F /* VIEWS.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,11 +32,8 @@
 		FE6C8B1D2F31C95E0075495F /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		FE6C8B1E2F31C95E0075495F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		FE6C8B222F31C9680075495F /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ARCHITECTURE.md; sourceTree = "<group>"; };
-		FE6C8B232F31C9680075495F /* CONTRACTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRACTS.md; sourceTree = "<group>"; };
-		FE6C8B242F31C9680075495F /* FEATURES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FEATURES.md; sourceTree = "<group>"; };
 		FE6C8B252F31C9680075495F /* MODELS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MODELS.md; sourceTree = "<group>"; };
-		FE6C8B262F31C9680075495F /* USERFLOWS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = USERFLOWS.md; sourceTree = "<group>"; };
-		FE6C8B352F3325190075495F /* ROADMAP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ROADMAP.md; sourceTree = "<group>"; };
+		FE6C8B382F31C9680075495F /* VIEWS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = VIEWS.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -99,11 +93,8 @@
 			isa = PBXGroup;
 			children = (
 				FE6C8B222F31C9680075495F /* ARCHITECTURE.md */,
-				FE6C8B232F31C9680075495F /* CONTRACTS.md */,
-				FE6C8B242F31C9680075495F /* FEATURES.md */,
 				FE6C8B252F31C9680075495F /* MODELS.md */,
-				FE6C8B262F31C9680075495F /* USERFLOWS.md */,
-				FE6C8B352F3325190075495F /* ROADMAP.md */,
+				FE6C8B382F31C9680075495F /* VIEWS.md */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -204,11 +195,8 @@
 				FE6C8B202F31C95E0075495F /* README.md in Resources */,
 				FE6C8B1C2F31C9560075495F /* CLAUDE.md in Resources */,
 				FE6C8B2A2F31C9680075495F /* MODELS.md in Resources */,
-				FE6C8B362F3325190075495F /* ROADMAP.md in Resources */,
-				FE6C8B2B2F31C9680075495F /* FEATURES.md in Resources */,
-				FE6C8B2C2F31C9680075495F /* CONTRACTS.md in Resources */,
-				FE6C8B2D2F31C9680075495F /* USERFLOWS.md in Resources */,
 				FE6C8B2E2F31C9680075495F /* ARCHITECTURE.md in Resources */,
+				FE6C8B372F31C9680075495F /* VIEWS.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

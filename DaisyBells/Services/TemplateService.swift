@@ -68,12 +68,23 @@ final class TemplateService: TemplateServiceProtocol {
             guard let exercise = templateExercise.exercise else { continue }
             let newTemplateExercise = SchemaV1.TemplateExercise(
                 exercise: exercise,
-                order: templateExercise.order,
-                targetSets: templateExercise.targetSets,
-                targetReps: templateExercise.targetReps
+                order: templateExercise.order
             )
+            newTemplateExercise.notes = templateExercise.notes
             newTemplateExercise.template = newTemplate
             modelContext.insert(newTemplateExercise)
+
+            let sortedSets = templateExercise.sets.sorted { $0.order < $1.order }
+            for templateSet in sortedSets {
+                let newSet = SchemaV1.TemplateSet(order: templateSet.order)
+                newSet.weight = templateSet.weight
+                newSet.reps = templateSet.reps
+                newSet.bodyweightModifier = templateSet.bodyweightModifier
+                newSet.time = templateSet.time
+                newSet.distance = templateSet.distance
+                newSet.templateExercise = newTemplateExercise
+                modelContext.insert(newSet)
+            }
         }
 
         try modelContext.save()
@@ -85,13 +96,11 @@ final class TemplateService: TemplateServiceProtocol {
         try modelContext.save()
     }
 
-    func addExercise(_ exercise: SchemaV1.Exercise, to template: SchemaV1.WorkoutTemplate, targetSets: Int?, targetReps: Int?) async throws {
+    func addExercise(_ exercise: SchemaV1.Exercise, to template: SchemaV1.WorkoutTemplate) async throws {
         let maxOrder = template.templateExercises.map(\.order).max() ?? -1
         let templateExercise = SchemaV1.TemplateExercise(
             exercise: exercise,
-            order: maxOrder + 1,
-            targetSets: targetSets,
-            targetReps: targetReps
+            order: maxOrder + 1
         )
         templateExercise.template = template
         modelContext.insert(templateExercise)
@@ -115,6 +124,40 @@ final class TemplateService: TemplateServiceProtocol {
                 templateExercise.order = index
             }
         }
+        try modelContext.save()
+    }
+
+    func addSet(to templateExercise: SchemaV1.TemplateExercise) async throws -> SchemaV1.TemplateSet {
+        let maxOrder = templateExercise.sets.map(\.order).max() ?? -1
+        let set = SchemaV1.TemplateSet(order: maxOrder + 1)
+        set.templateExercise = templateExercise
+        modelContext.insert(set)
+        try modelContext.save()
+        return set
+    }
+
+    func removeSet(_ set: SchemaV1.TemplateSet, from templateExercise: SchemaV1.TemplateExercise) async throws {
+        let removedOrder = set.order
+        modelContext.delete(set)
+
+        for remaining in templateExercise.sets where remaining.order > removedOrder {
+            remaining.order -= 1
+        }
+
+        try modelContext.save()
+    }
+
+    func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?) async throws {
+        set.weight = weight
+        set.reps = reps
+        set.bodyweightModifier = bodyweightModifier
+        set.time = time
+        set.distance = distance
+        try modelContext.save()
+    }
+
+    func updateExerciseNotes(_ templateExercise: SchemaV1.TemplateExercise, notes: String?) async throws {
+        templateExercise.notes = notes
         try modelContext.save()
     }
 }

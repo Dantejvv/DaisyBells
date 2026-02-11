@@ -7,6 +7,7 @@ final class SettingsService: SettingsServiceProtocol {
     private enum Keys {
         static let units = "settings.units"
         static let appearance = "settings.appearance"
+        static let activeSplitId = "settings.activeSplitId"
     }
 
     init(userDefaults: UserDefaults = .standard) {
@@ -36,6 +37,22 @@ final class SettingsService: SettingsServiceProtocol {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: Keys.appearance)
+        }
+    }
+
+    var activeSplitId: UUID? {
+        get {
+            guard let string = userDefaults.string(forKey: Keys.activeSplitId) else {
+                return nil
+            }
+            return UUID(uuidString: string)
+        }
+        set {
+            if let id = newValue {
+                userDefaults.set(id.uuidString, forKey: Keys.activeSplitId)
+            } else {
+                userDefaults.removeObject(forKey: Keys.activeSplitId)
+            }
         }
     }
 }

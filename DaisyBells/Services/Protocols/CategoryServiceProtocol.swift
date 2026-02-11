@@ -3,6 +3,7 @@ import SwiftData
 
 @MainActor
 protocol CategoryServiceProtocol {
+    static var maxNameLength: Int { get }
     func fetchAll() async throws -> [SchemaV1.ExerciseCategory]
     func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.ExerciseCategory?
     func create(name: String) async throws -> SchemaV1.ExerciseCategory

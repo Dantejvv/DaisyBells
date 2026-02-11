@@ -32,14 +32,27 @@ final class WorkoutService: WorkoutServiceProtocol {
                 exercise: exercise,
                 order: templateExercise.order
             )
+            loggedExercise.notes = templateExercise.notes
             loggedExercise.workout = workout
             modelContext.insert(loggedExercise)
 
-            let targetSets = templateExercise.targetSets ?? 3
-            for setIndex in 0..<targetSets {
-                let loggedSet = SchemaV1.LoggedSet(order: setIndex)
+            let sortedTemplateSets = templateExercise.sets.sorted { $0.order < $1.order }
+            if sortedTemplateSets.isEmpty {
+                // No template sets defined — create one empty set as default
+                let loggedSet = SchemaV1.LoggedSet(order: 0)
                 loggedSet.loggedExercise = loggedExercise
                 modelContext.insert(loggedSet)
+            } else {
+                for templateSet in sortedTemplateSets {
+                    let loggedSet = SchemaV1.LoggedSet(order: templateSet.order)
+                    loggedSet.weight = templateSet.weight
+                    loggedSet.reps = templateSet.reps
+                    loggedSet.bodyweightModifier = templateSet.bodyweightModifier
+                    loggedSet.time = templateSet.time
+                    loggedSet.distance = templateSet.distance
+                    loggedSet.loggedExercise = loggedExercise
+                    modelContext.insert(loggedSet)
+                }
             }
         }
 

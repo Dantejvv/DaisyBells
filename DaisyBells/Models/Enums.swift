@@ -59,3 +59,29 @@ enum Appearance: String, Codable, CaseIterable {
         }
     }
 }
+
+enum ExerciseSortOption: String, Codable, CaseIterable {
+    case alphabetical
+    case creationDate
+
+    var displayName: String {
+        switch self {
+        case .alphabetical: "Alphabetical"
+        case .creationDate: "Creation Date"
+        }
+    }
+
+    var shortDisplayName: String {
+        switch self {
+        case .alphabetical: "Abc"
+        case .creationDate: "Date"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .alphabetical: "textformat.abc"
+        case .creationDate: "calendar.badge.plus"
+        }
+    }
+}

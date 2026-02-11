@@ -42,10 +42,7 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 ## Documentation
 - `docs/ARCHITECTURE.md` — Architecture decisions, MVVM rules, concurrency model
 - `docs/MODELS.md` — Data model definitions and relationships
-- `docs/FEATURES.md` — Feature specifications
-- `docs/CONTRACTS.md` — View-ViewModel contracts (state, intents, side effects)
-- `docs/USERFLOWS.md` — User flows and model lifecycle mappings
-- `docs/ROADMAP.md` — Implementation phases, build order, and Phase 5 guide
+- `docs/VIEWS.md` — Complete view inventory, navigation maps, ViewModel bindings, and shared components
 
 ## Architecture Rules
 - **Views:** No business logic, no SwiftData access, call ViewModel intents only
@@ -105,4 +102,4 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - Do not use @Query in views—fetch through services
 - Do not use singletons or global state
 - Do not add third-party packages
-- Do not create new features without updating docs/FEATURES.md
+- Do not create views without an entry in docs/VIEWS.md

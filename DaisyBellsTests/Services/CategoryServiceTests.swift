@@ -59,17 +59,4 @@ struct CategoryServiceTests {
         #expect(all.isEmpty)
     }
 
-    @Test @MainActor
-    func deleteThrowsForDefaultCategory() async throws {
-        let container = try makeTestModelContainer()
-        let service = CategoryService(modelContext: container.mainContext)
-
-        let defaultCategory = SchemaV1.ExerciseCategory(name: "Default", isDefault: true)
-        container.mainContext.insert(defaultCategory)
-        try container.mainContext.save()
-
-        await #expect(throws: ServiceError.self) {
-            try await service.delete(defaultCategory)
-        }
-    }
 }

@@ -10,6 +10,7 @@ enum SchemaV1: VersionedSchema {
             Exercise.self,
             WorkoutTemplate.self,
             TemplateExercise.self,
+            TemplateSet.self,
             Split.self,
             SplitDay.self,
             Workout.self,
@@ -103,8 +104,7 @@ enum SchemaV1: VersionedSchema {
     final class TemplateExercise {
         @Attribute(.unique) var id: UUID
         var order: Int
-        var targetSets: Int?
-        var targetReps: Int?
+        var notes: String?
 
         @Relationship
         var exercise: Exercise?
@@ -112,12 +112,33 @@ enum SchemaV1: VersionedSchema {
         @Relationship
         var template: WorkoutTemplate?
 
-        init(exercise: Exercise, order: Int, targetSets: Int? = nil, targetReps: Int? = nil) {
+        @Relationship(deleteRule: .cascade, inverse: \TemplateSet.templateExercise)
+        var sets: [TemplateSet]
+
+        init(exercise: Exercise, order: Int) {
             self.id = UUID()
             self.exercise = exercise
             self.order = order
-            self.targetSets = targetSets
-            self.targetReps = targetReps
+            self.sets = []
+        }
+    }
+
+    @Model
+    final class TemplateSet {
+        @Attribute(.unique) var id: UUID
+        var order: Int
+        var weight: Double?
+        var reps: Int?
+        var bodyweightModifier: Double?
+        var time: TimeInterval?
+        var distance: Double?
+
+        @Relationship
+        var templateExercise: TemplateExercise?
+
+        init(order: Int) {
+            self.id = UUID()
+            self.order = order
         }
     }
 

@@ -3,6 +3,8 @@ import SwiftData
 
 @MainActor
 final class CategoryService: CategoryServiceProtocol {
+    static let maxNameLength = 20
+
     private let modelContext: ModelContext
 
     init(modelContext: ModelContext) {
@@ -21,6 +23,9 @@ final class CategoryService: CategoryServiceProtocol {
     }
 
     func create(name: String) async throws -> SchemaV1.ExerciseCategory {
+        guard name.count <= Self.maxNameLength else {
+            throw ServiceError.invalidOperation("Category name must be \(Self.maxNameLength) characters or less")
+        }
         let category = SchemaV1.ExerciseCategory(name: name)
         modelContext.insert(category)
         try modelContext.save()
@@ -28,6 +33,9 @@ final class CategoryService: CategoryServiceProtocol {
     }
 
     func update(_ category: SchemaV1.ExerciseCategory, name: String) async throws {
+        guard name.count <= Self.maxNameLength else {
+            throw ServiceError.invalidOperation("Category name must be \(Self.maxNameLength) characters or less")
+        }
         category.name = name
         try modelContext.save()
     }
@@ -40,9 +48,6 @@ final class CategoryService: CategoryServiceProtocol {
     }
 
     func delete(_ category: SchemaV1.ExerciseCategory) async throws {
-        if category.isDefault {
-            throw ServiceError.invalidOperation("Cannot delete default categories")
-        }
         modelContext.delete(category)
         try modelContext.save()
     }

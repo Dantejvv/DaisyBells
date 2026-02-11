@@ -226,12 +226,9 @@ final class ActiveWorkoutViewModel {
             let template = try await templateService.create(name: name)
             for loggedExercise in exercises {
                 guard let exercise = loggedExercise.exercise else { continue }
-                let setCount = loggedExercise.sets.count
                 try await templateService.addExercise(
                     exercise,
-                    to: template,
-                    targetSets: setCount > 0 ? setCount : nil,
-                    targetReps: nil
+                    to: template
                 )
             }
             didSaveAsTemplate = true

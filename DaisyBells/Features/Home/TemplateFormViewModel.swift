@@ -95,20 +95,6 @@ final class TemplateFormViewModel {
         }
     }
 
-    func updateTargets(exercise: SchemaV1.TemplateExercise, sets: Int?, reps: Int?) async {
-        exercise.targetSets = sets
-        exercise.targetReps = reps
-
-        guard template != nil else { return }
-
-        errorMessage = nil
-        do {
-            try await templateService.update(template!)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
     func save() async {
         guard validate() else { return }
 
@@ -150,7 +136,7 @@ final class TemplateFormViewModel {
         if let template {
             errorMessage = nil
             do {
-                try await templateService.addExercise(exercise, to: template, targetSets: nil, targetReps: nil)
+                try await templateService.addExercise(exercise, to: template)
                 exercises = template.templateExercises.sorted { $0.order < $1.order }
             } catch {
                 errorMessage = error.localizedDescription
@@ -164,7 +150,7 @@ final class TemplateFormViewModel {
                 template = newTemplate
                 isEditing = true // Now we're editing the created template
 
-                try await templateService.addExercise(exercise, to: newTemplate, targetSets: nil, targetReps: nil)
+                try await templateService.addExercise(exercise, to: newTemplate)
                 exercises = newTemplate.templateExercises.sorted { $0.order < $1.order }
             } catch {
                 errorMessage = error.localizedDescription

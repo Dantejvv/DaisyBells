@@ -185,12 +185,20 @@ struct WorkoutServiceTests {
 
         let template = try await templateService.create(name: "Push")
         let exercise = try await exerciseService.create(name: "Bench", type: .weightAndReps)
-        try await templateService.addExercise(exercise, to: template, targetSets: 3, targetReps: nil)
+        try await templateService.addExercise(exercise, to: template)
+        let templateExercise = template.templateExercises[0]
+        let set1 = try await templateService.addSet(to: templateExercise)
+        try await templateService.updateSet(set1, weight: 135, reps: 10, bodyweightModifier: nil, time: nil, distance: nil)
+        _ = try await templateService.addSet(to: templateExercise)
+        _ = try await templateService.addSet(to: templateExercise)
 
         let workout = try await workoutService.createFromTemplate(template)
 
         #expect(workout.fromTemplate?.id == template.id)
         #expect(workout.loggedExercises.count == 1)
         #expect(workout.loggedExercises[0].sets.count == 3)
+        let firstLoggedSet = workout.loggedExercises[0].sets.sorted { $0.order < $1.order }[0]
+        #expect(firstLoggedSet.weight == 135)
+        #expect(firstLoggedSet.reps == 10)
     }
 }
