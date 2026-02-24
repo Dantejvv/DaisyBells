@@ -46,6 +46,11 @@ final class LoggedSetService: LoggedSetServiceProtocol {
         try modelContext.save()
     }
 
+    func toggleCompletion(_ set: SchemaV1.LoggedSet) async throws {
+        set.isCompleted.toggle()
+        try modelContext.save()
+    }
+
     func fetch(id: UUID) async throws -> SchemaV1.LoggedSet {
         var descriptor = FetchDescriptor<SchemaV1.LoggedSet>()
         descriptor.predicate = #Predicate<SchemaV1.LoggedSet> { set in

@@ -38,10 +38,14 @@ final class WorkoutService: WorkoutServiceProtocol {
 
             let sortedTemplateSets = templateExercise.sets.sorted { $0.order < $1.order }
             if sortedTemplateSets.isEmpty {
-                // No template sets defined — create one empty set as default
-                let loggedSet = SchemaV1.LoggedSet(order: 0)
-                loggedSet.loggedExercise = loggedExercise
-                modelContext.insert(loggedSet)
+                // No template sets defined — use previous performance count
+                let previousSets = try await lastPerformedSets(for: exercise)
+                let setCount = max(previousSets.count, 1)
+                for i in 0..<setCount {
+                    let loggedSet = SchemaV1.LoggedSet(order: i)
+                    loggedSet.loggedExercise = loggedExercise
+                    modelContext.insert(loggedSet)
+                }
             } else {
                 for templateSet in sortedTemplateSets {
                     let loggedSet = SchemaV1.LoggedSet(order: templateSet.order)
@@ -174,7 +178,7 @@ final class WorkoutService: WorkoutServiceProtocol {
             sortBy: [SortDescriptor(\.completedAt, order: .reverse), SortDescriptor(\.order)]
         )
         descriptor.predicate = #Predicate<SchemaV1.LoggedSet> { set in
-            set.exerciseId == exerciseId && set.completedAt != nil
+            set.exerciseId == exerciseId && set.completedAt != nil && set.isCompleted == true
         }
 
         let allSets = try modelContext.fetch(descriptor)

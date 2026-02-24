@@ -16,9 +16,5 @@ struct AnalyticsTabRootView: View {
                     Text("Route: \(String(describing: route))")
                 }
         }
-        .sheet(item: $router.presentedSheet) { sheet in
-            // Sheet presentation will be implemented in Phase 5
-            Text("Sheet: \(sheet.id)")
-        }
     }
 }

@@ -31,8 +31,8 @@ final class SplitService: SplitServiceProtocol {
         modelContext.model(for: persistentId) as? SchemaV1.Split
     }
 
-    func create(name: String) async throws -> SchemaV1.Split {
-        let split = SchemaV1.Split(name: name)
+    func create(name: String, notes: String?) async throws -> SchemaV1.Split {
+        let split = SchemaV1.Split(name: name, notes: notes)
         modelContext.insert(split)
         try modelContext.save()
         return split

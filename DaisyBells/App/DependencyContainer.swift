@@ -18,6 +18,9 @@ final class DependencyContainer {
     let analyticsService: AnalyticsService
     let seedingService: SeedingService
 
+    // Active Workout
+    let activeWorkoutManager: ActiveWorkoutManager
+
     // Routers
     let homeRouter: HomeRouter
     let libraryRouter: LibraryRouter
@@ -52,6 +55,9 @@ final class DependencyContainer {
         self.analyticsService = AnalyticsService(modelContext: modelContext)
         self.seedingService = SeedingService(modelContext: modelContext)
 
+        // Initialize active workout manager
+        self.activeWorkoutManager = ActiveWorkoutManager(workoutService: workoutService)
+
         // Initialize routers
         self.homeRouter = HomeRouter()
         self.libraryRouter = LibraryRouter()
@@ -65,5 +71,7 @@ final class DependencyContainer {
         } catch {
             print("Seeding failed: \(error)")
         }
+
+        await activeWorkoutManager.checkForActiveWorkout()
     }
 }

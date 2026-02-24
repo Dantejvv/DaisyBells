@@ -7,17 +7,26 @@ enum LibraryRoute: Hashable {
     // Exercise routes
     case exerciseList(categoryId: PersistentIdentifier?)
     case exerciseDetail(exerciseId: PersistentIdentifier)
-    case exerciseForm(exerciseId: PersistentIdentifier?) // nil = create, non-nil = edit
+
+    // Template routes
+    case templateDetail(templateId: PersistentIdentifier)
 }
 
 // MARK: - Sheet Enum
 
 enum LibrarySheet: Identifiable {
-    case settings
+    case exerciseForm(exerciseId: PersistentIdentifier?)
+    case exercisePicker
+    case templateForm(templateId: PersistentIdentifier?)
 
     var id: String {
         switch self {
-        case .settings: return "settings"
+        case .exerciseForm(let exerciseId):
+            return "exerciseForm-\(exerciseId?.hashValue ?? 0)"
+        case .exercisePicker:
+            return "exercisePicker"
+        case .templateForm(let templateId):
+            return "templateForm-\(templateId?.hashValue ?? 0)"
         }
     }
 }
@@ -26,9 +35,12 @@ enum LibrarySheet: Identifiable {
 
 @MainActor
 @Observable
-final class LibraryRouter {
+final class LibraryRouter: TemplateRouting {
     var path: [LibraryRoute] = []
     var presentedSheet: LibrarySheet?
+
+    // Callbacks for picker selections
+    var onExerciseSelected: (([PersistentIdentifier]) -> Void)?
 
     // MARK: - Stack Navigation
 
@@ -47,12 +59,22 @@ final class LibraryRouter {
 
     // MARK: - Sheet Presentation
 
-    func presentSettings() {
-        presentedSheet = .settings
+    func presentExerciseForm(exerciseId: PersistentIdentifier? = nil) {
+        presentedSheet = .exerciseForm(exerciseId: exerciseId)
+    }
+
+    func presentExercisePicker(onSelect: @escaping ([PersistentIdentifier]) -> Void) {
+        onExerciseSelected = onSelect
+        presentedSheet = .exercisePicker
+    }
+
+    func presentTemplateForm(templateId: PersistentIdentifier? = nil) {
+        presentedSheet = .templateForm(templateId: templateId)
     }
 
     func dismissSheet() {
         presentedSheet = nil
+        onExerciseSelected = nil
     }
 
     // MARK: - Convenience Navigation
@@ -65,11 +87,7 @@ final class LibraryRouter {
         push(.exerciseDetail(exerciseId: exerciseId))
     }
 
-    func navigateToCreateExercise() {
-        push(.exerciseForm(exerciseId: nil))
-    }
-
-    func navigateToEditExercise(exerciseId: PersistentIdentifier) {
-        push(.exerciseForm(exerciseId: exerciseId))
+    func navigateToTemplateDetail(templateId: PersistentIdentifier) {
+        push(.templateDetail(templateId: templateId))
     }
 }

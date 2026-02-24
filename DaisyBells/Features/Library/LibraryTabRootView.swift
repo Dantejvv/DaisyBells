@@ -4,21 +4,83 @@ import SwiftData
 @MainActor
 struct LibraryTabRootView: View {
     @Environment(LibraryRouter.self) private var router
+    @Environment(DependencyContainer.self) private var container
 
     var body: some View {
         @Bindable var router = router
 
         NavigationStack(path: $router.path) {
-            Text("Library Content - Phase 5")
-                .navigationTitle("Library")
+            LibraryRootView()
                 .navigationDestination(for: LibraryRoute.self) { route in
-                    // Route handling will be implemented in Phase 5
-                    Text("Route: \(String(describing: route))")
+                    switch route {
+                    case .exerciseList(let categoryId):
+                        ExerciseListView(
+                            viewModel: ExerciseListViewModel(
+                                exerciseService: container.exerciseService,
+                                categoryService: container.categoryService,
+                                router: router,
+                                categoryId: categoryId
+                            )
+                        )
+                    case .exerciseDetail(let exerciseId):
+                        ExerciseDetailView(
+                            viewModel: ExerciseDetailViewModel(
+                                exerciseService: container.exerciseService,
+                                analyticsService: container.analyticsService,
+                                router: router,
+                                exerciseId: exerciseId
+                            )
+                        )
+                    case .templateDetail(let templateId):
+                        TemplateDetailView(
+                            viewModel: TemplateDetailViewModel(
+                                templateService: container.templateService,
+                                workoutService: container.workoutService,
+                                router: router,
+                                templateId: templateId
+                            ),
+                            onSheetDismissed: router.presentedSheet == nil
+                        )
+                    }
                 }
         }
         .sheet(item: $router.presentedSheet) { sheet in
-            // Sheet presentation will be implemented in Phase 5
-            Text("Sheet: \(sheet.id)")
+            switch sheet {
+            case .exerciseForm(let exerciseId):
+                NavigationStack {
+                    ExerciseFormView(
+                        viewModel: ExerciseFormViewModel(
+                            exerciseService: container.exerciseService,
+                            categoryService: container.categoryService,
+                            router: router,
+                            exerciseId: exerciseId
+                        )
+                    )
+                }
+            case .exercisePicker:
+                NavigationStack {
+                    ExercisePickerSheet(
+                        viewModel: ExercisePickerViewModel(
+                            exerciseService: container.exerciseService,
+                            categoryService: container.categoryService,
+                            onSelect: { exerciseIds in
+                                router.onExerciseSelected?(exerciseIds)
+                            }
+                        )
+                    )
+                }
+            case .templateForm(let templateId):
+                NavigationStack {
+                    TemplateFormView(
+                        viewModel: TemplateFormViewModel(
+                            templateService: container.templateService,
+                            exerciseService: container.exerciseService,
+                            router: router,
+                            templateId: templateId
+                        )
+                    )
+                }
+            }
         }
     }
 }

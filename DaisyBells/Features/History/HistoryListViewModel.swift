@@ -8,20 +8,50 @@ final class HistoryListViewModel {
     private(set) var workouts: [SchemaV1.Workout] = []
     private(set) var isLoading = false
     var errorMessage: String?
+    var searchQuery: String = ""
+    var showClearAllConfirmation = false
 
     var isEmpty: Bool {
-        workouts.isEmpty
+        workouts.isEmpty && searchQuery.isEmpty
+    }
+
+    var filteredWorkouts: [SchemaV1.Workout] {
+        guard !searchQuery.isEmpty else { return workouts }
+        let query = searchQuery.lowercased()
+        return workouts.filter { workout in
+            let templateName = workout.fromTemplate?.name ?? ""
+            return templateName.lowercased().contains(query)
+        }
+    }
+
+    var groupedWorkouts: [(String, [SchemaV1.Workout])] {
+        let grouped = Dictionary(grouping: filteredWorkouts) { workout -> Date in
+            (workout.completedAt ?? workout.startedAt).startOfDay
+        }
+        return grouped.keys.sorted(by: >).map { date in
+            (date.dayHeaderFormat, grouped[date]!)
+        }
+    }
+
+    var units: Units {
+        settingsService.units
     }
 
     // MARK: - Dependencies
 
     private let workoutService: WorkoutServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let router: HistoryRouter
 
     // MARK: - Init
 
-    init(workoutService: WorkoutServiceProtocol, router: HistoryRouter) {
+    init(
+        workoutService: WorkoutServiceProtocol,
+        settingsService: SettingsServiceProtocol,
+        router: HistoryRouter
+    ) {
         self.workoutService = workoutService
+        self.settingsService = settingsService
         self.router = router
     }
 
@@ -61,5 +91,24 @@ final class HistoryListViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    // MARK: - Helpers
+
+    func totalVolume(for workout: SchemaV1.Workout) -> Double {
+        var volume: Double = 0
+        for loggedExercise in workout.loggedExercises {
+            for set in loggedExercise.sets {
+                if let weight = set.weight, let reps = set.reps {
+                    volume += weight * Double(reps)
+                }
+            }
+        }
+        return volume
+    }
+
+    func duration(for workout: SchemaV1.Workout) -> TimeInterval {
+        guard let completedAt = workout.completedAt else { return 0 }
+        return completedAt.timeIntervalSince(workout.startedAt)
     }
 }

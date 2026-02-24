@@ -58,6 +58,13 @@ extension Date {
         return formatter.string(from: self)
     }
 
+    /// Formatted for history day headers: "Monday, February 17"
+    var dayHeaderFormat: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d"
+        return formatter.string(from: self)
+    }
+
     // MARK: - Date Calculations
 
     /// Start of the current week (Sunday)

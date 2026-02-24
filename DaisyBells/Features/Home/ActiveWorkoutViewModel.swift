@@ -16,6 +16,8 @@ final class ActiveWorkoutViewModel {
     var errorMessage: String?
     var workoutNotes: String = ""
     var showSaveAsTemplatePrompt = false
+    var showCancelConfirmation = false
+    var showCompleteConfirmation = false
     var templateName: String = ""
 
     // MARK: - Dependencies
@@ -25,13 +27,17 @@ final class ActiveWorkoutViewModel {
     private let loggedExerciseService: LoggedExerciseServiceProtocol
     private let loggedSetService: LoggedSetServiceProtocol
     private let templateService: TemplateServiceProtocol
-    private let router: HomeRouter
     private let workoutId: PersistentIdentifier
     private var timerTask: Task<Void, Never>? {
         willSet {
             timerTask?.cancel()
         }
     }
+
+    // Closure-based navigation (decoupled from HomeRouter)
+    var onDismiss: () -> Void = {}
+    var onPresentExercisePicker: (@escaping ([PersistentIdentifier]) -> Void) -> Void = { _ in }
+    var onDismissExercisePicker: () -> Void = {}
 
     // MARK: - Init
 
@@ -41,7 +47,6 @@ final class ActiveWorkoutViewModel {
         loggedExerciseService: LoggedExerciseServiceProtocol,
         loggedSetService: LoggedSetServiceProtocol,
         templateService: TemplateServiceProtocol,
-        router: HomeRouter,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService
@@ -49,8 +54,31 @@ final class ActiveWorkoutViewModel {
         self.loggedExerciseService = loggedExerciseService
         self.loggedSetService = loggedSetService
         self.templateService = templateService
-        self.router = router
         self.workoutId = workoutId
+    }
+
+    // MARK: - Computed Properties
+
+    var totalExercises: Int { exercises.count }
+
+    var completedExercises: Int {
+        exercises.filter { exercise in
+            let sets = exercise.sets
+            return !sets.isEmpty && sets.allSatisfy(\.isCompleted)
+        }.count
+    }
+
+    var totalSets: Int {
+        exercises.reduce(0) { $0 + $1.sets.count }
+    }
+
+    var completedSets: Int {
+        exercises.reduce(0) { $0 + $1.sets.filter(\.isCompleted).count }
+    }
+
+    var startedAtFormatted: String {
+        guard let workout else { return "" }
+        return workout.startedAt.formatted(.dateTime.month().day().year().hour().minute())
     }
 
     // MARK: - Intents
@@ -91,30 +119,37 @@ final class ActiveWorkoutViewModel {
     }
 
     func addExercise() {
-        router.presentExercisePicker { [weak self] exerciseId in
+        onPresentExercisePicker { [weak self] exerciseIds in
             Task { @MainActor in
-                await self?.onExerciseSelected(exerciseId)
+                await self?.onExercisesSelected(exerciseIds)
             }
         }
     }
 
-    func onExerciseSelected(_ exerciseId: PersistentIdentifier) async {
-        guard let workout,
-              let exercise = exerciseService.fetch(by: exerciseId) else { return }
-
+    func onExercisesSelected(_ exerciseIds: [PersistentIdentifier]) async {
+        guard let workout else { return }
         errorMessage = nil
-        do {
-            let maxOrder = workout.loggedExercises.map(\.order).max() ?? -1
-            _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: maxOrder + 1)
-            exercises = workout.loggedExercises.sorted { $0.order < $1.order }
 
-            await loadPreviousPerformance(for: exercise)
-            refreshExercises()
-        } catch {
-            errorMessage = error.localizedDescription
+        for exerciseId in exerciseIds {
+            guard let exercise = exerciseService.fetch(by: exerciseId) else { continue }
+            do {
+                // Load previous performance first to determine set count
+                await loadPreviousPerformance(for: exercise)
+                let previousCount = previousPerformance[exercise.id]?.count ?? 0
+
+                let maxOrder = workout.loggedExercises.map(\.order).max() ?? -1
+                _ = try await loggedExerciseService.createWithSets(
+                    exercise: exercise,
+                    workout: workout,
+                    order: maxOrder + 1,
+                    setCount: max(previousCount, 1)
+                )
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
-
-        router.dismissSheet()
+        refreshExercises()
+        onDismissExercisePicker()
     }
 
     func removeExercise(_ loggedExercise: SchemaV1.LoggedExercise) async {
@@ -182,6 +217,15 @@ final class ActiveWorkoutViewModel {
         }
     }
 
+    func toggleSetCompletion(_ set: SchemaV1.LoggedSet) async {
+        errorMessage = nil
+        do {
+            try await loggedSetService.toggleCompletion(set)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func updateExerciseNotes(_ loggedExercise: SchemaV1.LoggedExercise, notes: String) {
         loggedExercise.notes = notes.isEmpty ? nil : notes
     }
@@ -206,7 +250,7 @@ final class ActiveWorkoutViewModel {
             if workout.fromTemplate == nil && !exercises.isEmpty {
                 showSaveAsTemplatePrompt = true
             } else {
-                router.popToRoot()
+                onDismiss()
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -233,7 +277,7 @@ final class ActiveWorkoutViewModel {
             }
             didSaveAsTemplate = true
             showSaveAsTemplatePrompt = false
-            router.popToRoot()
+            onDismiss()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -241,7 +285,7 @@ final class ActiveWorkoutViewModel {
 
     func skipSaveAsTemplate() {
         showSaveAsTemplatePrompt = false
-        router.popToRoot()
+        onDismiss()
     }
 
     func cancelWorkout() async {
@@ -250,7 +294,7 @@ final class ActiveWorkoutViewModel {
         do {
             try await workoutService.cancel(workout)
             stopTimer()
-            router.popToRoot()
+            onDismiss()
         } catch {
             errorMessage = error.localizedDescription
         }

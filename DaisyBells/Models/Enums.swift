@@ -46,6 +46,18 @@ enum Units: String, Codable, CaseIterable {
     }
 }
 
+enum DistanceUnits: String, Codable, CaseIterable {
+    case mi
+    case km
+
+    var displayName: String {
+        switch self {
+        case .mi: "Miles (mi)"
+        case .km: "Kilometers (km)"
+        }
+    }
+}
+
 enum Appearance: String, Codable, CaseIterable {
     case light
     case dark
@@ -63,11 +75,13 @@ enum Appearance: String, Codable, CaseIterable {
 enum ExerciseSortOption: String, Codable, CaseIterable {
     case alphabetical
     case creationDate
+    case favoritesFirst
 
     var displayName: String {
         switch self {
         case .alphabetical: "Alphabetical"
         case .creationDate: "Creation Date"
+        case .favoritesFirst: "Favorites First"
         }
     }
 
@@ -75,6 +89,7 @@ enum ExerciseSortOption: String, Codable, CaseIterable {
         switch self {
         case .alphabetical: "Abc"
         case .creationDate: "Date"
+        case .favoritesFirst: "Fav"
         }
     }
 
@@ -82,6 +97,7 @@ enum ExerciseSortOption: String, Codable, CaseIterable {
         switch self {
         case .alphabetical: "textformat.abc"
         case .creationDate: "calendar.badge.plus"
+        case .favoritesFirst: "star"
         }
     }
 }

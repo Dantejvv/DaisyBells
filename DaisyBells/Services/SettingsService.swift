@@ -6,6 +6,7 @@ final class SettingsService: SettingsServiceProtocol {
 
     private enum Keys {
         static let units = "settings.units"
+        static let distanceUnits = "settings.distanceUnits"
         static let appearance = "settings.appearance"
         static let activeSplitId = "settings.activeSplitId"
     }
@@ -24,6 +25,19 @@ final class SettingsService: SettingsServiceProtocol {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: Keys.units)
+        }
+    }
+
+    var distanceUnits: DistanceUnits {
+        get {
+            guard let rawValue = userDefaults.string(forKey: Keys.distanceUnits),
+                  let value = DistanceUnits(rawValue: rawValue) else {
+                return .mi
+            }
+            return value
+        }
+        set {
+            userDefaults.set(newValue.rawValue, forKey: Keys.distanceUnits)
         }
     }
 

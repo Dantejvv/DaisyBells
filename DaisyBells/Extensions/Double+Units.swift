@@ -38,12 +38,12 @@ extension Double {
 
     /// Converts from lbs to kg
     var lbsToKg: Double {
-        self * 0.453592
+        self * 0.45359237
     }
 
     /// Converts from kg to lbs
     var kgToLbs: Double {
-        self / 0.453592
+        self / 0.45359237
     }
 
     /// Converts weight between unit systems
@@ -69,6 +69,36 @@ extension Double {
     /// Formats distance in kilometers (e.g., "5.1 km")
     var distanceKmString: String {
         String(format: "%.1f km", self)
+    }
+
+    /// Formats distance with unit suffix based on user preference (e.g., "3.2 mi" or "5.1 km")
+    func distanceString(units: DistanceUnits) -> String {
+        switch units {
+        case .mi: String(format: "%.1f mi", self)
+        case .km: String(format: "%.1f km", self)
+        }
+    }
+
+    // MARK: - Distance Conversion
+
+    /// Converts from miles to kilometers
+    var milesToKm: Double {
+        self * 1.609344
+    }
+
+    /// Converts from kilometers to miles
+    var kmToMiles: Double {
+        self / 1.609344
+    }
+
+    /// Converts distance between unit systems
+    func convertDistance(from: DistanceUnits, to: DistanceUnits) -> Double {
+        guard from != to else { return self }
+        switch (from, to) {
+        case (.mi, .km): return self.milesToKm
+        case (.km, .mi): return self.kmToMiles
+        default: return self
+        }
     }
 
     // MARK: - Volume Formatting

@@ -13,11 +13,14 @@ final class TemplateFormViewModel {
     private(set) var isSaving = false
     var errorMessage: String?
 
+    // Exercise picker sheet state (managed locally, not via router)
+    var showExercisePicker = false
+
     // MARK: - Dependencies
 
     private let templateService: TemplateServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
-    private let router: HomeRouter
+    private let router: TemplateRouting
     private let templateId: PersistentIdentifier?
     private var template: SchemaV1.WorkoutTemplate?
 
@@ -26,7 +29,7 @@ final class TemplateFormViewModel {
     init(
         templateService: TemplateServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
-        router: HomeRouter,
+        router: TemplateRouting,
         templateId: PersistentIdentifier? = nil
     ) {
         self.templateService = templateService
@@ -59,11 +62,37 @@ final class TemplateFormViewModel {
     }
 
     func addExercise() {
-        router.presentExercisePicker { [weak self] exerciseId in
-            Task { @MainActor in
-                await self?.onExerciseSelected(exerciseId)
+        showExercisePicker = true
+    }
+
+    func onExercisesSelected(_ exerciseIds: [PersistentIdentifier]) async {
+        if template == nil {
+            errorMessage = nil
+            do {
+                let newTemplate = try await templateService.create(name: name.isEmpty ? "New Template" : name)
+                newTemplate.notes = notes.isEmpty ? nil : notes
+                template = newTemplate
+                isEditing = true
+            } catch {
+                errorMessage = error.localizedDescription
+                showExercisePicker = false
+                return
             }
         }
+
+        guard let template else { return }
+
+        errorMessage = nil
+        for exerciseId in exerciseIds {
+            guard let exercise = exerciseService.fetch(by: exerciseId) else { continue }
+            do {
+                try await templateService.addExercise(exercise, to: template)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+        exercises = template.templateExercises.sorted { $0.order < $1.order }
+        showExercisePicker = false
     }
 
     func removeExercise(_ templateExercise: SchemaV1.TemplateExercise) async {
@@ -107,9 +136,8 @@ final class TemplateFormViewModel {
                 try await templateService.update(template)
             } else {
                 _ = try await templateService.create(name: name)
-                // Note: exercises added via picker callback are already persisted
             }
-            router.pop()
+            router.dismissSheet()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -117,7 +145,7 @@ final class TemplateFormViewModel {
     }
 
     func cancel() {
-        router.pop()
+        router.dismissSheet()
     }
 
     // MARK: - Private
@@ -128,35 +156,5 @@ final class TemplateFormViewModel {
             return false
         }
         return true
-    }
-
-    private func onExerciseSelected(_ exerciseId: PersistentIdentifier) async {
-        guard let exercise = exerciseService.fetch(by: exerciseId) else { return }
-
-        if let template {
-            errorMessage = nil
-            do {
-                try await templateService.addExercise(exercise, to: template)
-                exercises = template.templateExercises.sorted { $0.order < $1.order }
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        } else {
-            // Creating a new template - need to save first
-            errorMessage = nil
-            do {
-                let newTemplate = try await templateService.create(name: name.isEmpty ? "New Template" : name)
-                newTemplate.notes = notes.isEmpty ? nil : notes
-                template = newTemplate
-                isEditing = true // Now we're editing the created template
-
-                try await templateService.addExercise(exercise, to: newTemplate)
-                exercises = newTemplate.templateExercises.sorted { $0.order < $1.order }
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-
-        router.dismissSheet()
     }
 }

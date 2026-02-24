@@ -83,7 +83,7 @@ final class ExerciseDetailViewModel {
     }
 
     func editExercise() {
-        router.navigateToEditExercise(exerciseId: exerciseId)
+        router.presentExerciseForm(exerciseId: exerciseId)
     }
 
     func deleteExercise() async {

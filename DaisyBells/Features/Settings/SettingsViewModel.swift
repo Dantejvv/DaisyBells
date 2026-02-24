@@ -5,6 +5,7 @@ final class SettingsViewModel {
     // MARK: - State
 
     private(set) var units: Units = .lbs
+    private(set) var distanceUnits: DistanceUnits = .mi
     private(set) var appearance: Appearance = .system
     private(set) var appVersion: String = ""
     private(set) var isExporting = false
@@ -25,6 +26,7 @@ final class SettingsViewModel {
 
     func loadSettings() {
         units = settingsService.units
+        distanceUnits = settingsService.distanceUnits
         appearance = settingsService.appearance
         appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
@@ -32,6 +34,11 @@ final class SettingsViewModel {
     func updateUnits(_ newUnits: Units) {
         settingsService.units = newUnits
         units = newUnits
+    }
+
+    func updateDistanceUnits(_ newDistanceUnits: DistanceUnits) {
+        settingsService.distanceUnits = newDistanceUnits
+        distanceUnits = newDistanceUnits
     }
 
     func updateAppearance(_ newAppearance: Appearance) {

@@ -8,6 +8,9 @@ protocol LoggedSetServiceProtocol {
     func update(_ set: SchemaV1.LoggedSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?, notes: String?) async throws
     func delete(_ set: SchemaV1.LoggedSet) async throws
 
+    // Completion
+    func toggleCompletion(_ set: SchemaV1.LoggedSet) async throws
+
     // Fetch
     func fetch(id: UUID) async throws -> SchemaV1.LoggedSet
     func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.LoggedSet?

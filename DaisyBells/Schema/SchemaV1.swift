@@ -46,6 +46,7 @@ enum SchemaV1: VersionedSchema {
         var notes: String?
         var isFavorite: Bool
         var isArchived: Bool
+        var createdAt: Date
 
         // Cached statistics (updated on workout completion)
         var lastPerformedAt: Date?
@@ -70,6 +71,7 @@ enum SchemaV1: VersionedSchema {
             self.notes = notes
             self.isFavorite = false
             self.isArchived = false
+            self.createdAt = Date()
             self.lastPerformedAt = nil
             self.hasCompletedWorkout = false
             self.totalVolume = 0
@@ -146,14 +148,16 @@ enum SchemaV1: VersionedSchema {
     final class Split {
         @Attribute(.unique) var id: UUID
         var name: String
+        var notes: String?
         var createdAt: Date
 
         @Relationship(deleteRule: .cascade, inverse: \SplitDay.split)
         var days: [SplitDay]
 
-        init(name: String) {
+        init(name: String, notes: String? = nil) {
             self.id = UUID()
             self.name = name
+            self.notes = notes
             self.createdAt = Date()
             self.days = []
         }
@@ -242,6 +246,7 @@ enum SchemaV1: VersionedSchema {
         var time: TimeInterval?
         var distance: Double?
         var notes: String?
+        var isCompleted: Bool = false
 
         // Denormalized for direct queries (set on workout completion)
         var exerciseId: UUID?

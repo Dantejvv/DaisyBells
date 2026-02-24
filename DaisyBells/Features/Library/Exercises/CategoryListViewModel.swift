@@ -55,6 +55,10 @@ final class CategoryListViewModel {
         }
     }
 
+    func selectAllExercises() {
+        router.navigateToExerciseList(categoryId: nil)
+    }
+
     func selectCategory(_ category: SchemaV1.ExerciseCategory) {
         router.navigateToExerciseList(categoryId: category.persistentModelID)
     }

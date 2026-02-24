@@ -8,6 +8,7 @@ final class WorkoutPickerViewModel {
     private(set) var templates: [SchemaV1.WorkoutTemplate] = []
     var searchQuery: String = ""
     private(set) var isLoading = false
+    private(set) var shouldDismiss = false
 
     // MARK: - Dependencies
 
@@ -45,6 +46,7 @@ final class WorkoutPickerViewModel {
 
     func selectTemplate(_ template: SchemaV1.WorkoutTemplate) {
         onSelect(template.persistentModelID)
+        shouldDismiss = true
     }
 
     // MARK: - Private

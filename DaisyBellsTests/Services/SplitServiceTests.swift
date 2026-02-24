@@ -21,7 +21,7 @@ struct SplitServiceTests {
         let container = try makeTestModelContainer()
         let service = SplitService(modelContext: container.mainContext)
 
-        let split = try await service.create(name: "Push Pull Legs")
+        let split = try await service.create(name: "Push Pull Legs", notes: nil)
 
         #expect(split.name == "Push Pull Legs")
         #expect(!split.days.isEmpty == false) // No days yet
@@ -36,7 +36,7 @@ struct SplitServiceTests {
         let container = try makeTestModelContainer()
         let service = SplitService(modelContext: container.mainContext)
 
-        let created = try await service.create(name: "Upper Lower")
+        let created = try await service.create(name: "Upper Lower", notes: nil)
         let fetched = try await service.fetch(id: created.id)
 
         #expect(fetched.id == created.id)
@@ -58,7 +58,7 @@ struct SplitServiceTests {
         let container = try makeTestModelContainer()
         let service = SplitService(modelContext: container.mainContext)
 
-        let created = try await service.create(name: "Full Body")
+        let created = try await service.create(name: "Full Body", notes: nil)
         let persistentId = created.persistentModelID
 
         let fetched = service.fetch(by: persistentId)
@@ -72,7 +72,7 @@ struct SplitServiceTests {
         let container = try makeTestModelContainer()
         let service = SplitService(modelContext: container.mainContext)
 
-        let split = try await service.create(name: "Original Name")
+        let split = try await service.create(name: "Original Name", notes: nil)
         split.name = "Updated Name"
 
         try await service.update(split)
@@ -86,7 +86,7 @@ struct SplitServiceTests {
         let container = try makeTestModelContainer()
         let service = SplitService(modelContext: container.mainContext)
 
-        let split = try await service.create(name: "To Delete")
+        let split = try await service.create(name: "To Delete", notes: nil)
         try await service.delete(split)
 
         let all = try await service.fetchAll()
@@ -99,7 +99,7 @@ struct SplitServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         _ = try await dayService.create(name: "Day 1", split: split)
         _ = try await dayService.create(name: "Day 2", split: split)
 
@@ -122,11 +122,11 @@ struct SplitServiceTests {
         let container = try makeTestModelContainer()
         let service = SplitService(modelContext: container.mainContext)
 
-        let first = try await service.create(name: "First")
+        let first = try await service.create(name: "First", notes: nil)
         try await Task.sleep(for: .milliseconds(10))
-        let second = try await service.create(name: "Second")
+        let second = try await service.create(name: "Second", notes: nil)
         try await Task.sleep(for: .milliseconds(10))
-        let third = try await service.create(name: "Third")
+        let third = try await service.create(name: "Third", notes: nil)
 
         let splits = try await service.fetchAll()
 

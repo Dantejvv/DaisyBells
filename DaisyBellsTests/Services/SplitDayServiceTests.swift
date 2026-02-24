@@ -12,7 +12,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Push Day", split: split)
 
         #expect(day.name == "Push Day")
@@ -28,7 +28,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day1 = try await dayService.create(name: "Day 1", split: split)
         let day2 = try await dayService.create(name: "Day 2", split: split)
         let day3 = try await dayService.create(name: "Day 3", split: split)
@@ -45,7 +45,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let created = try await dayService.create(name: "Leg Day", split: split)
 
         let fetched = try await dayService.fetch(id: created.id)
@@ -70,7 +70,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let created = try await dayService.create(name: "Pull Day", split: split)
         let persistentId = created.persistentModelID
 
@@ -86,7 +86,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Original Name", split: split)
 
         day.name = "Updated Name"
@@ -102,7 +102,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "To Delete", split: split)
 
         try await dayService.delete(day, from: split)
@@ -121,7 +121,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day1 = try await dayService.create(name: "Day 1", split: split)
         let day2 = try await dayService.create(name: "Day 2", split: split)
         let day3 = try await dayService.create(name: "Day 3", split: split)
@@ -140,7 +140,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day1 = try await dayService.create(name: "Day 1", split: split)
         let day2 = try await dayService.create(name: "Day 2", split: split)
         let day3 = try await dayService.create(name: "Day 3", split: split)
@@ -165,7 +165,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Push Day", split: split)
 
         let template = SchemaV1.WorkoutTemplate(name: "Push Workout")
@@ -184,7 +184,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Push Day", split: split)
 
         let template = SchemaV1.WorkoutTemplate(name: "Push Workout")
@@ -205,7 +205,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Full Body", split: split)
 
         let template1 = SchemaV1.WorkoutTemplate(name: "Workout A")
@@ -229,7 +229,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day1 = try await dayService.create(name: "Monday", split: split)
         let day2 = try await dayService.create(name: "Friday", split: split)
 
@@ -252,7 +252,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Push Day", split: split)
 
         let template = SchemaV1.WorkoutTemplate(name: "Push Workout")
@@ -272,7 +272,7 @@ struct SplitDayServiceTests {
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
-        let split = try await splitService.create(name: "Test Split")
+        let split = try await splitService.create(name: "Test Split", notes: nil)
         let day = try await dayService.create(name: "Push Day", split: split)
 
         let template = SchemaV1.WorkoutTemplate(name: "Push Workout")

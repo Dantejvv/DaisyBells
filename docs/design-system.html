@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DaisyBells — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ─── Core Palette ─── */
+    --bg-primary: #0C0C0E;
+    --bg-elevated: #161618;
+    --bg-card: #1C1C1F;
+    --bg-card-hover: #242428;
+    --bg-input: #1A1A1D;
+    --bg-sheet: #131315;
+
+    /* ─── Surface & Borders ─── */
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.16);
+    --border-accent: var(--accent);
+
+    /* ─── Text ─── */
+    --text-primary: #F5F5F7;
+    --text-secondary: #8E8E93;
+    --text-tertiary: #5A5A5E;
+    --text-inverse: #0C0C0E;
+
+    /* ─── Accent — Electric Amber ─── */
+    --accent: #F0A830;
+    --accent-bright: #FFD166;
+    --accent-dim: #B87D1A;
+    --accent-bg: rgba(240,168,48,0.10);
+    --accent-bg-strong: rgba(240,168,48,0.18);
+
+    /* ─── Semantic ─── */
+    --success: #34C759;
+    --success-bg: rgba(52,199,89,0.12);
+    --warning: #FF9F0A;
+    --warning-bg: rgba(255,159,10,0.12);
+    --destructive: #FF453A;
+    --destructive-bg: rgba(255,69,58,0.12);
+    --info: #5AC8FA;
+    --info-bg: rgba(90,200,250,0.12);
+
+    /* ─── Spacing Scale (4px base) ─── */
+    --space-2xs: 2px;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-base: 16px;
+    --space-lg: 20px;
+    --space-xl: 24px;
+    --space-2xl: 32px;
+    --space-3xl: 40px;
+    --space-4xl: 48px;
+    --space-5xl: 64px;
+
+    /* ─── Radius ─── */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-full: 999px;
+
+    /* ─── Typography ─── */
+    --font-display: 'Bebas Neue', system-ui, sans-serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* ─── Shadows ─── */
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px var(--border-subtle);
+    --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--border-subtle);
+    --shadow-glow: 0 0 24px rgba(240,168,48,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ─── Page Chrome ─── */
+  .page-header {
+    position: relative;
+    padding: var(--space-5xl) var(--space-2xl) var(--space-3xl);
+    text-align: center;
+    overflow: hidden;
+  }
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(240,168,48,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .page-header h1 {
+    font-family: var(--font-display);
+    font-size: 64px;
+    letter-spacing: 3px;
+    line-height: 1;
+    color: var(--text-primary);
+    position: relative;
+  }
+  .page-header h1 span {
+    color: var(--accent);
+  }
+  .page-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: var(--space-sm);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+  }
+  .version-tag {
+    display: inline-block;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    margin-top: var(--space-md);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 var(--space-xl);
+  }
+
+  /* ─── Section ─── */
+  .section {
+    margin-bottom: var(--space-5xl);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .section-number {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--accent);
+    line-height: 1;
+    opacity: 0.6;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .section-desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-top: -var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+  .subsection {
+    margin-bottom: var(--space-2xl);
+  }
+  .subsection-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-md);
+  }
+
+  /* ─── Color Swatches ─── */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-md);
+  }
+  .color-swatch {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .color-swatch:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
+  }
+  .swatch-fill {
+    height: 72px;
+    position: relative;
+  }
+  .swatch-fill::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-subtle);
+  }
+  .swatch-info {
+    padding: var(--space-sm) var(--space-md);
+  }
+  .swatch-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .swatch-value {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'DM Sans', monospace;
+  }
+
+  /* ─── Typography Preview ─── */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xl);
+    padding: var(--space-base) 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-meta {
+    width: 160px;
+    flex-shrink: 0;
+  }
+  .type-meta .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .type-meta .spec {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .type-sample {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ─── Spacing Vis ─── */
+  .spacing-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: flex-end;
+  }
+  .spacing-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .spacing-bar {
+    background: var(--accent);
+    border-radius: 3px;
+    width: 32px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .spacing-item:hover .spacing-bar { opacity: 1; }
+  .spacing-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .spacing-px {
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+
+  /* ─── Buttons ─── */
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: center;
+    margin-bottom: var(--space-base);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 11px 22px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    line-height: 1.2;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.2px;
+  }
+  .btn-sm {
+    padding: 7px 14px;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+  }
+  .btn-lg {
+    padding: 15px 28px;
+    font-size: 16px;
+    border-radius: var(--radius-lg);
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--text-inverse);
+  }
+  .btn-primary:hover {
+    background: var(--accent-bright);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+  }
+  .btn-secondary:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-strong);
+  }
+  .btn-destructive {
+    background: var(--destructive-bg);
+    color: var(--destructive);
+    border: 1px solid rgba(255,69,58,0.2);
+  }
+  .btn-destructive:hover {
+    background: rgba(255,69,58,0.18);
+    border-color: rgba(255,69,58,0.35);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent);
+    border: none;
+  }
+  .btn-ghost:hover {
+    background: var(--accent-bg);
+  }
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+  }
+  .btn-icon:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--border-default);
+  }
+  .btn-icon svg { width: 18px; height: 18px; }
+
+  /* ─── Cards ─── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-base);
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+  }
+  .card:hover {
+    border-color: var(--border-default);
+    background: var(--bg-card-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-card);
+  }
+  .card-accent {
+    border-color: rgba(240,168,48,0.2);
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(240,168,48,0.03) 100%);
+  }
+  .card-accent:hover {
+    border-color: rgba(240,168,48,0.35);
+    box-shadow: var(--shadow-glow), var(--shadow-card);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-md);
+  }
+  .card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .card-icon-accent {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+  .card-icon-success {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+  .card-icon-info {
+    background: var(--info-bg);
+    color: var(--info);
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+  .card-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .card-stat {
+    font-family: var(--font-display);
+    font-size: 36px;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: 1px;
+  }
+  .card-stat-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: var(--space-xs);
+  }
+
+  /* ─── List Rows ─── */
+  .list-container {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+  }
+  .list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-base);
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:hover { background: var(--bg-card-hover); }
+  .list-row-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .list-row-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .list-row-title {
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .list-row-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .list-row-trailing {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+  .chevron {
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+
+  /* ─── Badges / Tags ─── */
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-base);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-accent {
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+  .badge-success {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+  .badge-warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+  }
+  .badge-destructive {
+    background: var(--destructive-bg);
+    color: var(--destructive);
+  }
+  .badge-neutral {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+  }
+  .badge-info {
+    background: var(--info-bg);
+    color: var(--info);
+  }
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .badge-outline {
+    background: transparent;
+    border: 1px solid currentColor;
+    opacity: 0.8;
+  }
+
+  /* ─── Inputs ─── */
+  .input-group {
+    margin-bottom: var(--space-base);
+  }
+  .input-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xs);
+    display: block;
+  }
+  .input-field {
+    width: 100%;
+    padding: 11px var(--space-base);
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .input-field::placeholder {
+    color: var(--text-tertiary);
+  }
+  .input-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+  .input-field-error {
+    border-color: var(--destructive);
+  }
+  .input-field-error:focus {
+    box-shadow: 0 0 0 3px var(--destructive-bg);
+  }
+  .input-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: var(--space-xs);
+  }
+  .input-error {
+    font-size: 12px;
+    color: var(--destructive);
+    margin-top: var(--space-xs);
+  }
+  .textarea-field {
+    min-height: 88px;
+    resize: vertical;
+  }
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+
+  /* ─── Segmented Control ─── */
+  .segmented-control {
+    display: inline-flex;
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+    padding: 3px;
+    border: 1px solid var(--border-subtle);
+  }
+  .segment {
+    padding: 7px 18px;
+    border-radius: calc(var(--radius-md) - 2px);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+  }
+  .segment:hover {
+    color: var(--text-primary);
+  }
+  .segment-active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  /* ─── Empty State ─── */
+  .empty-state {
+    text-align: center;
+    padding: var(--space-4xl) var(--space-xl);
+  }
+  .empty-state-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-xl);
+    background: var(--accent-bg);
+    color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: var(--space-base);
+    opacity: 0.7;
+  }
+  .empty-state-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+  }
+  .empty-state-message {
+    font-size: 14px;
+    color: var(--text-secondary);
+    max-width: 260px;
+    margin: 0 auto var(--space-lg);
+    line-height: 1.5;
+  }
+
+  /* ─── Tab Bar ─── */
+  .tab-bar-wrapper {
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-sm) 0 var(--space-lg);
+    position: relative;
+  }
+  .tab-bar-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to top, var(--bg-primary), transparent);
+    pointer-events: none;
+  }
+  .tab-bar {
+    display: flex;
+    justify-content: space-around;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: var(--space-xs) var(--space-sm);
+    transition: all 0.2s ease;
+  }
+  .tab-icon {
+    font-size: 22px;
+    line-height: 1;
+    transition: color 0.2s;
+    color: var(--text-tertiary);
+  }
+  .tab-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text-tertiary);
+    transition: color 0.2s;
+  }
+  .tab-item-active .tab-icon { color: var(--accent); }
+  .tab-item-active .tab-label { color: var(--accent); }
+  .tab-item:hover .tab-icon { color: var(--text-secondary); }
+  .tab-item:hover .tab-label { color: var(--text-secondary); }
+  .tab-item-active:hover .tab-icon { color: var(--accent); }
+  .tab-item-active:hover .tab-label { color: var(--accent); }
+
+  /* ─── Nav Bar Preview ─── */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    padding: var(--space-md) var(--space-base);
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .nav-back {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    cursor: pointer;
+  }
+  .nav-title {
+    flex: 1;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .nav-action {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ─── Section Headers (in-list) ─── */
+  .list-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-base);
+    background: var(--bg-elevated);
+  }
+  .list-section-header-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+  }
+  .list-section-header-action {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* ─── Phone Frame ─── */
+  .phone-frame {
+    width: 320px;
+    border-radius: 28px;
+    border: 2px solid var(--border-default);
+    overflow: hidden;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-elevated);
+    margin: 0 auto;
+  }
+  .phone-screen {
+    max-height: 560px;
+    overflow: hidden;
+  }
+  .phone-notch {
+    height: 34px;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 4px;
+  }
+  .phone-notch-pill {
+    width: 80px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--border-strong);
+  }
+
+  /* ─── Workout-specific ─── */
+  .set-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 1fr 40px;
+    gap: var(--space-sm);
+    align-items: center;
+    padding: var(--space-sm) var(--space-base);
+    font-size: 14px;
+  }
+  .set-number {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+  .set-input {
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .set-input:focus {
+    border-color: var(--accent);
+  }
+  .set-input::placeholder {
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+  .set-check {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    margin: 0 auto;
+  }
+  .set-check-done {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  /* ─── Utility ─── */
+  .flex-row { display: flex; align-items: center; gap: var(--space-md); }
+  .flex-col { display: flex; flex-direction: column; gap: var(--space-md); }
+  .gap-sm { gap: var(--space-sm); }
+  .gap-lg { gap: var(--space-lg); }
+  .mt-sm { margin-top: var(--space-sm); }
+  .mt-md { margin-top: var(--space-md); }
+  .mt-lg { margin-top: var(--space-lg); }
+  .text-dim { color: var(--text-secondary); }
+  .text-xs { font-size: 12px; }
+  .text-sm { font-size: 13px; }
+  .fw-600 { font-weight: 600; }
+
+  /* ─── Divider ─── */
+  .divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: var(--space-xl) 0;
+  }
+
+  /* ─── Toggle Switch ─── */
+  .toggle-track {
+    width: 51px;
+    height: 31px;
+    border-radius: var(--radius-full);
+    background: var(--text-tertiary);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-track-on {
+    background: var(--success);
+  }
+  .toggle-thumb {
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .toggle-track-on .toggle-thumb {
+    transform: translateX(20px);
+  }
+
+  /* ─── Icon Grid ─── */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: var(--space-md);
+  }
+  .icon-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-base) var(--space-sm);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.2s;
+  }
+  .icon-cell:hover {
+    border-color: var(--border-default);
+    background: var(--bg-card-hover);
+  }
+  .icon-cell svg { width: 24px; height: 24px; color: var(--text-primary); }
+  .icon-cell span { font-size: 10px; color: var(--text-tertiary); text-align: center; }
+
+  /* ─── Progress Ring ─── */
+  .progress-ring {
+    width: 48px;
+    height: 48px;
+    position: relative;
+  }
+  .progress-ring svg {
+    transform: rotate(-90deg);
+    width: 48px;
+    height: 48px;
+  }
+  .progress-ring circle {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .progress-track { stroke: var(--border-subtle); }
+  .progress-fill { stroke: var(--accent); }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 640px) {
+    .page-header h1 { font-size: 44px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .input-row { grid-template-columns: 1fr; }
+    .type-row { flex-direction: column; gap: var(--space-sm); }
+    .type-meta { width: auto; }
+  }
+
+  /* ─── Animations ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section {
+    animation: fadeUp 0.5s ease both;
+  }
+  .section:nth-child(2) { animation-delay: 0.05s; }
+  .section:nth-child(3) { animation-delay: 0.1s; }
+  .section:nth-child(4) { animation-delay: 0.15s; }
+  .section:nth-child(5) { animation-delay: 0.2s; }
+  .section:nth-child(6) { animation-delay: 0.25s; }
+  .section:nth-child(7) { animation-delay: 0.3s; }
+  .section:nth-child(8) { animation-delay: 0.35s; }
+  .section:nth-child(9) { animation-delay: 0.4s; }
+  .section:nth-child(10) { animation-delay: 0.45s; }
+  .section:nth-child(11) { animation-delay: 0.5s; }
+  .section:nth-child(12) { animation-delay: 0.55s; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ HEADER ═══════════════════════════════════ -->
+<header class="page-header">
+  <h1>DAISY<span>BELLS</span></h1>
+  <p>Design System &amp; Style Guide</p>
+  <div class="version-tag">Phase 5 Foundation</div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════ 01 COLOR PALETTE ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <h2 class="section-title">COLOR PALETTE</h2>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Backgrounds</div>
+    <div class="color-grid">
+      <div class="color-swatch"><div class="swatch-fill" style="background:#0C0C0E"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-value">#0C0C0E</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#161618"></div><div class="swatch-info"><div class="swatch-name">Elevated</div><div class="swatch-value">#161618</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#1C1C1F"></div><div class="swatch-info"><div class="swatch-name">Card</div><div class="swatch-value">#1C1C1F</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#242428"></div><div class="swatch-info"><div class="swatch-name">Card Hover</div><div class="swatch-value">#242428</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#1A1A1D"></div><div class="swatch-info"><div class="swatch-name">Input</div><div class="swatch-value">#1A1A1D</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#131315"></div><div class="swatch-info"><div class="swatch-name">Sheet</div><div class="swatch-value">#131315</div></div></div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Accent — Electric Amber</div>
+    <div class="color-grid">
+      <div class="color-swatch"><div class="swatch-fill" style="background:#F0A830"></div><div class="swatch-info"><div class="swatch-name">Accent</div><div class="swatch-value">#F0A830</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#FFD166"></div><div class="swatch-info"><div class="swatch-name">Accent Bright</div><div class="swatch-value">#FFD166</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#B87D1A"></div><div class="swatch-info"><div class="swatch-name">Accent Dim</div><div class="swatch-value">#B87D1A</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:rgba(240,168,48,0.18); border:1px dashed rgba(240,168,48,0.3)"></div><div class="swatch-info"><div class="swatch-name">Accent BG</div><div class="swatch-value">10–18% alpha</div></div></div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Text</div>
+    <div class="color-grid">
+      <div class="color-swatch"><div class="swatch-fill" style="background:#F5F5F7"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-value">#F5F5F7</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#8E8E93"></div><div class="swatch-info"><div class="swatch-name">Secondary</div><div class="swatch-value">#8E8E93</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#5A5A5E"></div><div class="swatch-info"><div class="swatch-name">Tertiary</div><div class="swatch-value">#5A5A5E</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#0C0C0E"></div><div class="swatch-info"><div class="swatch-name">Inverse</div><div class="swatch-value">#0C0C0E</div></div></div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Semantic</div>
+    <div class="color-grid">
+      <div class="color-swatch"><div class="swatch-fill" style="background:#34C759"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-value">#34C759</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#FF9F0A"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-value">#FF9F0A</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#FF453A"></div><div class="swatch-info"><div class="swatch-name">Destructive</div><div class="swatch-value">#FF453A</div></div></div>
+      <div class="color-swatch"><div class="swatch-fill" style="background:#5AC8FA"></div><div class="swatch-info"><div class="swatch-name">Info</div><div class="swatch-value">#5AC8FA</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 02 TYPOGRAPHY ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <h2 class="section-title">TYPOGRAPHY</h2>
+  </div>
+  <p class="text-sm text-dim" style="margin-bottom:var(--space-xl)">
+    <strong>Display:</strong> Bebas Neue (mapped to SF Pro Display Condensed in SwiftUI) &nbsp;|&nbsp;
+    <strong>Body:</strong> DM Sans (mapped to SF Pro / system default in SwiftUI)
+  </p>
+
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Large Title</div><div class="spec">Display / 34pt / Bold</div></div>
+    <div class="type-sample" style="font-family:var(--font-display);font-size:42px;letter-spacing:2px;">PUSH YOUR LIMITS</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Title 1</div><div class="spec">Body / 28pt / Bold</div></div>
+    <div class="type-sample" style="font-size:28px;font-weight:700;">Upper Body Strength</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Title 2</div><div class="spec">Body / 22pt / Bold</div></div>
+    <div class="type-sample" style="font-size:22px;font-weight:700;">Exercise Details</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Title 3</div><div class="spec">Body / 20pt / Semibold</div></div>
+    <div class="type-sample" style="font-size:20px;font-weight:600;">Active Split</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Headline</div><div class="spec">Body / 17pt / Semibold</div></div>
+    <div class="type-sample" style="font-size:17px;font-weight:600;">Bench Press</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Body</div><div class="spec">Body / 15pt / Regular</div></div>
+    <div class="type-sample" style="font-size:15px;font-weight:400;">3 sets of 8-12 reps at moderate weight. Focus on controlled eccentric.</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Callout</div><div class="spec">Body / 14pt / Medium</div></div>
+    <div class="type-sample" style="font-size:14px;font-weight:500;color:var(--text-secondary);">Last performed 3 days ago</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Footnote</div><div class="spec">Body / 13pt / Regular</div></div>
+    <div class="type-sample" style="font-size:13px;font-weight:400;color:var(--text-secondary);">Weight &middot; Reps &middot; Rest Timer</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Caption</div><div class="spec">Body / 12pt / Medium</div></div>
+    <div class="type-sample" style="font-size:12px;font-weight:500;color:var(--text-tertiary);">PERSONAL RECORD</div>
+  </div>
+  <div class="type-row">
+    <div class="type-meta"><div class="label">Stat / Metric</div><div class="spec">Display / 36pt</div></div>
+    <div class="type-sample" style="font-family:var(--font-display);font-size:44px;letter-spacing:1px;color:var(--accent);">12,450 <span style="font-size:16px;color:var(--text-tertiary);">LBS</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 03 SPACING ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <h2 class="section-title">SPACING SCALE</h2>
+  </div>
+  <p class="text-sm text-dim" style="margin-bottom:var(--space-xl)">4px base unit. Use semantic names in SwiftUI with a spacing extension.</p>
+
+  <div class="spacing-grid">
+    <div class="spacing-item"><div class="spacing-bar" style="height:2px"></div><div class="spacing-label">2xs</div><div class="spacing-px">2</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:4px"></div><div class="spacing-label">xs</div><div class="spacing-px">4</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:8px"></div><div class="spacing-label">sm</div><div class="spacing-px">8</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:12px"></div><div class="spacing-label">md</div><div class="spacing-px">12</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:16px"></div><div class="spacing-label">base</div><div class="spacing-px">16</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:20px"></div><div class="spacing-label">lg</div><div class="spacing-px">20</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:24px"></div><div class="spacing-label">xl</div><div class="spacing-px">24</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:32px"></div><div class="spacing-label">2xl</div><div class="spacing-px">32</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:40px"></div><div class="spacing-label">3xl</div><div class="spacing-px">40</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:48px"></div><div class="spacing-label">4xl</div><div class="spacing-px">48</div></div>
+    <div class="spacing-item"><div class="spacing-bar" style="height:64px"></div><div class="spacing-label">5xl</div><div class="spacing-px">64</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 04 BUTTONS ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <h2 class="section-title">BUTTONS</h2>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Primary</div>
+    <div class="button-row">
+      <button class="btn btn-primary btn-lg">Start Workout</button>
+      <button class="btn btn-primary">Complete Set</button>
+      <button class="btn btn-primary btn-sm">Save</button>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Secondary</div>
+    <div class="button-row">
+      <button class="btn btn-secondary btn-lg">Add Exercise</button>
+      <button class="btn btn-secondary">Edit Template</button>
+      <button class="btn btn-secondary btn-sm">Duplicate</button>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Destructive</div>
+    <div class="button-row">
+      <button class="btn btn-destructive">Delete Workout</button>
+      <button class="btn btn-destructive btn-sm">Remove</button>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Ghost</div>
+    <div class="button-row">
+      <button class="btn btn-ghost">View All</button>
+      <button class="btn btn-ghost btn-sm">Cancel</button>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Icon Buttons</div>
+    <div class="button-row">
+      <button class="btn btn-icon" title="Add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="btn btn-icon" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+      <button class="btn btn-icon" title="Filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      </button>
+      <button class="btn btn-icon" title="More">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 05 CARDS ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">05</span>
+    <h2 class="section-title">CARDS</h2>
+  </div>
+
+  <div class="card-grid">
+    <!-- Stat Card -->
+    <div class="card card-accent">
+      <div class="card-header">
+        <div>
+          <div class="card-stat">24</div>
+          <div class="card-stat-label">Workouts this month</div>
+        </div>
+        <div class="card-icon card-icon-accent">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon card-icon-success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+      <div class="card-title">Push Day</div>
+      <div class="card-subtitle">5 exercises &middot; ~45 min</div>
+    </div>
+
+    <!-- Analytics Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon card-icon-info">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+      </div>
+      <div class="card-title">Total Volume</div>
+      <div class="card-stat" style="font-size:28px;margin-top:var(--space-xs);">186,320 <span style="font-size:13px;color:var(--text-tertiary);">LBS</span></div>
+    </div>
+
+    <!-- Template Card with exercise preview -->
+    <div class="card">
+      <div class="card-title">Upper Body Hypertrophy</div>
+      <div class="card-subtitle" style="margin-bottom:var(--space-md);">6 exercises &middot; Created Jan 15</div>
+      <div style="display:flex;flex-wrap:wrap;gap:var(--space-xs);">
+        <span class="badge badge-neutral">Bench Press</span>
+        <span class="badge badge-neutral">OHP</span>
+        <span class="badge badge-neutral">Rows</span>
+        <span class="badge badge-neutral">+3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 06 LIST ROWS ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">06</span>
+    <h2 class="section-title">LIST ROWS</h2>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Exercise List</div>
+    <div class="list-container">
+      <div class="list-section-header">
+        <span class="list-section-header-title">Chest</span>
+        <span class="list-section-header-action">See All</span>
+      </div>
+      <div class="list-row">
+        <div class="list-row-icon" style="background:var(--accent-bg);color:var(--accent);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6.5 6.5h11M4 10h16M6.5 17.5h11M4 14h16"/></svg>
+        </div>
+        <div class="list-row-content">
+          <div class="list-row-title">Barbell Bench Press</div>
+          <div class="list-row-detail">Weight + Reps &middot; Last: 3 days ago</div>
+        </div>
+        <div class="list-row-trailing">
+          <span class="badge badge-accent" style="font-size:11px;padding:2px 8px;">PR</span>
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+      <div class="list-row">
+        <div class="list-row-icon" style="background:var(--success-bg);color:var(--success);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6.5 6.5h11M4 10h16M6.5 17.5h11M4 14h16"/></svg>
+        </div>
+        <div class="list-row-content">
+          <div class="list-row-title">Incline Dumbbell Press</div>
+          <div class="list-row-detail">Weight + Reps &middot; Last: 5 days ago</div>
+        </div>
+        <div class="list-row-trailing">
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+      <div class="list-row">
+        <div class="list-row-icon" style="background:var(--info-bg);color:var(--info);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="list-row-content">
+          <div class="list-row-title">Cable Flyes</div>
+          <div class="list-row-detail">Weight + Reps &middot; Never performed</div>
+        </div>
+        <div class="list-row-trailing">
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection" style="margin-top:var(--space-xl)">
+    <div class="subsection-label">History List</div>
+    <div class="list-container">
+      <div class="list-row">
+        <div class="list-row-icon" style="background:var(--success-bg);color:var(--success);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="list-row-content">
+          <div class="list-row-title">Push Day — Upper</div>
+          <div class="list-row-detail">Today &middot; 6 exercises &middot; 52 min</div>
+        </div>
+        <div class="list-row-trailing">
+          <span class="text-xs text-dim">12:30 PM</span>
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+      <div class="list-row">
+        <div class="list-row-icon" style="background:var(--accent-bg);color:var(--accent);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="list-row-content">
+          <div class="list-row-title">Pull Day</div>
+          <div class="list-row-detail">Yesterday &middot; 5 exercises &middot; 48 min</div>
+        </div>
+        <div class="list-row-trailing">
+          <span class="text-xs text-dim">3:15 PM</span>
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+      <div class="list-row">
+        <div class="list-row-icon" style="background:rgba(255,255,255,0.04);color:var(--text-tertiary);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="list-row-content">
+          <div class="list-row-title">Leg Day</div>
+          <div class="list-row-detail">3 days ago &middot; 7 exercises &middot; 1h 5m</div>
+        </div>
+        <div class="list-row-trailing">
+          <span class="text-xs text-dim">10:00 AM</span>
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 07 BADGES & TAGS ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">07</span>
+    <h2 class="section-title">BADGES &amp; TAGS</h2>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Filled</div>
+    <div class="badge-row">
+      <span class="badge badge-accent"><span class="badge-dot"></span> Active</span>
+      <span class="badge badge-success"><span class="badge-dot"></span> Completed</span>
+      <span class="badge badge-warning"><span class="badge-dot"></span> In Progress</span>
+      <span class="badge badge-destructive"><span class="badge-dot"></span> Cancelled</span>
+      <span class="badge badge-info"><span class="badge-dot"></span> New</span>
+      <span class="badge badge-neutral">Archived</span>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Exercise Type Tags</div>
+    <div class="badge-row">
+      <span class="badge badge-accent">Weight + Reps</span>
+      <span class="badge badge-info">Bodyweight</span>
+      <span class="badge badge-success">Time</span>
+      <span class="badge badge-warning">Distance + Time</span>
+      <span class="badge badge-neutral">Weight + Time</span>
+      <span class="badge badge-neutral">Reps Only</span>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Outline Variant</div>
+    <div class="badge-row">
+      <span class="badge badge-accent badge-outline">Chest</span>
+      <span class="badge badge-accent badge-outline">Shoulders</span>
+      <span class="badge badge-accent badge-outline">Triceps</span>
+      <span class="badge badge-info badge-outline">Favorite</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 08 INPUTS ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">08</span>
+    <h2 class="section-title">INPUT FIELDS</h2>
+  </div>
+
+  <div style="max-width:480px">
+    <div class="input-group">
+      <label class="input-label">Exercise Name</label>
+      <input class="input-field" type="text" value="Barbell Bench Press" />
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Notes / Form Cues</label>
+      <textarea class="input-field textarea-field" placeholder="Add notes about form, tempo, or rest periods..."></textarea>
+      <div class="input-hint">Optional — visible during workouts</div>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">Weight (lbs)</label>
+        <input class="input-field" type="text" placeholder="0" style="text-align:center" />
+      </div>
+      <div class="input-group">
+        <label class="input-label">Reps</label>
+        <input class="input-field" type="text" placeholder="0" style="text-align:center" />
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">Split Name</label>
+      <input class="input-field input-field-error" type="text" value="" />
+      <div class="input-error">Name cannot be empty</div>
+    </div>
+
+    <div class="input-group" style="margin-top:var(--space-lg)">
+      <label class="input-label">Search</label>
+      <div style="position:relative">
+        <input class="input-field" type="text" placeholder="Search exercises..." style="padding-left:36px" />
+        <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-tertiary)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+    </div>
+
+    <div class="subsection" style="margin-top:var(--space-xl)">
+      <div class="subsection-label">Segmented Control</div>
+      <div class="segmented-control">
+        <button class="segment segment-active">Exercises</button>
+        <button class="segment">Workouts</button>
+      </div>
+      <div style="margin-top:var(--space-md)">
+        <div class="segmented-control">
+          <button class="segment">lbs</button>
+          <button class="segment segment-active">kg</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection" style="margin-top:var(--space-xl)">
+      <div class="subsection-label">Toggle</div>
+      <div class="flex-row" style="justify-content:space-between">
+        <span style="font-size:15px">Show Archived Exercises</span>
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="flex-row" style="justify-content:space-between;margin-top:var(--space-md)">
+        <span style="font-size:15px">Favorites Only</span>
+        <div class="toggle-track toggle-track-on"><div class="toggle-thumb"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 09 EMPTY STATES ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">09</span>
+    <h2 class="section-title">EMPTY STATES</h2>
+  </div>
+
+  <div class="card-grid">
+    <div class="card" style="cursor:default">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6.5h11M4 10h16M6.5 17.5h11M4 14h16"/></svg>
+        </div>
+        <div class="empty-state-title">No Exercises Yet</div>
+        <div class="empty-state-message">Create your first exercise to start building your workout library.</div>
+        <button class="btn btn-primary btn-sm">Create Exercise</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:default">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="empty-state-title">No Workout History</div>
+        <div class="empty-state-message">Complete your first workout to see it here.</div>
+        <button class="btn btn-primary btn-sm">Start Workout</button>
+      </div>
+    </div>
+
+    <div class="card" style="cursor:default">
+      <div class="empty-state">
+        <div class="empty-state-icon" style="background:var(--info-bg);color:var(--info)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="empty-state-title">No Analytics Yet</div>
+        <div class="empty-state-message">Train consistently and insights will appear automatically.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 10 SECTION HEADERS & NAV ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">10</span>
+    <h2 class="section-title">NAVIGATION &amp; HEADERS</h2>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-label">Navigation Bar</div>
+    <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-subtle);max-width:400px">
+      <div class="nav-bar">
+        <div class="nav-back">
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 2 2 8 8 14"/></svg>
+          Library
+        </div>
+        <div class="nav-title">Bench Press</div>
+        <div class="nav-action">Edit</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection" style="margin-top:var(--space-xl)">
+    <div class="subsection-label">Inline Section Headers</div>
+    <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-subtle);max-width:400px">
+      <div class="list-section-header">
+        <span class="list-section-header-title">Active Split</span>
+        <span class="list-section-header-action">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </span>
+      </div>
+      <div class="list-row">
+        <div class="list-row-content">
+          <div class="list-row-title">Push / Pull / Legs</div>
+          <div class="list-row-detail">6 days &middot; 18 workouts</div>
+        </div>
+        <div class="list-row-trailing"><span class="chevron">&rsaquo;</span></div>
+      </div>
+      <div class="list-section-header">
+        <span class="list-section-header-title">Recent Templates</span>
+        <span class="list-section-header-action">View All</span>
+      </div>
+      <div class="list-row">
+        <div class="list-row-content">
+          <div class="list-row-title">Push Day A</div>
+          <div class="list-row-detail">5 exercises</div>
+        </div>
+        <div class="list-row-trailing"><span class="chevron">&rsaquo;</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 11 TAB BAR ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">11</span>
+    <h2 class="section-title">TAB BAR</h2>
+  </div>
+
+  <div style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-subtle);max-width:400px">
+    <div class="tab-bar-wrapper">
+      <div class="tab-bar">
+        <div class="tab-item tab-item-active">
+          <span class="tab-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </span>
+          <span class="tab-label">Home</span>
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <span class="tab-label">Library</span>
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <span class="tab-label">History</span>
+        </div>
+        <div class="tab-item">
+          <span class="tab-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </span>
+          <span class="tab-label">Analytics</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 12 ACTIVE WORKOUT PREVIEW ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">12</span>
+    <h2 class="section-title">WORKOUT LOGGING</h2>
+  </div>
+  <p class="text-sm text-dim" style="margin-bottom:var(--space-xl)">Set logging row pattern — the core interaction of the app.</p>
+
+  <div style="max-width:400px">
+    <div class="list-container">
+      <!-- Exercise Header -->
+      <div style="padding:var(--space-md) var(--space-base);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-subtle)">
+        <div>
+          <div style="font-size:16px;font-weight:600">Barbell Bench Press</div>
+          <span class="badge badge-accent" style="font-size:10px;padding:2px 7px;margin-top:4px">Weight + Reps</span>
+        </div>
+        <button class="btn btn-icon" style="width:32px;height:32px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+      </div>
+      <!-- Column Headers -->
+      <div class="set-row" style="padding-top:var(--space-sm);padding-bottom:2px">
+        <div style="font-size:10px;color:var(--text-tertiary);text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Set</div>
+        <div style="font-size:10px;color:var(--text-tertiary);text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Weight</div>
+        <div style="font-size:10px;color:var(--text-tertiary);text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Reps</div>
+        <div style="font-size:10px;color:var(--text-tertiary);text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:0.5px"></div>
+      </div>
+      <!-- Set 1 — completed -->
+      <div class="set-row">
+        <div class="set-number">1</div>
+        <input class="set-input" value="185" />
+        <input class="set-input" value="10" />
+        <div class="set-check set-check-done">&#10003;</div>
+      </div>
+      <!-- Set 2 — completed -->
+      <div class="set-row">
+        <div class="set-number">2</div>
+        <input class="set-input" value="185" />
+        <input class="set-input" value="8" />
+        <div class="set-check set-check-done">&#10003;</div>
+      </div>
+      <!-- Set 3 — active -->
+      <div class="set-row">
+        <div class="set-number" style="color:var(--accent)">3</div>
+        <input class="set-input" placeholder="lbs" style="border-color:var(--accent)" />
+        <input class="set-input" placeholder="reps" style="border-color:var(--accent)" />
+        <div class="set-check"></div>
+      </div>
+      <!-- Add Set -->
+      <div style="padding:var(--space-sm) var(--space-base) var(--space-md);text-align:center">
+        <button class="btn btn-ghost btn-sm" style="width:100%">+ Add Set</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 13 ICON TREATMENT ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">13</span>
+    <h2 class="section-title">ICON TREATMENT</h2>
+  </div>
+  <p class="text-sm text-dim" style="margin-bottom:var(--space-xl)">SF Symbols (in SwiftUI). Shown here as SVG equivalents — 2pt stroke, round caps, 24px canvas. Tinted with semantic color or text color.</p>
+
+  <div class="icon-grid">
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>house.fill</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>book.fill</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>clock.fill</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>chart.bar</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>plus</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <span>gearshape</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span>trash</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>pencil</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>star.fill</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>checkmark</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>magnifying<br>glass</span>
+    </div>
+    <div class="icon-cell">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span>line.3.hor<br>izontal.dec</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ 14 CORNER RADII ═══════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <span class="section-number">14</span>
+    <h2 class="section-title">CORNER RADII</h2>
+  </div>
+
+  <div style="display:flex;gap:var(--space-xl);flex-wrap:wrap;align-items:flex-end">
+    <div style="text-align:center">
+      <div style="width:60px;height:60px;border:2px solid var(--accent);border-radius:6px;margin-bottom:var(--space-sm)"></div>
+      <div class="spacing-label">sm</div>
+      <div class="spacing-px">6px</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:60px;height:60px;border:2px solid var(--accent);border-radius:10px;margin-bottom:var(--space-sm)"></div>
+      <div class="spacing-label">md</div>
+      <div class="spacing-px">10px</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:60px;height:60px;border:2px solid var(--accent);border-radius:14px;margin-bottom:var(--space-sm)"></div>
+      <div class="spacing-label">lg</div>
+      <div class="spacing-px">14px</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:60px;height:60px;border:2px solid var(--accent);border-radius:18px;margin-bottom:var(--space-sm)"></div>
+      <div class="spacing-label">xl</div>
+      <div class="spacing-px">18px</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:60px;height:36px;border:2px solid var(--accent);border-radius:999px;margin-bottom:var(--space-sm)"></div>
+      <div class="spacing-label">full</div>
+      <div class="spacing-px">capsule</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════ FOOTER / NOTES ═══════════════════════════════════ -->
+<section class="section" style="margin-bottom:var(--space-3xl)">
+  <div class="divider"></div>
+  <div style="text-align:center; color:var(--text-tertiary); font-size:13px; line-height:1.7">
+    <div style="font-family:var(--font-display);font-size:20px;letter-spacing:2px;color:var(--text-secondary);margin-bottom:var(--space-sm)">SWIFTUI MAPPING NOTES</div>
+    <p>Display font &rarr; use <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">.font(.system(.largeTitle, design: .rounded, weight: .black))</code> or a custom condensed font</p>
+    <p>Colors &rarr; define in <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">Assets.xcassets</code> as named color sets with dark/light variants</p>
+    <p>Spacing &rarr; create <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">CGFloat</code> extension with <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">.spacingSm</code>, <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">.spacingMd</code>, etc.</p>
+    <p>Semantic colors &rarr; wrap in <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">Color</code> extension for <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">.accent</code>, <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px">.destructive</code>, etc.</p>
+  </div>
+</section>
+
+</div>
+
+</body>
+</html>

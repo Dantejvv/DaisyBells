@@ -7,25 +7,12 @@ enum AnalyticsRoute: Hashable {
     case exerciseAnalytics(exerciseId: PersistentIdentifier)
 }
 
-// MARK: - Sheet Enum
-
-enum AnalyticsSheet: Identifiable {
-    case settings
-
-    var id: String {
-        switch self {
-        case .settings: return "settings"
-        }
-    }
-}
-
 // MARK: - Router
 
 @MainActor
 @Observable
 final class AnalyticsRouter {
     var path: [AnalyticsRoute] = []
-    var presentedSheet: AnalyticsSheet?
 
     // MARK: - Stack Navigation
 
@@ -40,16 +27,6 @@ final class AnalyticsRouter {
 
     func popToRoot() {
         path.removeAll()
-    }
-
-    // MARK: - Sheet Presentation
-
-    func presentSettings() {
-        presentedSheet = .settings
-    }
-
-    func dismissSheet() {
-        presentedSheet = nil
     }
 
     // MARK: - Convenience Navigation

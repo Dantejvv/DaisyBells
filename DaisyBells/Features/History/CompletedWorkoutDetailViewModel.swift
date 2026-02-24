@@ -11,20 +11,29 @@ final class CompletedWorkoutDetailViewModel {
     private(set) var isLoading = false
     var errorMessage: String?
 
+    var showDeleteConfirmation = false
+
     // MARK: - Dependencies
 
     private let workoutService: WorkoutServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let router: HistoryRouter
     private let workoutId: PersistentIdentifier
+
+    var units: Units {
+        settingsService.units
+    }
 
     // MARK: - Init
 
     init(
         workoutService: WorkoutServiceProtocol,
+        settingsService: SettingsServiceProtocol,
         router: HistoryRouter,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService
+        self.settingsService = settingsService
         self.router = router
         self.workoutId = workoutId
     }
@@ -69,5 +78,23 @@ final class CompletedWorkoutDetailViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    // MARK: - Computed
+
+    var totalSets: Int {
+        exercises.reduce(0) { $0 + $1.sets.count }
+    }
+
+    var totalVolume: Double {
+        var volume: Double = 0
+        for loggedExercise in exercises {
+            for set in loggedExercise.sets {
+                if let weight = set.weight, let reps = set.reps {
+                    volume += weight * Double(reps)
+                }
+            }
+        }
+        return volume
     }
 }

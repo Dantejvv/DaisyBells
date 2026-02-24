@@ -26,6 +26,25 @@ final class LoggedExerciseService: LoggedExerciseServiceProtocol {
         return loggedExercise
     }
 
+    func createWithSets(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, setCount: Int) async throws -> SchemaV1.LoggedExercise {
+        let loggedExercise = SchemaV1.LoggedExercise(
+            exercise: exercise,
+            order: order
+        )
+        loggedExercise.workout = workout
+        modelContext.insert(loggedExercise)
+
+        let count = max(setCount, 1)
+        for i in 0..<count {
+            let loggedSet = SchemaV1.LoggedSet(order: i)
+            loggedSet.loggedExercise = loggedExercise
+            modelContext.insert(loggedSet)
+        }
+
+        try modelContext.save()
+        return loggedExercise
+    }
+
     func update(_ loggedExercise: SchemaV1.LoggedExercise) async throws {
         try modelContext.save()
     }

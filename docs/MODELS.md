@@ -177,14 +177,16 @@ class TemplateExercise {
 class Split {
     @Attribute(.unique) var id: UUID
     var name: String
+    var notes: String?
     var createdAt: Date
 
     @Relationship(deleteRule: .cascade)
     var days: [SplitDay]
 
-    init(name: String) {
+    init(name: String, notes: String? = nil) {
         self.id = UUID()
         self.name = name
+        self.notes = notes
         self.createdAt = Date()
         self.days = []
     }

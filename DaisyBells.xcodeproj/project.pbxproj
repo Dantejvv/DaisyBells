@@ -12,7 +12,8 @@
 		FE6C8B202F31C95E0075495F /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B1E2F31C95E0075495F /* README.md */; };
 		FE6C8B2A2F31C9680075495F /* MODELS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B252F31C9680075495F /* MODELS.md */; };
 		FE6C8B2E2F31C9680075495F /* ARCHITECTURE.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B222F31C9680075495F /* ARCHITECTURE.md */; };
-		FE6C8B372F31C9680075495F /* VIEWS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B382F31C9680075495F /* VIEWS.md */; };
+		FE6C8F642F3D2AA60075495F /* design-system.html in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8F632F3D2AA60075495F /* design-system.html */; };
+		FE6C8FAE2F4D7B920075495F /* VIEWS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8FAD2F4D7B920075495F /* VIEWS.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,7 +34,8 @@
 		FE6C8B1E2F31C95E0075495F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		FE6C8B222F31C9680075495F /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ARCHITECTURE.md; sourceTree = "<group>"; };
 		FE6C8B252F31C9680075495F /* MODELS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MODELS.md; sourceTree = "<group>"; };
-		FE6C8B382F31C9680075495F /* VIEWS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = VIEWS.md; sourceTree = "<group>"; };
+		FE6C8F632F3D2AA60075495F /* design-system.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "design-system.html"; sourceTree = "<group>"; };
+		FE6C8FAD2F4D7B920075495F /* VIEWS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = VIEWS.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -92,9 +94,10 @@
 		FE6C8B272F31C9680075495F /* docs */ = {
 			isa = PBXGroup;
 			children = (
+				FE6C8FAD2F4D7B920075495F /* VIEWS.md */,
 				FE6C8B222F31C9680075495F /* ARCHITECTURE.md */,
 				FE6C8B252F31C9680075495F /* MODELS.md */,
-				FE6C8B382F31C9680075495F /* VIEWS.md */,
+				FE6C8F632F3D2AA60075495F /* design-system.html */,
 			);
 			path = docs;
 			sourceTree = "<group>";
@@ -194,9 +197,10 @@
 				FE6C8B1F2F31C95E0075495F /* LICENSE in Resources */,
 				FE6C8B202F31C95E0075495F /* README.md in Resources */,
 				FE6C8B1C2F31C9560075495F /* CLAUDE.md in Resources */,
+				FE6C8FAE2F4D7B920075495F /* VIEWS.md in Resources */,
 				FE6C8B2A2F31C9680075495F /* MODELS.md in Resources */,
 				FE6C8B2E2F31C9680075495F /* ARCHITECTURE.md in Resources */,
-				FE6C8B372F31C9680075495F /* VIEWS.md in Resources */,
+				FE6C8F642F3D2AA60075495F /* design-system.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

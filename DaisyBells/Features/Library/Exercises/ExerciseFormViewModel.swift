@@ -95,7 +95,7 @@ final class ExerciseFormViewModel {
                 newExercise.categories = selectedCategories
                 try await exerciseService.update(newExercise)
             }
-            router.pop()
+            router.dismissSheet()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -103,7 +103,7 @@ final class ExerciseFormViewModel {
     }
 
     func cancel() {
-        router.pop()
+        router.dismissSheet()
     }
 
     // MARK: - Private

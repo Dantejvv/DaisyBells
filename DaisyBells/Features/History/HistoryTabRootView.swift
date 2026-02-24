@@ -4,21 +4,32 @@ import SwiftData
 @MainActor
 struct HistoryTabRootView: View {
     @Environment(HistoryRouter.self) private var router
+    @Environment(DependencyContainer.self) private var container
 
     var body: some View {
         @Bindable var router = router
 
         NavigationStack(path: $router.path) {
-            Text("History Content - Phase 5")
-                .navigationTitle("History")
-                .navigationDestination(for: HistoryRoute.self) { route in
-                    // Route handling will be implemented in Phase 5
-                    Text("Route: \(String(describing: route))")
+            HistoryListView(
+                viewModel: HistoryListViewModel(
+                    workoutService: container.workoutService,
+                    settingsService: container.settingsService,
+                    router: router
+                )
+            )
+            .navigationDestination(for: HistoryRoute.self) { route in
+                switch route {
+                case .workoutDetail(let workoutId):
+                    CompletedWorkoutDetailView(
+                        viewModel: CompletedWorkoutDetailViewModel(
+                            workoutService: container.workoutService,
+                            settingsService: container.settingsService,
+                            router: router,
+                            workoutId: workoutId
+                        )
+                    )
                 }
-        }
-        .sheet(item: $router.presentedSheet) { sheet in
-            // Sheet presentation will be implemented in Phase 5
-            Text("Sheet: \(sheet.id)")
+            }
         }
     }
 }
