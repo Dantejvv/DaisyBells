@@ -47,6 +47,8 @@ enum SchemaV1: VersionedSchema {
         var isFavorite: Bool
         var isArchived: Bool
         var createdAt: Date
+        var preferredWeightUnit: Units?
+        var preferredDistanceUnit: DistanceUnits?
 
         // Cached statistics (updated on workout completion)
         var lastPerformedAt: Date?
@@ -72,6 +74,8 @@ enum SchemaV1: VersionedSchema {
             self.isFavorite = false
             self.isArchived = false
             self.createdAt = Date()
+            self.preferredWeightUnit = nil
+            self.preferredDistanceUnit = nil
             self.lastPerformedAt = nil
             self.hasCompletedWorkout = false
             self.totalVolume = 0
@@ -134,6 +138,7 @@ enum SchemaV1: VersionedSchema {
         var bodyweightModifier: Double?
         var time: TimeInterval?
         var distance: Double?
+        var notes: String?
 
         @Relationship
         var templateExercise: TemplateExercise?
@@ -150,6 +155,7 @@ enum SchemaV1: VersionedSchema {
         var name: String
         var notes: String?
         var createdAt: Date
+        var currentDayIndex: Int
 
         @Relationship(deleteRule: .cascade, inverse: \SplitDay.split)
         var days: [SplitDay]
@@ -159,6 +165,7 @@ enum SchemaV1: VersionedSchema {
             self.name = name
             self.notes = notes
             self.createdAt = Date()
+            self.currentDayIndex = 0
             self.days = []
         }
     }
@@ -168,6 +175,7 @@ enum SchemaV1: VersionedSchema {
         @Attribute(.unique) var id: UUID
         var name: String
         var order: Int
+        var isCompletedInCycle: Bool
 
         @Relationship
         var split: Split?
@@ -179,6 +187,7 @@ enum SchemaV1: VersionedSchema {
             self.id = UUID()
             self.name = name
             self.order = order
+            self.isCompletedInCycle = false
             self.assignedWorkouts = []
         }
     }

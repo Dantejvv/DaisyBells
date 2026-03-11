@@ -27,6 +27,7 @@ struct LibraryTabRootView: View {
                             viewModel: ExerciseDetailViewModel(
                                 exerciseService: container.exerciseService,
                                 analyticsService: container.analyticsService,
+                                settingsService: container.settingsService,
                                 router: router,
                                 exerciseId: exerciseId
                             )
@@ -36,6 +37,7 @@ struct LibraryTabRootView: View {
                             viewModel: TemplateDetailViewModel(
                                 templateService: container.templateService,
                                 workoutService: container.workoutService,
+                                settingsService: container.settingsService,
                                 router: router,
                                 templateId: templateId
                             ),
@@ -75,6 +77,7 @@ struct LibraryTabRootView: View {
                         viewModel: TemplateFormViewModel(
                             templateService: container.templateService,
                             exerciseService: container.exerciseService,
+                            workoutService: container.workoutService,
                             router: router,
                             templateId: templateId
                         )

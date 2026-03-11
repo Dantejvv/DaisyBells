@@ -69,6 +69,10 @@ final class HistoryListViewModel {
         isLoading = false
     }
 
+    func showCalendar() {
+        router.presentCalendar()
+    }
+
     func selectWorkout(_ workout: SchemaV1.Workout) {
         router.navigateToWorkoutDetail(workoutId: workout.persistentModelID)
     }

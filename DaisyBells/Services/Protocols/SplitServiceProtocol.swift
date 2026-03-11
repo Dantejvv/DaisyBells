@@ -9,4 +9,8 @@ protocol SplitServiceProtocol {
     func create(name: String, notes: String?) async throws -> SchemaV1.Split
     func update(_ split: SchemaV1.Split) async throws
     func delete(_ split: SchemaV1.Split) async throws
+    func setCurrentDay(index: Int, in split: SchemaV1.Split) async throws
+    func skipDay(at index: Int, in split: SchemaV1.Split) async throws
+    func advanceDay(in split: SchemaV1.Split) async throws
+    func resetCycleIfComplete(_ split: SchemaV1.Split) async throws
 }

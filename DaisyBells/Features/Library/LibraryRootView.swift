@@ -50,6 +50,5 @@ struct LibraryRootView: View {
         }
         .background(Color.bgPrimary)
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
     }
 }

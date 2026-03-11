@@ -30,7 +30,6 @@ struct ActiveWorkoutSheet: View {
                 )
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func makeViewModel(workoutId: PersistentIdentifier) -> ActiveWorkoutViewModel {
@@ -40,6 +39,7 @@ struct ActiveWorkoutSheet: View {
             loggedExerciseService: container.loggedExerciseService,
             loggedSetService: container.loggedSetService,
             templateService: container.templateService,
+            settingsService: container.settingsService,
             workoutId: workoutId
         )
         vm.onDismiss = {

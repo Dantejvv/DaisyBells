@@ -21,6 +21,7 @@ final class ExerciseDetailViewModel {
 
     private let exerciseService: ExerciseServiceProtocol
     private let analyticsService: AnalyticsServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let router: LibraryRouter
     private let exerciseId: PersistentIdentifier
 
@@ -29,14 +30,19 @@ final class ExerciseDetailViewModel {
     init(
         exerciseService: ExerciseServiceProtocol,
         analyticsService: AnalyticsServiceProtocol,
+        settingsService: SettingsServiceProtocol,
         router: LibraryRouter,
         exerciseId: PersistentIdentifier
     ) {
         self.exerciseService = exerciseService
         self.analyticsService = analyticsService
+        self.settingsService = settingsService
         self.router = router
         self.exerciseId = exerciseId
     }
+
+    var defaultWeightUnit: Units { settingsService.units }
+    var defaultDistanceUnit: DistanceUnits { settingsService.distanceUnits }
 
     // MARK: - Intents
 
@@ -79,6 +85,28 @@ final class ExerciseDetailViewModel {
         } catch {
             errorMessage = error.localizedDescription
             exercise.isFavorite.toggle() // Revert on error
+        }
+    }
+
+    func updateWeightUnit(_ unit: Units?) async {
+        guard let exercise else { return }
+        exercise.preferredWeightUnit = unit
+        errorMessage = nil
+        do {
+            try await exerciseService.update(exercise)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateDistanceUnit(_ unit: DistanceUnits?) async {
+        guard let exercise else { return }
+        exercise.preferredDistanceUnit = unit
+        errorMessage = nil
+        do {
+            try await exerciseService.update(exercise)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

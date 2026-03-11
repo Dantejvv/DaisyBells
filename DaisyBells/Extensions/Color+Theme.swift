@@ -1,4 +1,18 @@
 import SwiftUI
+import UIKit
+
+// MARK: - Adaptive Color Initializer
+
+extension Color {
+    /// Creates a color that adapts between light and dark mode.
+    init(light: Color, dark: Color) {
+        self.init(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(dark)
+                : UIColor(light)
+        })
+    }
+}
 
 // MARK: - Design System Colors
 
@@ -17,34 +31,61 @@ extension Color {
 
     // MARK: Backgrounds
 
-    /// Main app background (#0C0C0E)
-    static let bgPrimary = Color(red: 12/255, green: 12/255, blue: 14/255)
+    /// Main app background
+    static let bgPrimary = Color(
+        light: Color(red: 245/255, green: 245/255, blue: 247/255),
+        dark: Color(red: 12/255, green: 12/255, blue: 14/255)
+    )
 
-    /// Elevated surface — nav bars, tab bars (#161618)
-    static let bgElevated = Color(red: 22/255, green: 22/255, blue: 24/255)
+    /// Elevated surface — nav bars, tab bars
+    static let bgElevated = Color(
+        light: Color(red: 255/255, green: 255/255, blue: 255/255),
+        dark: Color(red: 22/255, green: 22/255, blue: 24/255)
+    )
 
-    /// Card / grouped list background (#1C1C1F)
-    static let bgCard = Color(red: 28/255, green: 28/255, blue: 31/255)
+    /// Card / grouped list background
+    static let bgCard = Color(
+        light: Color(red: 255/255, green: 255/255, blue: 255/255),
+        dark: Color(red: 28/255, green: 28/255, blue: 31/255)
+    )
 
-    /// Card hover / pressed state (#242428)
-    static let bgCardHover = Color(red: 36/255, green: 36/255, blue: 40/255)
+    /// Card hover / pressed state
+    static let bgCardHover = Color(
+        light: Color(red: 235/255, green: 235/255, blue: 240/255),
+        dark: Color(red: 36/255, green: 36/255, blue: 40/255)
+    )
 
-    /// Input field background (#1A1A1D)
-    static let bgInput = Color(red: 26/255, green: 26/255, blue: 29/255)
+    /// Input field background
+    static let bgInput = Color(
+        light: Color(red: 240/255, green: 240/255, blue: 243/255),
+        dark: Color(red: 26/255, green: 26/255, blue: 29/255)
+    )
 
-    /// Sheet background (#131315)
-    static let bgSheet = Color(red: 19/255, green: 19/255, blue: 21/255)
+    /// Sheet background
+    static let bgSheet = Color(
+        light: Color(red: 242/255, green: 242/255, blue: 247/255),
+        dark: Color(red: 19/255, green: 19/255, blue: 21/255)
+    )
 
     // MARK: Text
 
-    /// Primary text (#F5F5F7)
-    static let textPrimary = Color(red: 245/255, green: 245/255, blue: 247/255)
+    /// Primary text
+    static let textPrimary = Color(
+        light: Color(red: 28/255, green: 28/255, blue: 30/255),
+        dark: Color(red: 245/255, green: 245/255, blue: 247/255)
+    )
 
-    /// Secondary text — labels, descriptions (#8E8E93)
-    static let textSecondary = Color(red: 142/255, green: 142/255, blue: 147/255)
+    /// Secondary text — labels, descriptions
+    static let textSecondary = Color(
+        light: Color(red: 108/255, green: 108/255, blue: 112/255),
+        dark: Color(red: 142/255, green: 142/255, blue: 147/255)
+    )
 
-    /// Tertiary text — placeholders, captions (#5A5A5E)
-    static let textTertiary = Color(red: 90/255, green: 90/255, blue: 94/255)
+    /// Tertiary text — placeholders, captions
+    static let textTertiary = Color(
+        light: Color(red: 160/255, green: 160/255, blue: 168/255),
+        dark: Color(red: 90/255, green: 90/255, blue: 94/255)
+    )
 
     // MARK: Semantic
 
@@ -71,12 +112,21 @@ extension Color {
 
     // MARK: Borders
 
-    /// Subtle border — card edges, dividers (6% white)
-    static let borderSubtle = Color.white.opacity(0.06)
+    /// Subtle border — card edges, dividers
+    static let borderSubtle = Color(
+        light: Color.black.opacity(0.06),
+        dark: Color.white.opacity(0.06)
+    )
 
-    /// Default border — inputs, interactive elements (10% white)
-    static let borderDefault = Color.white.opacity(0.10)
+    /// Default border — inputs, interactive elements
+    static let borderDefault = Color(
+        light: Color.black.opacity(0.10),
+        dark: Color.white.opacity(0.10)
+    )
 
-    /// Strong border — focused inputs, hover states (16% white)
-    static let borderStrong = Color.white.opacity(0.16)
+    /// Strong border — focused inputs, hover states
+    static let borderStrong = Color(
+        light: Color.black.opacity(0.16),
+        dark: Color.white.opacity(0.16)
+    )
 }

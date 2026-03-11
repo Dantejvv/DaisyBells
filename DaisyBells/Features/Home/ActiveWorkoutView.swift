@@ -54,7 +54,6 @@ struct ActiveWorkoutView: View {
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
         .navigationBarHidden(true)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Empty State
@@ -252,11 +251,17 @@ struct ActiveWorkoutView: View {
         let sets = loggedExercise.sets.sorted { $0.order < $1.order }
         let previousSets = exercise.flatMap { viewModel.previousPerformance[$0.id] } ?? []
         let firstNonCompletedIndex = sets.firstIndex(where: { !$0.isCompleted })
+        let weightUnit = exercise?.resolvedWeightUnit(default: viewModel.defaultWeightUnit) ?? viewModel.defaultWeightUnit
+        let distanceUnit = exercise?.resolvedDistanceUnit(default: viewModel.defaultDistanceUnit) ?? viewModel.defaultDistanceUnit
 
         return ExerciseCardContainer {
             // Card header
             ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
                 Menu {
+                    if let exercise {
+                        unitMenuSection(exercise: exercise, exerciseType: exerciseType)
+                    }
+
                     Button(role: .destructive) {
                         Task { await viewModel.removeExercise(loggedExercise) }
                     } label: {
@@ -271,7 +276,7 @@ struct ActiveWorkoutView: View {
             }
 
             // Column headers
-            SetColumnHeaders(exerciseType: exerciseType, showCheckColumn: true)
+            SetColumnHeaders(exerciseType: exerciseType, showCheckColumn: true, weightUnit: weightUnit, distanceUnit: distanceUnit)
 
             // Divider below headers
             Rectangle()
@@ -316,169 +321,94 @@ struct ActiveWorkoutView: View {
         isActive: Bool,
         loggedExercise: SchemaV1.LoggedExercise
     ) -> some View {
-        HStack(spacing: 6) {
-            // Set number badge
-            SetNumberBadge(
-                number: setNumber,
-                style: loggedSet.isCompleted ? .completed : isActive ? .active : .pending
+        let exercise = loggedExercise.exercise
+        let weightUnit = exercise?.resolvedWeightUnit(default: viewModel.defaultWeightUnit) ?? viewModel.defaultWeightUnit
+        let distanceUnit = exercise?.resolvedDistanceUnit(default: viewModel.defaultDistanceUnit) ?? viewModel.defaultDistanceUnit
+
+        return HStack(spacing: 0) {
+            EditableSetRow(
+                exerciseType: exerciseType,
+                setNumber: setNumber,
+                badgeStyle: loggedSet.isCompleted ? .completed : isActive ? .active : .pending,
+                weightUnit: weightUnit,
+                distanceUnit: distanceUnit,
+                weight: loggedSet.weight,
+                reps: loggedSet.reps,
+                bodyweightModifier: loggedSet.bodyweightModifier,
+                time: loggedSet.time,
+                distance: loggedSet.distance,
+                notes: loggedSet.notes,
+                previousWeight: previous?.weight,
+                previousReps: previous?.reps,
+                previousBodyweightModifier: previous?.bodyweightModifier,
+                previousTime: previous?.time,
+                previousDistance: previous?.distance,
+                previousNotes: previous?.notes,
+                onWeightChange: { newVal in
+                    Task {
+                        await viewModel.updateSet(
+                            loggedSet, weight: newVal, reps: loggedSet.reps,
+                            time: loggedSet.time, distance: loggedSet.distance,
+                            bodyweightModifier: loggedSet.bodyweightModifier,
+                            notes: loggedSet.notes
+                        )
+                    }
+                },
+                onRepsChange: { newVal in
+                    Task {
+                        await viewModel.updateSet(
+                            loggedSet, weight: loggedSet.weight, reps: newVal,
+                            time: loggedSet.time, distance: loggedSet.distance,
+                            bodyweightModifier: loggedSet.bodyweightModifier,
+                            notes: loggedSet.notes
+                        )
+                    }
+                },
+                onBodyweightModifierChange: { newVal in
+                    Task {
+                        await viewModel.updateSet(
+                            loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
+                            time: loggedSet.time, distance: loggedSet.distance,
+                            bodyweightModifier: newVal,
+                            notes: loggedSet.notes
+                        )
+                    }
+                },
+                onTimeChange: { newVal in
+                    Task {
+                        await viewModel.updateSet(
+                            loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
+                            time: newVal, distance: loggedSet.distance,
+                            bodyweightModifier: loggedSet.bodyweightModifier,
+                            notes: loggedSet.notes
+                        )
+                    }
+                },
+                onDistanceChange: { newVal in
+                    Task {
+                        await viewModel.updateSet(
+                            loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
+                            time: loggedSet.time, distance: newVal,
+                            bodyweightModifier: loggedSet.bodyweightModifier,
+                            notes: loggedSet.notes
+                        )
+                    }
+                },
+                onNotesChange: { newVal in
+                    Task {
+                        await viewModel.updateSet(
+                            loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
+                            time: loggedSet.time, distance: loggedSet.distance,
+                            bodyweightModifier: loggedSet.bodyweightModifier,
+                            notes: newVal
+                        )
+                    }
+                }
             )
 
-            // Input pills based on exercise type — show previous values as placeholders
-            switch exerciseType {
-            case .weightAndReps:
-                let leftPH = previous?.weight.map { String(format: "%g", $0) } ?? "lbs"
-                let rightPH = previous?.reps.map { "\($0)" } ?? "reps"
-                dualInputPill(
-                    leftValue: loggedSet.weight,
-                    rightValue: loggedSet.reps.map { Double($0) },
-                    leftPlaceholder: leftPH,
-                    rightPlaceholder: rightPH,
-                    isCompleted: loggedSet.isCompleted,
-                    onLeftCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: newVal, reps: loggedSet.reps,
-                                time: loggedSet.time, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    },
-                    onRightCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: newVal.map { Int($0) } ?? nil,
-                                time: loggedSet.time, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    }
-                )
-            case .bodyweightAndReps:
-                let leftPH = previous?.bodyweightModifier.map { String(format: "%+g", $0) } ?? "+/-"
-                let rightPH = previous?.reps.map { "\($0)" } ?? "reps"
-                dualInputPill(
-                    leftValue: loggedSet.bodyweightModifier,
-                    rightValue: loggedSet.reps.map { Double($0) },
-                    leftPlaceholder: leftPH,
-                    rightPlaceholder: rightPH,
-                    isCompleted: loggedSet.isCompleted,
-                    onLeftCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
-                                time: loggedSet.time, distance: loggedSet.distance,
-                                bodyweightModifier: newVal
-                            )
-                        }
-                    },
-                    onRightCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: newVal.map { Int($0) } ?? nil,
-                                time: loggedSet.time, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    }
-                )
-            case .distanceAndTime:
-                let leftPH = previous?.distance.map { String(format: "%.1f", $0) } ?? "dist"
-                let rightPH = previous?.time.map { $0.setDurationString } ?? "m:ss"
-                dualInputPill(
-                    leftValue: loggedSet.distance,
-                    rightValue: loggedSet.time,
-                    leftPlaceholder: leftPH,
-                    rightPlaceholder: rightPH,
-                    isCompleted: loggedSet.isCompleted,
-                    onLeftCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
-                                time: loggedSet.time, distance: newVal,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    },
-                    onRightCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
-                                time: newVal, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    }
-                )
-            case .weightAndTime:
-                let leftPH = previous?.weight.map { String(format: "%g", $0) } ?? "lbs"
-                let rightPH = previous?.time.map { $0.setDurationString } ?? "m:ss"
-                dualInputPill(
-                    leftValue: loggedSet.weight,
-                    rightValue: loggedSet.time,
-                    leftPlaceholder: leftPH,
-                    rightPlaceholder: rightPH,
-                    isCompleted: loggedSet.isCompleted,
-                    onLeftCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: newVal, reps: loggedSet.reps,
-                                time: loggedSet.time, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    },
-                    onRightCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
-                                time: newVal, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    }
-                )
-            case .reps:
-                let ph = previous?.reps.map { "\($0)" } ?? "reps"
-                singleInputPill(
-                    value: loggedSet.reps.map { Double($0) },
-                    placeholder: ph,
-                    isCompleted: loggedSet.isCompleted,
-                    onCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: newVal.map { Int($0) } ?? nil,
-                                time: loggedSet.time, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    }
-                )
-            case .time:
-                let ph = previous?.time.map { $0.setDurationString } ?? "m:ss"
-                singleInputPill(
-                    value: loggedSet.time,
-                    placeholder: ph,
-                    isCompleted: loggedSet.isCompleted,
-                    onCommit: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                loggedSet, weight: loggedSet.weight, reps: loggedSet.reps,
-                                time: newVal, distance: loggedSet.distance,
-                                bodyweightModifier: loggedSet.bodyweightModifier
-                            )
-                        }
-                    }
-                )
-            }
-
-            // Notes field
-            notesField(loggedSet, previous: previous)
-
-            // Check button
             checkButton(loggedSet)
+                .padding(.trailing, 14)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 5)
         .contextMenu {
             Button(role: .destructive) {
                 Task { await viewModel.deleteSet(loggedSet, from: loggedExercise) }
@@ -486,104 +416,6 @@ struct ActiveWorkoutView: View {
                 Label("Delete Set", systemImage: "trash")
             }
         }
-    }
-
-    // MARK: - Fused Input Pills
-
-    private func dualInputPill(
-        leftValue: Double?,
-        rightValue: Double?,
-        leftPlaceholder: String,
-        rightPlaceholder: String,
-        isCompleted: Bool,
-        onLeftCommit: @escaping (Double?) -> Void,
-        onRightCommit: @escaping (Double?) -> Void
-    ) -> some View {
-        HStack(spacing: 0) {
-            pillTextField(value: leftValue, placeholder: leftPlaceholder, onCommit: onLeftCommit)
-            Rectangle()
-                .fill(Color.borderDefault)
-                .frame(width: 1, height: 16)
-            pillTextField(value: rightValue, placeholder: rightPlaceholder, onCommit: onRightCommit)
-        }
-        .frame(width: 94)
-        .background(Color.bgInput)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
-    }
-
-    private func singleInputPill(
-        value: Double?,
-        placeholder: String,
-        isCompleted: Bool,
-        onCommit: @escaping (Double?) -> Void
-    ) -> some View {
-        pillTextField(value: value, placeholder: placeholder, onCommit: onCommit)
-            .frame(width: 46)
-            .background(Color.bgInput)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(Color.borderSubtle, lineWidth: 1)
-            )
-    }
-
-    private func pillTextField(value: Double?, placeholder: String, onCommit: @escaping (Double?) -> Void) -> some View {
-        let text = value.map { String(format: "%g", $0) } ?? ""
-        return TextField(placeholder, text: Binding(
-            get: { text },
-            set: { newText in
-                let cleaned = newText.filter { $0.isNumber || $0 == "." || $0 == "-" }
-                onCommit(Double(cleaned))
-            }
-        ))
-        .keyboardType(.decimalPad)
-        .font(.system(size: 13))
-        .foregroundStyle(Color.textPrimary)
-        .multilineTextAlignment(.center)
-        .padding(.vertical, 5)
-        .padding(.horizontal, 4)
-    }
-
-    // MARK: - Notes Field
-
-    private func notesField(_ loggedSet: SchemaV1.LoggedSet, previous: SchemaV1.LoggedSet?) -> some View {
-        let currentNotes = loggedSet.notes ?? ""
-        let placeholderText = previous?.notes ?? "Notes..."
-
-        return TextField(
-            placeholderText,
-            text: Binding(
-                get: { currentNotes },
-                set: { newValue in
-                    Task {
-                        await viewModel.updateSet(
-                            loggedSet,
-                            weight: loggedSet.weight,
-                            reps: loggedSet.reps,
-                            time: loggedSet.time,
-                            distance: loggedSet.distance,
-                            bodyweightModifier: loggedSet.bodyweightModifier,
-                            notes: newValue.isEmpty ? nil : newValue
-                        )
-                    }
-                }
-            )
-        )
-        .font(.system(size: 11))
-        .italic(currentNotes.isEmpty)
-        .foregroundStyle(currentNotes.isEmpty ? Color.textTertiary : Color.textSecondary)
-        .padding(.horizontal, .spacingSm)
-        .padding(.vertical, .spacingSm)
-        .background(currentNotes.isEmpty ? Color.clear : Color.white.opacity(0.02))
-        .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusSm)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
     }
 
     // MARK: - Check Button
@@ -632,6 +464,49 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    // MARK: - Unit Menu
+
+    @ViewBuilder
+    private func unitMenuSection(exercise: SchemaV1.Exercise, exerciseType: ExerciseType) -> some View {
+        switch exerciseType {
+        case .weightAndReps, .bodyweightAndReps, .weightAndTime:
+            Picker("Weight Unit", selection: Binding(
+                get: { exercise.preferredWeightUnit ?? viewModel.defaultWeightUnit },
+                set: { newUnit in
+                    Task {
+                        await viewModel.updateWeightUnit(
+                            exercise,
+                            unit: newUnit == viewModel.defaultWeightUnit ? nil : newUnit
+                        )
+                    }
+                }
+            )) {
+                ForEach(Units.allCases, id: \.self) { unit in
+                    Text(unit.displayName).tag(unit)
+                }
+            }
+            .pickerStyle(.inline)
+        case .distanceAndTime:
+            Picker("Distance Unit", selection: Binding(
+                get: { exercise.preferredDistanceUnit ?? viewModel.defaultDistanceUnit },
+                set: { newUnit in
+                    Task {
+                        await viewModel.updateDistanceUnit(
+                            exercise,
+                            unit: newUnit == viewModel.defaultDistanceUnit ? nil : newUnit
+                        )
+                    }
+                }
+            )) {
+                ForEach(DistanceUnits.allCases, id: \.self) { unit in
+                    Text(unit.displayName).tag(unit)
+                }
+            }
+            .pickerStyle(.inline)
+        case .reps, .time:
+            EmptyView()
+        }
+    }
 }
 
 // MARK: - Pulsing Dot

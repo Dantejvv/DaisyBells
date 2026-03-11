@@ -69,6 +69,11 @@ final class SplitDayService: SplitDayServiceProtocol {
             remainingDay.order = index
         }
 
+        // Clamp currentDayIndex if now out of bounds
+        if split.currentDayIndex >= split.days.count {
+            split.currentDayIndex = max(0, split.days.count - 1)
+        }
+
         try modelContext.save()
     }
 

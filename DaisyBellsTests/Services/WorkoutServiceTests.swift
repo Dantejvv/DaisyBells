@@ -188,7 +188,7 @@ struct WorkoutServiceTests {
         try await templateService.addExercise(exercise, to: template)
         let templateExercise = template.templateExercises[0]
         let set1 = try await templateService.addSet(to: templateExercise)
-        try await templateService.updateSet(set1, weight: 135, reps: 10, bodyweightModifier: nil, time: nil, distance: nil)
+        try await templateService.updateSet(set1, weight: 135, reps: 10, bodyweightModifier: nil, time: nil, distance: nil, notes: nil)
         _ = try await templateService.addSet(to: templateExercise)
         _ = try await templateService.addSet(to: templateExercise)
 

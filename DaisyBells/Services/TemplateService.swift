@@ -82,6 +82,7 @@ final class TemplateService: TemplateServiceProtocol {
                 newSet.bodyweightModifier = templateSet.bodyweightModifier
                 newSet.time = templateSet.time
                 newSet.distance = templateSet.distance
+                newSet.notes = templateSet.notes
                 newSet.templateExercise = newTemplateExercise
                 modelContext.insert(newSet)
             }
@@ -147,12 +148,32 @@ final class TemplateService: TemplateServiceProtocol {
         try modelContext.save()
     }
 
-    func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?) async throws {
+    func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?, notes: String?) async throws {
         set.weight = weight
         set.reps = reps
         set.bodyweightModifier = bodyweightModifier
         set.time = time
         set.distance = distance
+        set.notes = notes
+        try modelContext.save()
+    }
+
+    func addExerciseWithSets(_ exercise: SchemaV1.Exercise, to template: SchemaV1.WorkoutTemplate, setCount: Int) async throws {
+        let maxOrder = template.templateExercises.map(\.order).max() ?? -1
+        let templateExercise = SchemaV1.TemplateExercise(
+            exercise: exercise,
+            order: maxOrder + 1
+        )
+        templateExercise.template = template
+        modelContext.insert(templateExercise)
+
+        let count = max(setCount, 1)
+        for i in 0..<count {
+            let set = SchemaV1.TemplateSet(order: i)
+            set.templateExercise = templateExercise
+            modelContext.insert(set)
+        }
+
         try modelContext.save()
     }
 

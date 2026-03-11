@@ -3,6 +3,8 @@ import SwiftUI
 struct SetColumnHeaders: View {
     let exerciseType: ExerciseType
     var showCheckColumn: Bool = false
+    var weightUnit: Units = .lbs
+    var distanceUnit: DistanceUnits = .mi
 
     var body: some View {
         HStack(spacing: 6) {
@@ -11,13 +13,13 @@ struct SetColumnHeaders: View {
 
             switch exerciseType {
             case .weightAndReps:
-                dualColumnLabel("Lb", "Reps")
+                dualColumnLabel(weightUnit.shortLabel, "Reps")
             case .bodyweightAndReps:
-                dualColumnLabel("+/- Lb", "Reps")
+                dualColumnLabel("+/- \(weightUnit.shortLabel)", "Reps")
             case .distanceAndTime:
-                dualColumnLabel("Mi", "Time")
+                dualColumnLabel(distanceUnit.shortLabel, "Time")
             case .weightAndTime:
-                dualColumnLabel("Lb", "Time")
+                dualColumnLabel(weightUnit.shortLabel, "Time")
             case .reps:
                 Text("Reps")
                     .frame(width: 46)

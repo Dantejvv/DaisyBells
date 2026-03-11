@@ -36,7 +36,7 @@ struct HistoryListView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    // filter/calendar action — TBD
+                    viewModel.showCalendar()
                 } label: {
                     Image(systemName: "calendar")
                         .foregroundStyle(Color.textSecondary)
@@ -53,7 +53,6 @@ struct HistoryListView: View {
         )
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Workout List

@@ -24,6 +24,10 @@ final class CompletedWorkoutDetailViewModel {
         settingsService.units
     }
 
+    var distanceUnits: DistanceUnits {
+        settingsService.distanceUnits
+    }
+
     // MARK: - Init
 
     init(

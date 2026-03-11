@@ -7,12 +7,25 @@ enum HistoryRoute: Hashable {
     case workoutDetail(workoutId: PersistentIdentifier)
 }
 
+// MARK: - Sheet Enum
+
+enum HistorySheet: Identifiable {
+    case calendar
+
+    var id: String {
+        switch self {
+        case .calendar: return "calendar"
+        }
+    }
+}
+
 // MARK: - Router
 
 @MainActor
 @Observable
 final class HistoryRouter {
     var path: [HistoryRoute] = []
+    var presentedSheet: HistorySheet?
 
     // MARK: - Stack Navigation
 
@@ -27,6 +40,16 @@ final class HistoryRouter {
 
     func popToRoot() {
         path.removeAll()
+    }
+
+    // MARK: - Sheet Navigation
+
+    func presentCalendar() {
+        presentedSheet = .calendar
+    }
+
+    func dismissSheet() {
+        presentedSheet = nil
     }
 
     // MARK: - Convenience Navigation

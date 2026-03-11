@@ -4,17 +4,31 @@ import SwiftData
 @MainActor
 struct AnalyticsTabRootView: View {
     @Environment(AnalyticsRouter.self) private var router
+    @Environment(DependencyContainer.self) private var container
 
     var body: some View {
         @Bindable var router = router
 
         NavigationStack(path: $router.path) {
-            Text("Analytics Content - Phase 5")
-                .navigationTitle("Analytics")
-                .navigationDestination(for: AnalyticsRoute.self) { route in
-                    // Route handling will be implemented in Phase 5
-                    Text("Route: \(String(describing: route))")
+            AnalyticsDashboardView(
+                viewModel: AnalyticsDashboardViewModel(
+                    analyticsService: container.analyticsService,
+                    router: router
+                )
+            )
+            .navigationDestination(for: AnalyticsRoute.self) { route in
+                switch route {
+                case .exerciseAnalytics(let exerciseId):
+                    ExerciseAnalyticsView(
+                        viewModel: ExerciseAnalyticsViewModel(
+                            analyticsService: container.analyticsService,
+                            exerciseService: container.exerciseService,
+                            settingsService: container.settingsService,
+                            exerciseId: exerciseId
+                        )
+                    )
                 }
+            }
         }
     }
 }

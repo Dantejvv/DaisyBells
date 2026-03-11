@@ -22,6 +22,7 @@ final class TemplateDetailViewModel {
     private let templateService: TemplateServiceProtocol
     private let workoutService: WorkoutServiceProtocol?
     private let splitDayService: SplitDayServiceProtocol?
+    private let settingsService: SettingsServiceProtocol
     private let activeWorkoutManager: ActiveWorkoutManager?
     private let router: TemplateRouting
     private let templateId: PersistentIdentifier
@@ -32,6 +33,7 @@ final class TemplateDetailViewModel {
         templateService: TemplateServiceProtocol,
         workoutService: WorkoutServiceProtocol? = nil,
         splitDayService: SplitDayServiceProtocol? = nil,
+        settingsService: SettingsServiceProtocol,
         activeWorkoutManager: ActiveWorkoutManager? = nil,
         router: TemplateRouting,
         templateId: PersistentIdentifier
@@ -39,10 +41,14 @@ final class TemplateDetailViewModel {
         self.templateService = templateService
         self.workoutService = workoutService
         self.splitDayService = splitDayService
+        self.settingsService = settingsService
         self.activeWorkoutManager = activeWorkoutManager
         self.router = router
         self.templateId = templateId
     }
+
+    var defaultWeightUnit: Units { settingsService.units }
+    var defaultDistanceUnit: DistanceUnits { settingsService.distanceUnits }
 
     // MARK: - Intents
 

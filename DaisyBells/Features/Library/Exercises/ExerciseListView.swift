@@ -60,7 +60,6 @@ struct ExerciseListView: View {
         }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Exercise List

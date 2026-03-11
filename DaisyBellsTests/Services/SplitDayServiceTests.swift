@@ -267,6 +267,27 @@ struct SplitDayServiceTests {
     }
 
     @Test @MainActor
+    func deleteClampCurrentDayIndex() async throws {
+        let container = try makeTestModelContainer()
+        let splitService = SplitService(modelContext: container.mainContext)
+        let dayService = SplitDayService(modelContext: container.mainContext)
+
+        let split = try await splitService.create(name: "Test Split", notes: nil)
+        _ = try await dayService.create(name: "Day 1", split: split)
+        _ = try await dayService.create(name: "Day 2", split: split)
+        let day3 = try await dayService.create(name: "Day 3", split: split)
+
+        // Set current day to last index
+        split.currentDayIndex = 2
+
+        // Delete last day — currentDayIndex should clamp
+        try await dayService.delete(day3, from: split)
+
+        #expect(split.days.count == 2)
+        #expect(split.currentDayIndex == 1) // Clamped from 2 to 1
+    }
+
+    @Test @MainActor
     func deleteDayPreservesTemplates() async throws {
         let container = try makeTestModelContainer()
         let splitService = SplitService(modelContext: container.mainContext)

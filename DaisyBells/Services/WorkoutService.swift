@@ -36,24 +36,29 @@ final class WorkoutService: WorkoutServiceProtocol {
             loggedExercise.workout = workout
             modelContext.insert(loggedExercise)
 
-            let sortedTemplateSets = templateExercise.sets.sorted { $0.order < $1.order }
-            if sortedTemplateSets.isEmpty {
-                // No template sets defined — use previous performance count
-                let previousSets = try await lastPerformedSets(for: exercise)
-                let setCount = max(previousSets.count, 1)
+            let previousSets = try await lastPerformedSets(for: exercise)
+
+            if previousSets.isEmpty {
+                // No history — fall back to template sets
+                let sortedTemplateSets = templateExercise.sets.sorted { $0.order < $1.order }
+                let setCount = max(sortedTemplateSets.count, 1)
                 for i in 0..<setCount {
                     let loggedSet = SchemaV1.LoggedSet(order: i)
+                    if i < sortedTemplateSets.count {
+                        let templateSet = sortedTemplateSets[i]
+                        loggedSet.weight = templateSet.weight
+                        loggedSet.reps = templateSet.reps
+                        loggedSet.bodyweightModifier = templateSet.bodyweightModifier
+                        loggedSet.time = templateSet.time
+                        loggedSet.distance = templateSet.distance
+                    }
                     loggedSet.loggedExercise = loggedExercise
                     modelContext.insert(loggedSet)
                 }
             } else {
-                for templateSet in sortedTemplateSets {
-                    let loggedSet = SchemaV1.LoggedSet(order: templateSet.order)
-                    loggedSet.weight = templateSet.weight
-                    loggedSet.reps = templateSet.reps
-                    loggedSet.bodyweightModifier = templateSet.bodyweightModifier
-                    loggedSet.time = templateSet.time
-                    loggedSet.distance = templateSet.distance
+                // Has history — use previous performance count
+                for i in 0..<previousSets.count {
+                    let loggedSet = SchemaV1.LoggedSet(order: i)
                     loggedSet.loggedExercise = loggedExercise
                     modelContext.insert(loggedSet)
                 }

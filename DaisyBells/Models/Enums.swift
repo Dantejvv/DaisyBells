@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum ExerciseType: String, Codable, CaseIterable {
     case weightAndReps
@@ -44,6 +45,13 @@ enum Units: String, Codable, CaseIterable {
         case .kg: "Kilograms (kg)"
         }
     }
+
+    var shortLabel: String {
+        switch self {
+        case .lbs: "Lb"
+        case .kg: "Kg"
+        }
+    }
 }
 
 enum DistanceUnits: String, Codable, CaseIterable {
@@ -54,6 +62,13 @@ enum DistanceUnits: String, Codable, CaseIterable {
         switch self {
         case .mi: "Miles (mi)"
         case .km: "Kilometers (km)"
+        }
+    }
+
+    var shortLabel: String {
+        switch self {
+        case .mi: "Mi"
+        case .km: "Km"
         }
     }
 }
@@ -68,6 +83,14 @@ enum Appearance: String, Codable, CaseIterable {
         case .light: "Light"
         case .dark: "Dark"
         case .system: "System"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: .light
+        case .dark: .dark
+        case .system: nil
         }
     }
 }

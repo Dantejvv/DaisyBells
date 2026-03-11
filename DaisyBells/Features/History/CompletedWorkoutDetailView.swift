@@ -11,6 +11,8 @@ struct CompletedWorkoutDetailView: View {
                 LoadingSpinnerView()
             } else if let workout = viewModel.workout {
                 workoutContent(workout)
+            } else {
+                Color.clear
             }
         }
         .task { await viewModel.loadWorkout() }
@@ -36,7 +38,6 @@ struct CompletedWorkoutDetailView: View {
         )
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Workout Content
@@ -136,6 +137,8 @@ struct CompletedWorkoutDetailView: View {
         let exercise = loggedExercise.exercise
         let exerciseType = exercise?.type ?? .weightAndReps
         let sets = loggedExercise.sets.sorted { $0.order < $1.order }
+        let weightUnit = exercise?.resolvedWeightUnit(default: viewModel.units) ?? viewModel.units
+        let distanceUnit = exercise?.resolvedDistanceUnit(default: viewModel.distanceUnits) ?? viewModel.distanceUnits
 
         return ExerciseCardContainer {
             ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
@@ -154,7 +157,7 @@ struct CompletedWorkoutDetailView: View {
                     .padding(.bottom, .spacingXs)
             }
 
-            SetColumnHeaders(exerciseType: exerciseType)
+            SetColumnHeaders(exerciseType: exerciseType, weightUnit: weightUnit, distanceUnit: distanceUnit)
 
             Rectangle()
                 .fill(Color.borderSubtle)
@@ -165,6 +168,8 @@ struct CompletedWorkoutDetailView: View {
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     badgeStyle: .completed,
+                    weightUnit: weightUnit,
+                    distanceUnit: distanceUnit,
                     weight: loggedSet.weight,
                     reps: loggedSet.reps,
                     bodyweightModifier: loggedSet.bodyweightModifier,

@@ -13,10 +13,12 @@ struct TemplateDetailView: View {
                 LoadingSpinnerView()
             } else if let template = viewModel.template {
                 templateContent(template)
+            } else {
+                Color.clear
             }
         }
         .navigationTitle(viewModel.template?.name ?? "Template")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -40,7 +42,6 @@ struct TemplateDetailView: View {
             }
         )
         .background(Color.bgPrimary)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Content
@@ -48,12 +49,8 @@ struct TemplateDetailView: View {
     private func templateContent(_ template: SchemaV1.WorkoutTemplate) -> some View {
         ScrollView {
             VStack(spacing: 14) {
-                // Template info card
-                if let notes = template.notes, !notes.isEmpty {
-                    templateInfoCard(notes)
-                }
+                statusCard(template)
 
-                // Exercise cards
                 if viewModel.exercises.isEmpty {
                     emptyExercises
                 } else {
@@ -62,7 +59,6 @@ struct TemplateDetailView: View {
                     }
                 }
 
-                // Action buttons
                 actionsCard
             }
             .padding(.horizontal, .spacingBase)
@@ -70,27 +66,68 @@ struct TemplateDetailView: View {
         }
     }
 
-    // MARK: - Template Info
+    // MARK: - Status Card
 
-    private func templateInfoCard(_ notes: String) -> some View {
-        VStack(alignment: .leading, spacing: .spacingSm) {
-            Text("Notes")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.textTertiary)
-                .textCase(.uppercase)
+    private func statusCard(_ template: SchemaV1.WorkoutTemplate) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Template name
+            Text(template.name)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+                .frame(maxWidth: .infinity)
 
-            Text(notes)
-                .font(.system(size: 13))
-                .foregroundStyle(Color.textSecondary)
+            Divider()
+                .background(Color.borderSubtle)
+                .padding(.top, 10)
+
+            // Stats row
+            HStack(spacing: .spacingXl) {
+                statusStatItem(label: "Exercises", value: "\(viewModel.exercises.count)")
+                statusStatItem(label: "Sets", value: "\(totalSetCount)")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 10)
+
+            // Notes
+            if let notes = template.notes, !notes.isEmpty {
+                Divider()
+                    .background(Color.borderSubtle)
+                    .padding(.top, 10)
+
+                Text(notes)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, .spacingSm)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
+        .padding(.horizontal, 2)
         .background(Color.bgCard)
         .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
         .overlay(
             RoundedRectangle(cornerRadius: .radiusLg)
                 .stroke(Color.borderSubtle, lineWidth: 1)
         )
+    }
+
+    private func statusStatItem(label: String, value: String) -> some View {
+        VStack(spacing: .spacing2xs) {
+            Text(value)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.textTertiary)
+        }
+    }
+
+    private var totalSetCount: Int {
+        viewModel.exercises.reduce(0) { total, templateExercise in
+            let templateSets = templateExercise.sets.count
+            let previousSets = templateExercise.exercise.flatMap { viewModel.previousPerformance[$0.id] }?.count ?? 0
+            return total + (templateSets > 0 ? templateSets : max(previousSets, 1))
+        }
     }
 
     // MARK: - Empty State
@@ -119,6 +156,8 @@ struct TemplateDetailView: View {
         let templateSets = templateExercise.sets.sorted { $0.order < $1.order }
         let previousSets = exercise.flatMap { viewModel.previousPerformance[$0.id] } ?? []
         let setCount = templateSets.isEmpty ? max(previousSets.count, 1) : templateSets.count
+        let weightUnit = exercise?.resolvedWeightUnit(default: viewModel.defaultWeightUnit) ?? viewModel.defaultWeightUnit
+        let distanceUnit = exercise?.resolvedDistanceUnit(default: viewModel.defaultDistanceUnit) ?? viewModel.defaultDistanceUnit
 
         return ExerciseCardContainer {
             ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
@@ -127,17 +166,24 @@ struct TemplateDetailView: View {
                     .foregroundStyle(Color.textTertiary)
             }
 
-            // Exercise notes
             if let notes = templateExercise.notes, !notes.isEmpty {
                 Text(notes)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, .spacingSm)
+                    .padding(.vertical, .spacingSm)
+                    .background(Color.white.opacity(0.02))
+                    .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: .radiusSm)
+                            .stroke(Color.borderSubtle, lineWidth: 1)
+                    )
                     .padding(.horizontal, 14)
                     .padding(.bottom, .spacingXs)
             }
 
-            SetColumnHeaders(exerciseType: exerciseType)
+            SetColumnHeaders(exerciseType: exerciseType, weightUnit: weightUnit, distanceUnit: distanceUnit)
 
             Rectangle()
                 .fill(Color.borderSubtle)
@@ -151,6 +197,8 @@ struct TemplateDetailView: View {
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     badgeStyle: .neutral,
+                    weightUnit: weightUnit,
+                    distanceUnit: distanceUnit,
                     weight: templateSet?.weight ?? previousSet?.weight,
                     reps: templateSet?.reps ?? previousSet?.reps,
                     bodyweightModifier: templateSet?.bodyweightModifier ?? previousSet?.bodyweightModifier,
@@ -169,16 +217,6 @@ struct TemplateDetailView: View {
 
     private var actionsCard: some View {
         VStack(spacing: 0) {
-            if viewModel.canStartWorkout {
-                actionButton(title: "Start Workout", color: .accent) {
-                    Task { await viewModel.startWorkout() }
-                }
-
-                Rectangle()
-                    .fill(Color.borderSubtle)
-                    .frame(height: 1)
-            }
-
             actionButton(title: "Duplicate Template", color: .accent) {
                 Task { await viewModel.duplicateTemplate() }
             }
@@ -208,131 +246,4 @@ struct TemplateDetailView: View {
                 .padding(.vertical, 14)
         }
     }
-}
-
-// MARK: - Preview
-
-@MainActor
-private func makePreviewContainer() -> ModelContainer {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let schema = Schema(SchemaV1.models)
-    return try! ModelContainer(for: schema, configurations: config)
-}
-
-@MainActor
-private func seedTemplatePreview(in ctx: ModelContext) -> PersistentIdentifier {
-    let template = SchemaV1.WorkoutTemplate(name: "Push Day A")
-    template.notes = "Focus on progressive overload"
-    ctx.insert(template)
-
-    let bench = SchemaV1.Exercise(name: "Bench Press", type: .weightAndReps)
-    ctx.insert(bench)
-    let te1 = SchemaV1.TemplateExercise(exercise: bench, order: 0)
-    te1.template = template
-    ctx.insert(te1)
-    for i in 0..<3 {
-        let ts = SchemaV1.TemplateSet(order: i)
-        ts.weight = 135
-        ts.reps = 10
-        ts.templateExercise = te1
-        ctx.insert(ts)
-    }
-
-    let ohp = SchemaV1.Exercise(name: "Overhead Press", type: .weightAndReps)
-    ctx.insert(ohp)
-    let te2 = SchemaV1.TemplateExercise(exercise: ohp, order: 1)
-    te2.notes = "Strict form, no leg drive"
-    te2.template = template
-    ctx.insert(te2)
-    for i in 0..<3 {
-        let ts = SchemaV1.TemplateSet(order: i)
-        ts.weight = 95
-        ts.reps = 8
-        ts.templateExercise = te2
-        ctx.insert(ts)
-    }
-
-    let flyes = SchemaV1.Exercise(name: "Cable Flyes", type: .weightAndReps)
-    ctx.insert(flyes)
-    let te3 = SchemaV1.TemplateExercise(exercise: flyes, order: 2)
-    te3.template = template
-    ctx.insert(te3)
-
-    try! ctx.save()
-    return template.persistentModelID
-}
-
-@MainActor
-private final class PreviewTemplateService: TemplateServiceProtocol {
-    private let modelContext: ModelContext
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-    }
-
-    func fetchAll() async throws -> [SchemaV1.WorkoutTemplate] { [] }
-    func fetch(id: UUID) async throws -> SchemaV1.WorkoutTemplate { fatalError() }
-    func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.WorkoutTemplate? {
-        modelContext.model(for: persistentId) as? SchemaV1.WorkoutTemplate
-    }
-    func search(query: String) async throws -> [SchemaV1.WorkoutTemplate] { [] }
-    func create(name: String) async throws -> SchemaV1.WorkoutTemplate { fatalError() }
-    func update(_ template: SchemaV1.WorkoutTemplate) async throws {}
-    func duplicate(_ template: SchemaV1.WorkoutTemplate) async throws -> SchemaV1.WorkoutTemplate { fatalError() }
-    func delete(_ template: SchemaV1.WorkoutTemplate) async throws {}
-    func addExercise(_ exercise: SchemaV1.Exercise, to template: SchemaV1.WorkoutTemplate) async throws {}
-    func removeExercise(_ templateExercise: SchemaV1.TemplateExercise, from template: SchemaV1.WorkoutTemplate) async throws {}
-    func reorderExercises(_ template: SchemaV1.WorkoutTemplate, order: [UUID]) async throws {}
-    func addSet(to templateExercise: SchemaV1.TemplateExercise) async throws -> SchemaV1.TemplateSet { fatalError() }
-    func removeSet(_ set: SchemaV1.TemplateSet, from templateExercise: SchemaV1.TemplateExercise) async throws {}
-    func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?) async throws {}
-    func updateExerciseNotes(_ templateExercise: SchemaV1.TemplateExercise, notes: String?) async throws {}
-}
-
-@MainActor
-private final class PreviewTemplateRouter: TemplateRouting {
-    func navigateToTemplateDetail(templateId: PersistentIdentifier) {}
-    func presentTemplateForm(templateId: PersistentIdentifier?) {}
-    func dismissSheet() {}
-    func pop() {}
-}
-
-#Preview("Template Detail") {
-    let container = makePreviewContainer()
-    let templateId = seedTemplatePreview(in: container.mainContext)
-
-    NavigationStack {
-        TemplateDetailView(
-            viewModel: TemplateDetailViewModel(
-                templateService: PreviewTemplateService(modelContext: container.mainContext),
-                router: PreviewTemplateRouter(),
-                templateId: templateId
-            )
-        )
-    }
-    .modelContainer(container)
-}
-
-@MainActor
-private func seedEmptyTemplatePreview(in ctx: ModelContext) -> PersistentIdentifier {
-    let template = SchemaV1.WorkoutTemplate(name: "Empty Template")
-    ctx.insert(template)
-    try! ctx.save()
-    return template.persistentModelID
-}
-
-#Preview("Empty Template") {
-    let container = makePreviewContainer()
-    let templateId = seedEmptyTemplatePreview(in: container.mainContext)
-
-    NavigationStack {
-        TemplateDetailView(
-            viewModel: TemplateDetailViewModel(
-                templateService: PreviewTemplateService(modelContext: container.mainContext),
-                router: PreviewTemplateRouter(),
-                templateId: templateId
-            )
-        )
-    }
-    .modelContainer(container)
 }

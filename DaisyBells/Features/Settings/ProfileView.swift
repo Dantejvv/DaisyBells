@@ -16,7 +16,6 @@ struct ProfileView: View {
             .scrollContentBackground(.hidden)
             .background(Color.bgPrimary)
             .navigationTitle("Profile")
-            .preferredColorScheme(.dark)
             .task {
                 viewModel.loadSettings()
             }

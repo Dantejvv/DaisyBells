@@ -18,6 +18,9 @@ final class DependencyContainer {
     let analyticsService: AnalyticsService
     let seedingService: SeedingService
 
+    // Appearance
+    private(set) var currentAppearance: Appearance = .system
+
     // Active Workout
     let activeWorkoutManager: ActiveWorkoutManager
 
@@ -63,6 +66,13 @@ final class DependencyContainer {
         self.libraryRouter = LibraryRouter()
         self.historyRouter = HistoryRouter()
         self.analyticsRouter = AnalyticsRouter()
+
+        self.currentAppearance = settingsService.appearance
+    }
+
+    func updateAppearance(_ newAppearance: Appearance) {
+        settingsService.appearance = newAppearance
+        currentAppearance = newAppearance
     }
 
     func performSetup() async {

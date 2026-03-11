@@ -45,7 +45,6 @@ struct SplitListView: View {
         }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Split List

@@ -98,6 +98,12 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - Exercises with no history can be permanently deleted
 - Show archived exercises via optional toggle filter
 
+## View Coupling
+- **ActiveWorkoutView ↔ TemplateDetailView**: TemplateDetailView mirrors ActiveWorkoutView's layout as a read-only preview. When changing ActiveWorkoutView's exercise card or set row layout, update TemplateDetailView to match.
+
+## Testing
+- Do NOT run simulator tests (xcodebuild test). Just build the app to verify compilation.
+
 ## Avoid
 - Do not use @Query in views—fetch through services
 - Do not use singletons or global state

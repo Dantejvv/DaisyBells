@@ -51,7 +51,6 @@ struct ExercisePickerSheet: View {
             if shouldDismiss { dismiss() }
         }
         .background(Color.bgPrimary)
-        .preferredColorScheme(.dark)
     }
 
     private var hasActiveFilters: Bool {

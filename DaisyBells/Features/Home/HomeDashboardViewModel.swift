@@ -24,6 +24,8 @@ final class HomeDashboardViewModel {
     private let router: HomeRouter
 
     var hasActiveWorkout: Bool { activeWorkoutManager.hasActiveWorkout }
+    var completedDayCount: Int { splitDays.filter(\.isCompletedInCycle).count }
+    var currentDayIndex: Int { activeSplit?.currentDayIndex ?? 0 }
 
     // MARK: - Init
 
@@ -134,5 +136,29 @@ final class HomeDashboardViewModel {
 
     func resumeActiveWorkout() {
         activeWorkoutManager.showSheet()
+    }
+
+    // MARK: - Cycle Tracking
+
+    func setCurrentDay(index: Int) async {
+        errorMessage = nil
+        do {
+            guard let split = activeSplit else { return }
+            try await splitService.setCurrentDay(index: index, in: split)
+            await loadDashboard()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func skipDay(at index: Int) async {
+        errorMessage = nil
+        do {
+            guard let split = activeSplit else { return }
+            try await splitService.skipDay(at: index, in: split)
+            await loadDashboard()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

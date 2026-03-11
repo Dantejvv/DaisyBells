@@ -28,6 +28,7 @@ struct HomeTabRootView: View {
                             templateService: container.templateService,
                             workoutService: container.workoutService,
                             splitDayService: container.splitDayService,
+                            settingsService: container.settingsService,
                             activeWorkoutManager: container.activeWorkoutManager,
                             router: router,
                             templateId: templateId
@@ -53,6 +54,7 @@ struct HomeTabRootView: View {
                         viewModel: TemplateFormViewModel(
                             templateService: container.templateService,
                             exerciseService: container.exerciseService,
+                            workoutService: container.workoutService,
                             router: router,
                             templateId: templateId
                         )

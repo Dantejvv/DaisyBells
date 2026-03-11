@@ -176,10 +176,46 @@ struct TemplateServiceTests {
         let templateExercise = template.templateExercises[0]
         let set = try await templateService.addSet(to: templateExercise)
 
-        try await templateService.updateSet(set, weight: 225, reps: 5, bodyweightModifier: nil, time: nil, distance: nil)
+        try await templateService.updateSet(set, weight: 225, reps: 5, bodyweightModifier: nil, time: nil, distance: nil, notes: "Heavy")
 
         #expect(set.weight == 225)
         #expect(set.reps == 5)
+        #expect(set.notes == "Heavy")
+    }
+
+    @Test @MainActor
+    func addExerciseWithSetsCreatesMultipleSets() async throws {
+        let container = try makeTestModelContainer()
+        let templateService = TemplateService(modelContext: container.mainContext)
+        let exerciseService = ExerciseService(modelContext: container.mainContext)
+
+        let template = try await templateService.create(name: "Test")
+        let exercise = try await exerciseService.create(name: "Bench", type: .weightAndReps)
+
+        try await templateService.addExerciseWithSets(exercise, to: template, setCount: 3)
+
+        #expect(template.templateExercises.count == 1)
+        let templateExercise = template.templateExercises[0]
+        #expect(templateExercise.sets.count == 3)
+        let sorted = templateExercise.sets.sorted { $0.order < $1.order }
+        #expect(sorted[0].order == 0)
+        #expect(sorted[1].order == 1)
+        #expect(sorted[2].order == 2)
+    }
+
+    @Test @MainActor
+    func addExerciseWithSetsDefaultsToOneSet() async throws {
+        let container = try makeTestModelContainer()
+        let templateService = TemplateService(modelContext: container.mainContext)
+        let exerciseService = ExerciseService(modelContext: container.mainContext)
+
+        let template = try await templateService.create(name: "Test")
+        let exercise = try await exerciseService.create(name: "Squat", type: .weightAndReps)
+
+        try await templateService.addExerciseWithSets(exercise, to: template, setCount: 0)
+
+        #expect(template.templateExercises.count == 1)
+        #expect(template.templateExercises[0].sets.count == 1)
     }
 
     @Test @MainActor
@@ -194,7 +230,7 @@ struct TemplateServiceTests {
 
         let templateExercise = template.templateExercises[0]
         let set = try await templateService.addSet(to: templateExercise)
-        try await templateService.updateSet(set, weight: 135, reps: 10, bodyweightModifier: nil, time: nil, distance: nil)
+        try await templateService.updateSet(set, weight: 135, reps: 10, bodyweightModifier: nil, time: nil, distance: nil, notes: nil)
 
         let copy = try await templateService.duplicate(template)
 

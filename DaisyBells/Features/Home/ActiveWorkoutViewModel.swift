@@ -27,6 +27,7 @@ final class ActiveWorkoutViewModel {
     private let loggedExerciseService: LoggedExerciseServiceProtocol
     private let loggedSetService: LoggedSetServiceProtocol
     private let templateService: TemplateServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let workoutId: PersistentIdentifier
     private var timerTask: Task<Void, Never>? {
         willSet {
@@ -47,6 +48,7 @@ final class ActiveWorkoutViewModel {
         loggedExerciseService: LoggedExerciseServiceProtocol,
         loggedSetService: LoggedSetServiceProtocol,
         templateService: TemplateServiceProtocol,
+        settingsService: SettingsServiceProtocol,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService
@@ -54,8 +56,12 @@ final class ActiveWorkoutViewModel {
         self.loggedExerciseService = loggedExerciseService
         self.loggedSetService = loggedSetService
         self.templateService = templateService
+        self.settingsService = settingsService
         self.workoutId = workoutId
     }
+
+    var defaultWeightUnit: Units { settingsService.units }
+    var defaultDistanceUnit: DistanceUnits { settingsService.distanceUnits }
 
     // MARK: - Computed Properties
 
@@ -221,6 +227,26 @@ final class ActiveWorkoutViewModel {
         errorMessage = nil
         do {
             try await loggedSetService.toggleCompletion(set)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateWeightUnit(_ exercise: SchemaV1.Exercise, unit: Units?) async {
+        exercise.preferredWeightUnit = unit
+        errorMessage = nil
+        do {
+            try await exerciseService.update(exercise)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateDistanceUnit(_ exercise: SchemaV1.Exercise, unit: DistanceUnits?) async {
+        exercise.preferredDistanceUnit = unit
+        errorMessage = nil
+        do {
+            try await exerciseService.update(exercise)
         } catch {
             errorMessage = error.localizedDescription
         }

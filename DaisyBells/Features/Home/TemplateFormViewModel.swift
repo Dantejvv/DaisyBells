@@ -11,6 +11,7 @@ final class TemplateFormViewModel {
     private(set) var exercises: [SchemaV1.TemplateExercise] = []
     private(set) var isEditing = false
     private(set) var isSaving = false
+    private(set) var previousPerformance: [UUID: [SchemaV1.LoggedSet]] = [:]
     var errorMessage: String?
 
     // Exercise picker sheet state (managed locally, not via router)
@@ -20,6 +21,7 @@ final class TemplateFormViewModel {
 
     private let templateService: TemplateServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
+    private let workoutService: WorkoutServiceProtocol
     private let router: TemplateRouting
     private let templateId: PersistentIdentifier?
     private var template: SchemaV1.WorkoutTemplate?
@@ -29,11 +31,13 @@ final class TemplateFormViewModel {
     init(
         templateService: TemplateServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
+        workoutService: WorkoutServiceProtocol,
         router: TemplateRouting,
         templateId: PersistentIdentifier? = nil
     ) {
         self.templateService = templateService
         self.exerciseService = exerciseService
+        self.workoutService = workoutService
         self.router = router
         self.templateId = templateId
         self.isEditing = templateId != nil
@@ -50,6 +54,11 @@ final class TemplateFormViewModel {
             name = templateModel.name
             notes = templateModel.notes ?? ""
             exercises = templateModel.templateExercises.sorted { $0.order < $1.order }
+
+            for templateExercise in exercises {
+                guard let exercise = templateExercise.exercise else { continue }
+                await loadPreviousPerformance(for: exercise)
+            }
         }
     }
 
@@ -86,7 +95,9 @@ final class TemplateFormViewModel {
         for exerciseId in exerciseIds {
             guard let exercise = exerciseService.fetch(by: exerciseId) else { continue }
             do {
-                try await templateService.addExercise(exercise, to: template)
+                await loadPreviousPerformance(for: exercise)
+                let previousCount = previousPerformance[exercise.id]?.count ?? 0
+                try await templateService.addExerciseWithSets(exercise, to: template, setCount: previousCount)
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -124,6 +135,50 @@ final class TemplateFormViewModel {
         }
     }
 
+    func addSet(to templateExercise: SchemaV1.TemplateExercise) async {
+        errorMessage = nil
+        do {
+            _ = try await templateService.addSet(to: templateExercise)
+            exercises = template?.templateExercises.sorted { $0.order < $1.order } ?? exercises
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func removeSet(_ set: SchemaV1.TemplateSet, from templateExercise: SchemaV1.TemplateExercise) async {
+        errorMessage = nil
+        do {
+            try await templateService.removeSet(set, from: templateExercise)
+            exercises = template?.templateExercises.sorted { $0.order < $1.order } ?? exercises
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateSet(
+        _ set: SchemaV1.TemplateSet,
+        weight: Double?,
+        reps: Int?,
+        bodyweightModifier: Double?,
+        time: TimeInterval?,
+        distance: Double?,
+        notes: String?
+    ) async {
+        do {
+            try await templateService.updateSet(set, weight: weight, reps: reps, bodyweightModifier: bodyweightModifier, time: time, distance: distance, notes: notes)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateExerciseNotes(_ templateExercise: SchemaV1.TemplateExercise, notes: String?) async {
+        do {
+            try await templateService.updateExerciseNotes(templateExercise, notes: notes)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func save() async {
         guard validate() else { return }
 
@@ -156,5 +211,14 @@ final class TemplateFormViewModel {
             return false
         }
         return true
+    }
+
+    private func loadPreviousPerformance(for exercise: SchemaV1.Exercise) async {
+        do {
+            let sets = try await workoutService.lastPerformedSets(for: exercise)
+            previousPerformance[exercise.id] = sets
+        } catch {
+            // Non-critical — just means no placeholders
+        }
     }
 }

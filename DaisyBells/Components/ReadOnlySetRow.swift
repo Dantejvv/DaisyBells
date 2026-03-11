@@ -4,6 +4,8 @@ struct ReadOnlySetRow: View {
     let exerciseType: ExerciseType
     let setNumber: Int
     let badgeStyle: SetNumberBadge.Style
+    var weightUnit: Units = .lbs
+    var distanceUnit: DistanceUnits = .mi
     var weight: Double?
     var reps: Int?
     var bodyweightModifier: Double?
@@ -47,6 +49,14 @@ struct ReadOnlySetRow: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, .spacingSm)
+                    .padding(.vertical, .spacingSm)
+                    .background(Color.white.opacity(0.02))
+                    .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: .radiusSm)
+                            .stroke(Color.borderSubtle, lineWidth: 1)
+                    )
             } else {
                 Color.clear
                     .frame(maxWidth: .infinity)

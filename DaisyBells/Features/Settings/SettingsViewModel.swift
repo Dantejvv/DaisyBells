@@ -15,11 +15,13 @@ final class SettingsViewModel {
     // MARK: - Dependencies
 
     private let settingsService: SettingsServiceProtocol
+    private let container: DependencyContainer?
 
     // MARK: - Init
 
-    init(settingsService: SettingsServiceProtocol) {
+    init(settingsService: SettingsServiceProtocol, container: DependencyContainer? = nil) {
         self.settingsService = settingsService
+        self.container = container
     }
 
     // MARK: - Intents
@@ -42,7 +44,11 @@ final class SettingsViewModel {
     }
 
     func updateAppearance(_ newAppearance: Appearance) {
-        settingsService.appearance = newAppearance
+        if let container {
+            container.updateAppearance(newAppearance)
+        } else {
+            settingsService.appearance = newAppearance
+        }
         appearance = newAppearance
     }
 

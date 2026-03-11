@@ -16,6 +16,7 @@ struct DaisyBellsApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .preferredColorScheme(dependencyContainer.currentAppearance.colorScheme)
                 .task {
                     await dependencyContainer.performSetup()
                 }

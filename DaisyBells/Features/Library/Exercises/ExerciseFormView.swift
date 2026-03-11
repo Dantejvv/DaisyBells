@@ -30,7 +30,6 @@ struct ExerciseFormView: View {
         }
         .task { await viewModel.load() }
         .errorAlert(errorMessage: $viewModel.errorMessage)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Sections

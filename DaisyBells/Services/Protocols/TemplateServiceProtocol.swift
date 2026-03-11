@@ -16,6 +16,7 @@ protocol TemplateServiceProtocol {
     func reorderExercises(_ template: SchemaV1.WorkoutTemplate, order: [UUID]) async throws
     func addSet(to templateExercise: SchemaV1.TemplateExercise) async throws -> SchemaV1.TemplateSet
     func removeSet(_ set: SchemaV1.TemplateSet, from templateExercise: SchemaV1.TemplateExercise) async throws
-    func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?) async throws
+    func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?, notes: String?) async throws
+    func addExerciseWithSets(_ exercise: SchemaV1.Exercise, to template: SchemaV1.WorkoutTemplate, setCount: Int) async throws
     func updateExerciseNotes(_ templateExercise: SchemaV1.TemplateExercise, notes: String?) async throws
 }

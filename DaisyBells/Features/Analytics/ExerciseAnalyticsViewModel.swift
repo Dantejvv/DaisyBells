@@ -17,17 +17,23 @@ final class ExerciseAnalyticsViewModel {
 
     private let analyticsService: AnalyticsServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let exerciseId: PersistentIdentifier
+
+    var units: Units { settingsService.units }
+    var distanceUnits: DistanceUnits { settingsService.distanceUnits }
 
     // MARK: - Init
 
     init(
         analyticsService: AnalyticsServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
+        settingsService: SettingsServiceProtocol,
         exerciseId: PersistentIdentifier
     ) {
         self.analyticsService = analyticsService
         self.exerciseService = exerciseService
+        self.settingsService = settingsService
         self.exerciseId = exerciseId
     }
 

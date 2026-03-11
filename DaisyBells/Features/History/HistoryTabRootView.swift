@@ -31,5 +31,15 @@ struct HistoryTabRootView: View {
                 }
             }
         }
+        .sheet(item: $router.presentedSheet) { sheet in
+            switch sheet {
+            case .calendar:
+                HistoryCalendarSheet(
+                    viewModel: HistoryCalendarViewModel(
+                        workoutService: container.workoutService
+                    )
+                )
+            }
+        }
     }
 }

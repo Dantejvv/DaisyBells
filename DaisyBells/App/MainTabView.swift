@@ -36,15 +36,16 @@ struct MainTabView: View {
                     Label("Analytics", systemImage: "chart.bar")
                 }
 
-            ProfileView(viewModel: SettingsViewModel(settingsService: container.settingsService))
+            ProfileView(viewModel: SettingsViewModel(settingsService: container.settingsService, container: container))
                 .tabItem {
                     Label("Profile", systemImage: "person")
                 }
         }
-        .safeAreaInset(edge: .bottom) {
+        .overlay(alignment: .bottom) {
             if manager.hasActiveWorkout && !manager.isShowingSheet {
                 ActiveWorkoutFloatingButton()
                     .environment(container.activeWorkoutManager)
+                    .padding(.bottom, 52)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

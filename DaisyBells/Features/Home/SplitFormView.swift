@@ -59,7 +59,6 @@ struct SplitFormView: View {
                 )
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Name & Notes Section
