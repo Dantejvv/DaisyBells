@@ -162,7 +162,7 @@ struct ExercisePickerSheet: View {
                     menuItem("Favorites Only", isSelected: viewModel.showFavoritesOnly)
                 }
                 Button {
-                    viewModel.toggleArchivedFilter()
+                    Task { await viewModel.toggleArchivedFilter() }
                 } label: {
                     menuItem("Show Archived", isSelected: viewModel.showArchived)
                 }

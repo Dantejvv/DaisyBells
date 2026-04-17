@@ -13,6 +13,7 @@ struct AnalyticsTabRootView: View {
             AnalyticsDashboardView(
                 viewModel: AnalyticsDashboardViewModel(
                     analyticsService: container.analyticsService,
+                    settingsService: container.settingsService,
                     router: router
                 )
             )

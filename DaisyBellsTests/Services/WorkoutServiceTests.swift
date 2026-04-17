@@ -122,7 +122,7 @@ struct WorkoutServiceTests {
         let workout = try await workoutService.createEmpty()
         let exercise = try await exerciseService.create(name: "Bench", type: .weightAndReps)
 
-        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0, weightUnit: .lbs, distanceUnit: nil)
 
         #expect(workout.loggedExercises.count == 1)
         #expect(logged.exercise?.name == "Bench")
@@ -139,9 +139,9 @@ struct WorkoutServiceTests {
 
         let workout = try await workoutService.createEmpty()
         let exercise = try await exerciseService.create(name: "Squat", type: .weightAndReps)
-        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0, weightUnit: .lbs, distanceUnit: nil)
 
-        _ = try await loggedSetService.create(loggedExercise: logged, order: 1)
+        _ = try await loggedSetService.create(loggedExercise: logged, order: 1, weightUnit: .lbs, distanceUnit: nil)
 
         #expect(logged.sets.count == 2)
     }
@@ -156,24 +156,13 @@ struct WorkoutServiceTests {
 
         let workout = try await workoutService.createEmpty()
         let exercise = try await exerciseService.create(name: "Deadlift", type: .weightAndReps)
-        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0, weightUnit: .lbs, distanceUnit: nil)
         let set = logged.sets[0]
 
         try await loggedSetService.update(set, weight: 225, reps: 5, bodyweightModifier: nil, time: nil, distance: nil, notes: nil)
 
         #expect(set.weight == 225)
         #expect(set.reps == 5)
-    }
-
-    @Test @MainActor
-    func updateNotes() async throws {
-        let container = try makeTestModelContainer()
-        let service = makeWorkoutService(modelContext: container.mainContext)
-
-        let workout = try await service.createEmpty()
-        try await service.updateNotes(workout, notes: "Great session")
-
-        #expect(workout.notes == "Great session")
     }
 
     @Test @MainActor

@@ -7,8 +7,7 @@ struct HomeDashboardView: View {
     @Environment(HomeRouter.self) private var router
 
     @State private var expandedTemplateIds: Set<UUID> = []
-    @State private var expandedDayIds: Set<UUID> = []
-    @State private var swipedDayId: UUID?
+    @State private var selectedDayId: UUID?
 
     var body: some View {
         Group {
@@ -23,6 +22,22 @@ struct HomeDashboardView: View {
             if isDismissed {
                 Task { await viewModel.loadDashboard() }
             }
+        }
+        .onChange(of: viewModel.hasActiveWorkout) { oldValue, newValue in
+            if oldValue && !newValue {
+                Task { await viewModel.loadDashboard() }
+            }
+        }
+        .alert(
+            "Delete Template",
+            isPresented: $viewModel.showDeleteConfirmation
+        ) {
+            Button("Delete", role: .destructive) {
+                Task { await viewModel.confirmDelete() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to delete \"\(viewModel.templatePendingDelete?.name ?? "this template")\"?")
         }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
@@ -82,22 +97,40 @@ struct HomeDashboardView: View {
     }
 
     private func expandedSplitDashboard(_ split: SchemaV1.Split) -> some View {
-        VStack(alignment: .leading, spacing: .spacingMd) {
-            // Header
-            HStack {
-                Text(split.name)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.textPrimary)
+        let completed = viewModel.completedDayCount
+        let total = viewModel.splitDays.count
+        let progress = total > 0 ? CGFloat(completed) / CGFloat(total) : 0
+
+        return VStack(spacing: .spacingXl) {
+            // Mini ring + text header
+            HStack(spacing: .spacingMd) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.bgInput, lineWidth: 4)
+                        .frame(width: 48, height: 48)
+
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(Color.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 48, height: 48)
+                        .rotationEffect(.degrees(-90))
+
+                    Text("\(completed)/\(total)")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.textPrimary)
+                }
+
+                VStack(alignment: .leading, spacing: .spacing2xs) {
+                    Text(split.name)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.textPrimary)
+
+                    Text("\(completed) of \(total) days")
+                        .font(.caption)
+                        .foregroundStyle(Color.textTertiary)
+                }
 
                 Spacer()
-
-                Text("\(viewModel.completedDayCount)/\(viewModel.splitDays.count)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.accent)
-                    .padding(.horizontal, .spacingSm)
-                    .padding(.vertical, .spacing2xs)
-                    .background(Color.accentBg)
-                    .clipShape(Capsule())
 
                 Button("Manage") {
                     router.navigateToSplitList()
@@ -106,14 +139,213 @@ struct HomeDashboardView: View {
                 .foregroundStyle(Color.accent)
             }
 
-            // Progress bar
-            splitProgressBar
+            // Day chips grid
+            splitDayChips
 
-            // Day list
-            VStack(spacing: .spacingXs) {
-                ForEach(Array(viewModel.splitDays.enumerated()), id: \.element.id) { index, day in
-                    splitDayRow(day, index: index)
+            if viewModel.isCycleComplete {
+                // Cycle complete state
+                cycleCompleteCard
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            } else if let selectedDay = viewModel.splitDays.first(where: { $0.id == selectedDayId }) {
+                // Detail panel for selected day
+                splitDayDetailPanel(for: selectedDay)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .onAppear {
+            if selectedDayId == nil, !viewModel.splitDays.isEmpty {
+                if let suggestedIndex = viewModel.suggestedDayIndex {
+                    selectedDayId = viewModel.splitDays[suggestedIndex].id
+                } else {
+                    selectedDayId = viewModel.splitDays.first?.id
                 }
+            }
+        }
+        .onChange(of: viewModel.completedDayCount) {
+            guard !viewModel.splitDays.isEmpty else { return }
+            if let suggestedIndex = viewModel.suggestedDayIndex {
+                withAnimation(.snappy(duration: 0.2)) {
+                    selectedDayId = viewModel.splitDays[suggestedIndex].id
+                }
+            }
+        }
+    }
+
+    // MARK: - Day Chips
+
+    private var splitDayChips: some View {
+        let columns = [
+            GridItem(.flexible(), spacing: .spacingSm),
+            GridItem(.flexible(), spacing: .spacingSm),
+            GridItem(.flexible(), spacing: .spacingSm),
+        ]
+
+        return LazyVGrid(columns: columns, spacing: .spacingSm) {
+            ForEach(Array(viewModel.splitDays.enumerated()), id: \.element.id) { index, day in
+                let isSuggested = index == viewModel.suggestedDayIndex
+                let isSelected = selectedDayId == day.id
+
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) {
+                        selectedDayId = isSelected ? nil : day.id
+                    }
+                } label: {
+                    HStack(spacing: .spacingXs) {
+                        if day.isCompletedInCycle {
+                            Image(systemName: "checkmark")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(Color.success)
+                        }
+
+                        Text(day.name)
+                            .font(.subheadline.weight(isSuggested ? .semibold : .regular))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(
+                        day.isCompletedInCycle ? Color.success :
+                        (isSuggested ? Color.white : Color.textPrimary)
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, .spacingSm)
+                    .padding(.horizontal, .spacingSm)
+                    .background(
+                        day.isCompletedInCycle ? Color.successBg :
+                        (isSuggested ? Color.accent : Color.bgCard)
+                    )
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                isSelected ? Color.accent : Color.borderSubtle,
+                                lineWidth: isSelected ? 2 : 1
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Cycle Complete
+
+    private var cycleCompleteCard: some View {
+        VStack(spacing: .spacingMd) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 36))
+                .foregroundStyle(Color.success)
+
+            Text("Cycle Complete!")
+                .font(.headline)
+                .foregroundStyle(Color.textPrimary)
+
+            Text("You've completed all days in this split.")
+                .font(.subheadline)
+                .foregroundStyle(Color.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                Task { await viewModel.resetCycle() }
+            } label: {
+                Text("Start New Cycle")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, .spacingSm)
+                    .background(Color.accent)
+                    .clipShape(RoundedRectangle(cornerRadius: .radiusMd))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.spacingBase)
+        .background(Color.bgCard)
+        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
+        .overlay(
+            RoundedRectangle(cornerRadius: .radiusLg)
+                .stroke(Color.borderSubtle, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Detail Panel
+
+    private func splitDayDetailPanel(for day: SchemaV1.SplitDay) -> some View {
+        let index = viewModel.splitDays.firstIndex(where: { $0.id == day.id }) ?? 0
+        let isSuggested = index == viewModel.suggestedDayIndex
+
+        return VStack(alignment: .leading, spacing: .spacingSm) {
+            HStack {
+                Text(day.name)
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+
+                if isSuggested {
+                    Text("UP NEXT")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color.accent)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentBg)
+                        .clipShape(Capsule())
+                }
+
+                Spacer()
+
+                if day.isCompletedInCycle {
+                    Label("Complete", systemImage: "checkmark.circle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color.success)
+                }
+            }
+
+            ForEach(day.assignedWorkouts, id: \.id) { template in
+                HStack {
+                    Text(template.name)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textSecondary)
+
+                    Spacer()
+
+                    if !day.isCompletedInCycle {
+                        Button {
+                            Task { await viewModel.startSplitDayWorkout(template, dayIndex: index) }
+                        } label: {
+                            Text("Start")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(viewModel.hasActiveWorkout ? Color.textTertiary : Color.accent)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.hasActiveWorkout)
+                    }
+                }
+            }
+
+            Divider()
+
+            if day.isCompletedInCycle {
+                HStack {
+                    Button {
+                        Task { await viewModel.uncompleteDay(at: index) }
+                    } label: {
+                        Label("Mark Incomplete", systemImage: "arrow.uturn.backward")
+                    }
+                    .foregroundStyle(Color.textSecondary)
+
+                    Spacer()
+                }
+                .font(.subheadline.weight(.medium))
+                .buttonStyle(.plain)
+            } else {
+                HStack {
+                    Spacer()
+
+                    Button {
+                        Task { await viewModel.skipDay(at: index) }
+                    } label: {
+                        Label("Skip", systemImage: "forward.fill")
+                    }
+                    .foregroundStyle(Color.textSecondary)
+                }
+                .font(.subheadline.weight(.medium))
+                .buttonStyle(.plain)
             }
         }
         .padding(.spacingBase)
@@ -125,191 +357,6 @@ struct HomeDashboardView: View {
         )
     }
 
-    private var splitProgressBar: some View {
-        GeometryReader { geo in
-            let total = viewModel.splitDays.count
-            let progress = total > 0 ? CGFloat(viewModel.completedDayCount) / CGFloat(total) : 0
-
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.bgInput)
-                    .frame(height: 6)
-
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.accent)
-                    .frame(width: geo.size.width * progress, height: 6)
-            }
-        }
-        .frame(height: 6)
-    }
-
-    // MARK: - Split Day Row
-
-    private func splitDayRow(_ day: SchemaV1.SplitDay, index: Int) -> some View {
-        let isCurrent = index == viewModel.currentDayIndex
-        let isPrevious = index == viewModel.currentDayIndex - 1
-        let isNext = index == viewModel.currentDayIndex + 1
-        let isExpanded = expandedDayIds.contains(day.id)
-        let isSwiped = swipedDayId == day.id
-
-        return ZStack(alignment: .trailing) {
-            // Swipe action buttons (behind the row)
-            HStack(spacing: 0) {
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        Task { await viewModel.setCurrentDay(index: index) }
-                        swipedDayId = nil
-                    }
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.callout)
-                        Text("Set Next")
-                            .font(.system(size: 10, weight: .medium))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(width: 72, height: 56)
-                    .background(Color.accent)
-                }
-
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        Task { await viewModel.skipDay(at: index) }
-                        swipedDayId = nil
-                    }
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "forward.fill")
-                            .font(.callout)
-                        Text("Skip")
-                            .font(.system(size: 10, weight: .medium))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(width: 72, height: 56)
-                    .background(Color.textSecondary)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: .radiusMd))
-
-            // Foreground row content
-            VStack(alignment: .leading, spacing: 0) {
-                // Main row
-                HStack(spacing: .spacingSm) {
-                    // Completion indicator
-                    ZStack {
-                        Circle()
-                            .fill(day.isCompletedInCycle ? Color.success.opacity(0.15) : Color.bgInput)
-                            .frame(width: 28, height: 28)
-
-                        if day.isCompletedInCycle {
-                            Image(systemName: "checkmark")
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(Color.success)
-                        } else if isCurrent {
-                            Circle()
-                                .fill(Color.accent)
-                                .frame(width: 10, height: 10)
-                        }
-                    }
-
-                    // Day info
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: .spacingXs) {
-                            Text(day.name)
-                                .font(.subheadline.weight(isCurrent ? .semibold : .regular))
-                                .foregroundStyle(isCurrent ? Color.textPrimary : (day.isCompletedInCycle ? Color.textTertiary : Color.textSecondary))
-
-                            if isCurrent {
-                                Text("UP NEXT")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(Color.accent)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.accentBg)
-                                    .clipShape(Capsule())
-                            }
-                        }
-
-                        Text("\(day.assignedWorkouts.count) workout\(day.assignedWorkouts.count == 1 ? "" : "s")")
-                            .font(.caption)
-                            .foregroundStyle(Color.textTertiary)
-                    }
-
-                    Spacer()
-
-                    // Expand chevron
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Color.textTertiary)
-                }
-                .padding(.vertical, .spacingSm)
-                .padding(.horizontal, .spacingSm)
-
-                // Expanded workout list
-                if isExpanded {
-                    VStack(spacing: .spacingXs) {
-                        ForEach(day.assignedWorkouts, id: \.id) { template in
-                            HStack {
-                                Text(template.name)
-                                    .font(.caption)
-                                    .foregroundStyle(Color.textSecondary)
-
-                                Spacer()
-
-                                Button {
-                                    Task { await viewModel.startWorkoutFromTemplate(template) }
-                                } label: {
-                                    Text("Start")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(viewModel.hasActiveWorkout ? Color.textTertiary : Color.accent)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(viewModel.hasActiveWorkout)
-                            }
-                            .padding(.horizontal, .spacingSm)
-                        }
-                    }
-                    .padding(.bottom, .spacingSm)
-                    .padding(.leading, 36)
-                }
-            }
-            .background(
-                isCurrent
-                    ? Color.accentBg
-                    : (isPrevious || isNext ? Color.bgInput.opacity(0.5) : Color.bgCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: .radiusMd))
-            .offset(x: isSwiped ? -144 : 0)
-            .gesture(
-                DragGesture(minimumDistance: 20)
-                    .onEnded { value in
-                        withAnimation(.snappy(duration: 0.2)) {
-                            if value.translation.width < -50 {
-                                swipedDayId = day.id
-                            } else {
-                                swipedDayId = nil
-                            }
-                        }
-                    }
-            )
-            .onTapGesture {
-                if isSwiped {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        swipedDayId = nil
-                    }
-                } else {
-                    withAnimation(.snappy(duration: 0.2)) {
-                        if isExpanded {
-                            expandedDayIds.remove(day.id)
-                        } else {
-                            expandedDayIds.insert(day.id)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - Templates Section
 
     private var templatesSection: some View {
@@ -317,6 +364,11 @@ struct HomeDashboardView: View {
             templatesSectionHeader
 
             if viewModel.templates.isEmpty {
+                NewWorkoutCard(
+                    isDisabled: viewModel.hasActiveWorkout,
+                    onStart: { Task { await viewModel.startEmptyWorkout() } }
+                )
+
                 EmptyStateView(
                     icon: "doc.text",
                     title: "No Templates Yet",
@@ -344,7 +396,6 @@ struct HomeDashboardView: View {
                             name: template.name,
                             exercises: exercises,
                             isExpanded: expandedTemplateIds.contains(template.id),
-                            isPendingDelete: viewModel.templatePendingDelete?.id == template.id,
                             startDisabled: viewModel.hasActiveWorkout,
                             onToggleExpand: {
                                 withAnimation(.snappy(duration: 0.2)) {
@@ -359,9 +410,7 @@ struct HomeDashboardView: View {
                                 Task { await viewModel.startWorkoutFromTemplate(template) }
                             },
                             onEdit: { viewModel.editTemplate(template) },
-                            onRequestDelete: { viewModel.requestDelete(template) },
-                            onCancelDelete: { viewModel.cancelDelete() },
-                            onConfirmDelete: { Task { await viewModel.confirmDelete() } },
+                            onDelete: { viewModel.requestDelete(template) },
                             onViewDetail: { router.navigateToTemplateDetail(templateId: template.persistentModelID) },
                             style: .card
                         )

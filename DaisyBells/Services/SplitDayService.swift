@@ -40,9 +40,26 @@ final class SplitDayService: SplitDayServiceProtocol {
         let day = SchemaV1.SplitDay(name: name, order: nextOrder)
         modelContext.insert(day)
 
-        // Establish relationship
+        // Establish relationship (inverse automatically adds to split.days)
         day.split = split
-        split.days.append(day)
+
+        try modelContext.save()
+        return day
+    }
+
+    func create(name: String, split: SchemaV1.Split, assigningWorkouts templates: [SchemaV1.WorkoutTemplate]) async throws -> SchemaV1.SplitDay {
+        let nextOrder = split.days.count
+
+        let day = SchemaV1.SplitDay(name: name, order: nextOrder)
+        modelContext.insert(day)
+
+        // Establish relationship (inverse automatically adds to split.days)
+        day.split = split
+
+        // Assign all workouts before saving
+        for template in templates {
+            day.assignedWorkouts.append(template)
+        }
 
         try modelContext.save()
         return day
@@ -60,36 +77,19 @@ final class SplitDayService: SplitDayServiceProtocol {
 
         modelContext.delete(day)
 
-        // Sort remaining days by current order and reorder
-        let sortedDays = split.days.sorted(by: { $0.order < $1.order })
-        split.days = sortedDays
-
         // Reorder remaining days
-        for (index, remainingDay) in split.days.enumerated() {
+        let sortedDays = split.days.sorted(by: { $0.order < $1.order })
+        for (index, remainingDay) in sortedDays.enumerated() {
             remainingDay.order = index
-        }
-
-        // Clamp currentDayIndex if now out of bounds
-        if split.currentDayIndex >= split.days.count {
-            split.currentDayIndex = max(0, split.days.count - 1)
         }
 
         try modelContext.save()
     }
 
     func reorder(days: [SchemaV1.SplitDay], in split: SchemaV1.Split) async throws {
-        // Update order based on array position
         for (index, day) in days.enumerated() {
             day.order = index
         }
-
-        // Update split's days array to match new order
-        // Clear and rebuild to ensure SwiftData respects the order
-        split.days.removeAll()
-        for day in days {
-            split.days.append(day)
-        }
-
         try modelContext.save()
     }
 

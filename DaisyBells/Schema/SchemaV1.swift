@@ -60,8 +60,18 @@ enum SchemaV1: VersionedSchema {
         var prReps: Int?
         var prTime: TimeInterval?
         var prDistance: Double?
+        var prBodyweightModifier: Double?
         var prEstimated1RM: Double?
         var prAchievedAt: Date?
+
+        // Unit tracking for cached stats
+        var totalVolumeUnit: String?
+        var prWeightUnit: String?
+        var prDistanceUnit: String?
+
+        var resolvedTotalVolumeUnit: Units? { totalVolumeUnit.flatMap { Units(rawValue: $0) } }
+        var resolvedPrWeightUnit: Units? { prWeightUnit.flatMap { Units(rawValue: $0) } }
+        var resolvedPrDistanceUnit: DistanceUnits? { prDistanceUnit.flatMap { DistanceUnits(rawValue: $0) } }
 
         @Relationship
         var categories: [ExerciseCategory]
@@ -85,6 +95,9 @@ enum SchemaV1: VersionedSchema {
             self.prDistance = nil
             self.prEstimated1RM = nil
             self.prAchievedAt = nil
+            self.totalVolumeUnit = nil
+            self.prWeightUnit = nil
+            self.prDistanceUnit = nil
             self.categories = []
         }
     }
@@ -98,11 +111,15 @@ enum SchemaV1: VersionedSchema {
         @Relationship(deleteRule: .cascade, inverse: \TemplateExercise.template)
         var templateExercises: [TemplateExercise]
 
+        @Relationship
+        var splitDays: [SplitDay]
+
         init(name: String, notes: String? = nil) {
             self.id = UUID()
             self.name = name
             self.notes = notes
             self.templateExercises = []
+            self.splitDays = []
         }
     }
 
@@ -155,7 +172,6 @@ enum SchemaV1: VersionedSchema {
         var name: String
         var notes: String?
         var createdAt: Date
-        var currentDayIndex: Int
 
         @Relationship(deleteRule: .cascade, inverse: \SplitDay.split)
         var days: [SplitDay]
@@ -165,7 +181,6 @@ enum SchemaV1: VersionedSchema {
             self.name = name
             self.notes = notes
             self.createdAt = Date()
-            self.currentDayIndex = 0
             self.days = []
         }
     }
@@ -180,7 +195,7 @@ enum SchemaV1: VersionedSchema {
         @Relationship
         var split: Split?
 
-        @Relationship
+        @Relationship(inverse: \WorkoutTemplate.splitDays)
         var assignedWorkouts: [WorkoutTemplate]
 
         init(name: String, order: Int) {
@@ -197,7 +212,6 @@ enum SchemaV1: VersionedSchema {
         @Attribute(.unique) var id: UUID
         var startedAt: Date
         var completedAt: Date?
-        var notes: String?
 
         // Store as raw string for predicate support (internal for predicate access)
         var statusValue: String
@@ -256,6 +270,13 @@ enum SchemaV1: VersionedSchema {
         var distance: Double?
         var notes: String?
         var isCompleted: Bool = false
+
+        // Unit tracking (stamped at creation time)
+        var weightUnit: String?    // Units.rawValue ("lbs"/"kg")
+        var distanceUnit: String?  // DistanceUnits.rawValue ("mi"/"km")
+
+        var resolvedWeightUnit: Units? { weightUnit.flatMap { Units(rawValue: $0) } }
+        var resolvedDistanceUnit: DistanceUnits? { distanceUnit.flatMap { DistanceUnits(rawValue: $0) } }
 
         // Denormalized for direct queries (set on workout completion)
         var exerciseId: UUID?

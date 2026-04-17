@@ -166,7 +166,7 @@ struct TemplateDetailView: View {
                     .foregroundStyle(Color.textTertiary)
             }
 
-            if let notes = templateExercise.notes, !notes.isEmpty {
+            if let notes = exercise?.notes, !notes.isEmpty {
                 Text(notes)
                     .font(.system(size: 11))
                     .foregroundStyle(Color.textSecondary)
@@ -193,17 +193,22 @@ struct TemplateDetailView: View {
                 let templateSet = index < templateSets.count ? templateSets[index] : nil
                 let previousSet = index < previousSets.count ? previousSets[index] : nil
 
+                // Template set values are in current unit; previous set values need conversion
+                let prevWeight = convertWeight(previousSet?.weight, storedUnit: previousSet?.resolvedWeightUnit, displayUnit: weightUnit)
+                let prevBWMod = convertWeight(previousSet?.bodyweightModifier, storedUnit: previousSet?.resolvedWeightUnit, displayUnit: weightUnit)
+                let prevDistance = convertDistance(previousSet?.distance, storedUnit: previousSet?.resolvedDistanceUnit, displayUnit: distanceUnit)
+
                 ReadOnlySetRow(
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     badgeStyle: .neutral,
                     weightUnit: weightUnit,
                     distanceUnit: distanceUnit,
-                    weight: templateSet?.weight ?? previousSet?.weight,
+                    weight: templateSet?.weight ?? prevWeight,
                     reps: templateSet?.reps ?? previousSet?.reps,
-                    bodyweightModifier: templateSet?.bodyweightModifier ?? previousSet?.bodyweightModifier,
+                    bodyweightModifier: templateSet?.bodyweightModifier ?? prevBWMod,
                     time: templateSet?.time ?? previousSet?.time,
-                    distance: templateSet?.distance ?? previousSet?.distance,
+                    distance: templateSet?.distance ?? prevDistance,
                     notes: templateSet != nil ? nil : previousSet?.notes
                 )
             }
@@ -245,5 +250,19 @@ struct TemplateDetailView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
         }
+    }
+
+    // MARK: - Unit Conversion Helpers
+
+    private func convertWeight(_ value: Double?, storedUnit: Units?, displayUnit: Units) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convert(from: from, to: displayUnit)
+    }
+
+    private func convertDistance(_ value: Double?, storedUnit: DistanceUnits?, displayUnit: DistanceUnits) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convertDistance(from: from, to: displayUnit)
     }
 }

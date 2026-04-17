@@ -11,20 +11,26 @@ struct PersonalRecord: Identifiable, Sendable {
     let time: TimeInterval?
     let distance: Double?
     let bodyweightModifier: Double?
+    let weightUnit: Units?
+    let distanceUnit: DistanceUnits?
 
-    var displayValue: String {
+    func displayValue(displayWeightUnit: Units, displayDistanceUnit: DistanceUnits) -> String {
+        let wUnit = weightUnit ?? displayWeightUnit
+        let dUnit = distanceUnit ?? displayDistanceUnit
+
         switch exerciseType {
         case .weightAndReps:
             if let weight, let reps {
-                return "\(Int(weight)) lbs x \(reps)"
+                let converted = weight.convert(from: wUnit, to: displayWeightUnit)
+                return converted.weightString(units: displayWeightUnit) + " x \(reps)"
             }
             return "—"
 
         case .bodyweightAndReps:
             if let reps {
                 if let modifier = bodyweightModifier, modifier != 0 {
-                    let sign = modifier > 0 ? "+" : ""
-                    return "\(reps) reps (\(sign)\(Int(modifier)) lbs)"
+                    let converted = modifier.convert(from: wUnit, to: displayWeightUnit)
+                    return "\(reps) reps (\(converted.bodyweightModifierString(units: displayWeightUnit)))"
                 }
                 return "\(reps) reps"
             }
@@ -45,7 +51,9 @@ struct PersonalRecord: Identifiable, Sendable {
         case .distanceAndTime:
             var parts: [String] = []
             if let distance {
-                parts.append(String(format: "%.2f mi", distance))
+                let fromUnit = dUnit
+                let converted = distance.convertDistance(from: fromUnit, to: displayDistanceUnit)
+                parts.append(converted.distanceString(units: displayDistanceUnit))
             }
             if let time {
                 parts.append(formatTime(time))
@@ -55,7 +63,8 @@ struct PersonalRecord: Identifiable, Sendable {
         case .weightAndTime:
             var parts: [String] = []
             if let weight {
-                parts.append("\(Int(weight)) lbs")
+                let converted = weight.convert(from: wUnit, to: displayWeightUnit)
+                parts.append(converted.weightString(units: displayWeightUnit))
             }
             if let time {
                 parts.append(formatTime(time))

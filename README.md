@@ -25,9 +25,6 @@ MVVM + Services with manual dependency injection. See [docs/ARCHITECTURE.md](doc
 
 - [Architecture](docs/ARCHITECTURE.md) — Architecture decisions and rules
 - [Models](docs/MODELS.md) — Data model definitions
-- [Features](docs/FEATURES.md) — Feature specifications
-- [User Flows](docs/USERFLOWS.md) — User interaction flows
-- [Contracts](docs/CONTRACTS.md) — View-ViewModel contracts
 
 ## Requirements
 

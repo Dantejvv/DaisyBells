@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @MainActor
-final class SeedingService {
+final class SeedingService: SeedingServiceProtocol {
     private let modelContext: ModelContext
 
     private enum Keys {
@@ -11,6 +11,10 @@ final class SeedingService {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
+    }
+
+    func resetSeedingFlag() {
+        UserDefaults.standard.removeObject(forKey: Keys.hasSeeded)
     }
 
     func seedIfNeeded() async throws {

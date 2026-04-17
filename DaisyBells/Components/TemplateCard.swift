@@ -5,14 +5,11 @@ struct TemplateCard: View {
     let name: String
     let exercises: [ExerciseInfo]
     let isExpanded: Bool
-    let isPendingDelete: Bool
     let startDisabled: Bool?
     let onToggleExpand: () -> Void
     let onStart: (() -> Void)?
     let onEdit: () -> Void
-    let onRequestDelete: () -> Void
-    let onCancelDelete: () -> Void
-    let onConfirmDelete: () -> Void
+    let onDelete: () -> Void
     let onViewDetail: (() -> Void)?
 
     let style: Style
@@ -38,89 +35,56 @@ struct TemplateCard: View {
         VStack(spacing: 0) {
             headerButton
 
-            if isExpanded && !isPendingDelete {
+            if isExpanded {
                 expandedContent
             }
         }
         .modifier(CardStyleModifier(style: style))
-        .contextMenu {
-            Button {
-                onEdit()
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-            Button(role: .destructive) {
-                onRequestDelete()
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button {
-                onRequestDelete()
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-            .tint(.destructive)
-            Button {
-                onEdit()
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-            .tint(.accent)
-        }
     }
 
     // MARK: - Header
 
     private var headerButton: some View {
         Button {
-            if !isPendingDelete {
-                onToggleExpand()
-            }
+            onToggleExpand()
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: .spacing2xs) {
                     Text(name)
                         .font(.body.weight(.medium))
-                        .foregroundStyle(isPendingDelete ? Color.textTertiary : Color.textPrimary)
+                        .foregroundStyle(Color.textPrimary)
                     Text("\(exercises.count) exercise\(exercises.count == 1 ? "" : "s")")
                         .font(.caption)
-                        .foregroundStyle(isPendingDelete ? Color.textTertiary : Color.textSecondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
 
                 Spacer()
 
-                if isPendingDelete {
-                    deleteConfirmationButtons
-                } else {
-                    if let startDisabled, let onStart {
-                        Button {
-                            onStart()
-                        } label: {
-                            Text("Start")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(startDisabled ? Color.textTertiary : Color.accent)
-                                .padding(.horizontal, .spacingMd)
-                                .padding(.vertical, .spacingXs)
-                                .background(startDisabled ? Color.bgCardHover : Color.accentBg)
-                                .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(startDisabled)
+                if let startDisabled, let onStart {
+                    Button {
+                        onStart()
+                    } label: {
+                        Text("Start")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(startDisabled ? Color.textTertiary : Color.accent)
+                            .padding(.horizontal, .spacingMd)
+                            .padding(.vertical, .spacingXs)
+                            .background(startDisabled ? Color.bgCardHover : Color.accentBg)
+                            .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
                     }
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.textTertiary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .buttonStyle(.plain)
+                    .disabled(startDisabled)
                 }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.textTertiary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
             }
             .padding(.spacingBase)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .opacity(isPendingDelete ? 0.5 : 1.0)
     }
 
     // MARK: - Expanded Content
@@ -148,62 +112,43 @@ struct TemplateCard: View {
                 }
             }
 
-            if let onViewDetail {
-                Divider()
-                    .background(Color.borderSubtle)
+            Divider()
+                .background(Color.borderSubtle)
+
+            HStack(spacing: .spacingSm) {
+                if let onViewDetail {
+                    Button {
+                        onViewDetail()
+                    } label: {
+                        Label("Details", systemImage: "chevron.right")
+                    }
+                    .foregroundStyle(Color.accent)
+                }
+
+                Spacer()
 
                 Button {
-                    onViewDetail()
+                    onEdit()
                 } label: {
-                    HStack {
-                        Text("View Details")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.accent)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(Color.accent)
-                    }
-                    .padding(.horizontal, .spacingBase)
-                    .padding(.vertical, .spacingSm)
+                    Label("Edit", systemImage: "pencil")
                 }
-                .buttonStyle(.plain)
+                .foregroundStyle(Color.textSecondary)
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .foregroundStyle(Color.destructive)
             }
+            .font(.subheadline.weight(.medium))
+            .buttonStyle(.plain)
+            .padding(.horizontal, .spacingBase)
+            .padding(.vertical, .spacingSm)
         }
         .transition(.opacity)
     }
 
-    // MARK: - Delete Confirmation
-
-    private var deleteConfirmationButtons: some View {
-        HStack(spacing: .spacingSm) {
-            Button {
-                onCancelDelete()
-            } label: {
-                Text("Cancel")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.textSecondary)
-                    .padding(.horizontal, .spacingSm)
-                    .padding(.vertical, .spacingXs)
-                    .background(Color.bgCardHover)
-                    .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                onConfirmDelete()
-            } label: {
-                Text("Confirm")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, .spacingSm)
-                    .padding(.vertical, .spacingXs)
-                    .background(Color.destructive)
-                    .clipShape(RoundedRectangle(cornerRadius: .radiusSm))
-            }
-            .buttonStyle(.plain)
-        }
-    }
 }
 
 // MARK: - Card Style Modifier

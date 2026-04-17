@@ -32,17 +32,6 @@ struct LibraryTabRootView: View {
                                 exerciseId: exerciseId
                             )
                         )
-                    case .templateDetail(let templateId):
-                        TemplateDetailView(
-                            viewModel: TemplateDetailViewModel(
-                                templateService: container.templateService,
-                                workoutService: container.workoutService,
-                                settingsService: container.settingsService,
-                                router: router,
-                                templateId: templateId
-                            ),
-                            onSheetDismissed: router.presentedSheet == nil
-                        )
                     }
                 }
         }
@@ -68,18 +57,6 @@ struct LibraryTabRootView: View {
                             onSelect: { exerciseIds in
                                 router.onExerciseSelected?(exerciseIds)
                             }
-                        )
-                    )
-                }
-            case .templateForm(let templateId):
-                NavigationStack {
-                    TemplateFormView(
-                        viewModel: TemplateFormViewModel(
-                            templateService: container.templateService,
-                            exerciseService: container.exerciseService,
-                            workoutService: container.workoutService,
-                            router: router,
-                            templateId: templateId
                         )
                     )
                 }

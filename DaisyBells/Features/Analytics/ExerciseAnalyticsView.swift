@@ -47,7 +47,7 @@ struct ExerciseAnalyticsView: View {
             )
             statRow(
                 label: "Personal Best",
-                value: viewModel.personalBest?.displayValue ?? "—"
+                value: viewModel.personalBest?.displayValue(displayWeightUnit: viewModel.units, displayDistanceUnit: viewModel.distanceUnits) ?? "—"
             )
             statRow(
                 label: "Last Performed",
@@ -98,15 +98,21 @@ struct ExerciseAnalyticsView: View {
 
     private func formatVolume(_ volume: Double, exercise: SchemaV1.Exercise) -> String {
         guard volume > 0 else { return "—" }
-        let resolvedUnits = exercise.resolvedWeightUnit(default: viewModel.units)
-        return volume.volumeString(units: resolvedUnits)
+        let displayUnit = exercise.resolvedWeightUnit(default: viewModel.units)
+        let storedUnit = exercise.resolvedTotalVolumeUnit ?? displayUnit
+        let converted = volume.convert(from: storedUnit, to: displayUnit)
+        return converted.volumeString(units: displayUnit)
     }
 
     private func formatSet(_ set: SchemaV1.LoggedSet, exercise: SchemaV1.Exercise) -> String {
+        let weightDisplayUnit = exercise.resolvedWeightUnit(default: viewModel.units)
+        let distanceDisplayUnit = exercise.resolvedDistanceUnit(default: viewModel.distanceUnits)
+        let storedWeightUnit = set.resolvedWeightUnit ?? weightDisplayUnit
+        let storedDistanceUnit = set.resolvedDistanceUnit ?? distanceDisplayUnit
+
         switch exercise.type {
         case .weightAndReps:
-            let unit = exercise.resolvedWeightUnit(default: viewModel.units)
-            let weightStr = set.weight?.weightString(units: unit) ?? "—"
+            let weightStr = set.weight.map { $0.convert(from: storedWeightUnit, to: weightDisplayUnit).weightString(units: weightDisplayUnit) } ?? "—"
             let repsStr = set.reps.map { "\($0) reps" } ?? "—"
             return "\(weightStr) × \(repsStr)"
 
@@ -116,8 +122,8 @@ struct ExerciseAnalyticsView: View {
                 parts.append("\(reps) reps")
             }
             if let modifier = set.bodyweightModifier, modifier != 0 {
-                let unit = exercise.resolvedWeightUnit(default: viewModel.units)
-                parts.append(modifier.bodyweightModifierString(units: unit))
+                let converted = modifier.convert(from: storedWeightUnit, to: weightDisplayUnit)
+                parts.append(converted.bodyweightModifierString(units: weightDisplayUnit))
             }
             return parts.isEmpty ? "—" : parts.joined(separator: " ")
 
@@ -130,8 +136,8 @@ struct ExerciseAnalyticsView: View {
         case .distanceAndTime:
             var parts: [String] = []
             if let distance = set.distance {
-                let unit = exercise.resolvedDistanceUnit(default: viewModel.distanceUnits)
-                parts.append(distance.distanceString(units: unit))
+                let converted = distance.convertDistance(from: storedDistanceUnit, to: distanceDisplayUnit)
+                parts.append(converted.distanceString(units: distanceDisplayUnit))
             }
             if let time = set.time {
                 parts.append(time.setDurationString)
@@ -141,8 +147,8 @@ struct ExerciseAnalyticsView: View {
         case .weightAndTime:
             var parts: [String] = []
             if let weight = set.weight {
-                let unit = exercise.resolvedWeightUnit(default: viewModel.units)
-                parts.append(weight.weightString(units: unit))
+                let converted = weight.convert(from: storedWeightUnit, to: weightDisplayUnit)
+                parts.append(converted.weightString(units: weightDisplayUnit))
             }
             if let time = set.time {
                 parts.append(time.setDurationString)

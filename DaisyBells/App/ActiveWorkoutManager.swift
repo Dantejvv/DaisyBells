@@ -11,6 +11,10 @@ final class ActiveWorkoutManager {
     private(set) var elapsedTime: TimeInterval = 0
     var isShowingSheet = false
 
+    // Split context — set when workout is started from split dashboard
+    var activeSplitDayIndex: Int?
+    var onWorkoutCompleted: (() async -> Void)?
+
     var hasActiveWorkout: Bool { activeWorkoutId != nil }
 
     // MARK: - Dependencies
@@ -41,10 +45,11 @@ final class ActiveWorkoutManager {
         }
     }
 
-    func start(workoutId: PersistentIdentifier, name: String?, startedAt: Date) {
+    func start(workoutId: PersistentIdentifier, name: String?, startedAt: Date, splitDayIndex: Int? = nil) {
         activeWorkoutId = workoutId
         workoutName = name
         self.startedAt = startedAt
+        self.activeSplitDayIndex = splitDayIndex
         startTimer()
         isShowingSheet = true
     }
@@ -58,6 +63,11 @@ final class ActiveWorkoutManager {
         isShowingSheet = false
     }
 
+    func updateStartedAt(_ date: Date) {
+        startedAt = date
+        startTimer()
+    }
+
     func clearWorkout() {
         stopTimer()
         activeWorkoutId = nil
@@ -65,6 +75,8 @@ final class ActiveWorkoutManager {
         startedAt = nil
         elapsedTime = 0
         isShowingSheet = false
+        activeSplitDayIndex = nil
+        onWorkoutCompleted = nil
     }
 
     // MARK: - Private

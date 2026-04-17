@@ -13,7 +13,7 @@
 		FE6C8B2A2F31C9680075495F /* MODELS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B252F31C9680075495F /* MODELS.md */; };
 		FE6C8B2E2F31C9680075495F /* ARCHITECTURE.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8B222F31C9680075495F /* ARCHITECTURE.md */; };
 		FE6C8F642F3D2AA60075495F /* design-system.html in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8F632F3D2AA60075495F /* design-system.html */; };
-		FE6C8FAE2F4D7B920075495F /* VIEWS.md in Resources */ = {isa = PBXBuildFile; fileRef = FE6C8FAD2F4D7B920075495F /* VIEWS.md */; };
+		FE76E8392F8F124E00CE694A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FE76E8382F8F124E00CE694A /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,7 +35,7 @@
 		FE6C8B222F31C9680075495F /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ARCHITECTURE.md; sourceTree = "<group>"; };
 		FE6C8B252F31C9680075495F /* MODELS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MODELS.md; sourceTree = "<group>"; };
 		FE6C8F632F3D2AA60075495F /* design-system.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "design-system.html"; sourceTree = "<group>"; };
-		FE6C8FAD2F4D7B920075495F /* VIEWS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = VIEWS.md; sourceTree = "<group>"; };
+		FE76E8382F8F124E00CE694A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -72,6 +72,7 @@
 		FE6C89122F31C6E00075495F = {
 			isa = PBXGroup;
 			children = (
+				FE76E8382F8F124E00CE694A /* Assets.xcassets */,
 				FE6C891D2F31C6E00075495F /* DaisyBells */,
 				FE6C892D2F31C6E10075495F /* DaisyBellsTests */,
 				FE6C891C2F31C6E00075495F /* Products */,
@@ -94,7 +95,6 @@
 		FE6C8B272F31C9680075495F /* docs */ = {
 			isa = PBXGroup;
 			children = (
-				FE6C8FAD2F4D7B920075495F /* VIEWS.md */,
 				FE6C8B222F31C9680075495F /* ARCHITECTURE.md */,
 				FE6C8B252F31C9680075495F /* MODELS.md */,
 				FE6C8F632F3D2AA60075495F /* design-system.html */,
@@ -197,9 +197,9 @@
 				FE6C8B1F2F31C95E0075495F /* LICENSE in Resources */,
 				FE6C8B202F31C95E0075495F /* README.md in Resources */,
 				FE6C8B1C2F31C9560075495F /* CLAUDE.md in Resources */,
-				FE6C8FAE2F4D7B920075495F /* VIEWS.md in Resources */,
 				FE6C8B2A2F31C9680075495F /* MODELS.md in Resources */,
 				FE6C8B2E2F31C9680075495F /* ARCHITECTURE.md in Resources */,
+				FE76E8392F8F124E00CE694A /* Assets.xcassets in Resources */,
 				FE6C8F642F3D2AA60075495F /* design-system.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -8,7 +8,7 @@ struct NewWorkoutCard: View {
         HStack(spacing: .spacingSm) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("New Workout")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.medium))
                     .foregroundStyle(Color.textPrimary)
                 Text("Start with a blank workout")
                     .font(.caption)
@@ -30,6 +30,11 @@ struct NewWorkoutCard: View {
             }
             .buttonStyle(.plain)
             .disabled(isDisabled)
+
+            // Invisible chevron to match TemplateCard layout
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.clear)
         }
         .padding(.spacingBase)
         .background(Color.bgCard)

@@ -16,6 +16,7 @@ final class CompletedWorkoutDetailViewModel {
     // MARK: - Dependencies
 
     private let workoutService: WorkoutServiceProtocol
+    private let templateService: TemplateServiceProtocol
     private let settingsService: SettingsServiceProtocol
     private let router: HistoryRouter
     private let workoutId: PersistentIdentifier
@@ -32,11 +33,13 @@ final class CompletedWorkoutDetailViewModel {
 
     init(
         workoutService: WorkoutServiceProtocol,
+        templateService: TemplateServiceProtocol,
         settingsService: SettingsServiceProtocol,
         router: HistoryRouter,
         workoutId: PersistentIdentifier
     ) {
         self.workoutService = workoutService
+        self.templateService = templateService
         self.settingsService = settingsService
         self.router = router
         self.workoutId = workoutId
@@ -63,11 +66,14 @@ final class CompletedWorkoutDetailViewModel {
         isLoading = false
     }
 
+    var hasTemplate: Bool { workout?.fromTemplate != nil }
+
     func updateNotes(_ notes: String) async {
-        guard let workout else { return }
+        guard let template = workout?.fromTemplate else { return }
+        template.notes = notes.isEmpty ? nil : notes
         errorMessage = nil
         do {
-            try await workoutService.updateNotes(workout, notes: notes.isEmpty ? nil : notes)
+            try await templateService.update(template)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -91,11 +97,14 @@ final class CompletedWorkoutDetailViewModel {
     }
 
     var totalVolume: Double {
+        let displayUnit = units
         var volume: Double = 0
         for loggedExercise in exercises {
             for set in loggedExercise.sets {
                 if let weight = set.weight, let reps = set.reps {
-                    volume += weight * Double(reps)
+                    let storedUnit = set.resolvedWeightUnit ?? displayUnit
+                    let converted = weight.convert(from: storedUnit, to: displayUnit)
+                    volume += converted * Double(reps)
                 }
             }
         }

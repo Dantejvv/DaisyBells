@@ -39,7 +39,7 @@ struct EditableDualPill: View {
                 .frame(width: 1, height: 16)
             PillTextField(value: rightValue, placeholder: rightPlaceholder, onCommit: onRightCommit)
         }
-        .frame(width: 94)
+        .frame(width: 94, height: 30)
         .background(Color.bgInput)
         .clipShape(Capsule())
         .overlay(
@@ -56,7 +56,7 @@ struct EditableSinglePill: View {
 
     var body: some View {
         PillTextField(value: value, placeholder: placeholder, onCommit: onCommit)
-            .frame(width: 46)
+            .frame(width: 46, height: 30)
             .background(Color.bgInput)
             .clipShape(Capsule())
             .overlay(

@@ -8,7 +8,7 @@ final class TemplateFormViewModel {
 
     var name: String = ""
     var notes: String = ""
-    private(set) var exercises: [SchemaV1.TemplateExercise] = []
+    private(set) var exercises: [DraftTemplateExercise] = []
     private(set) var isEditing = false
     private(set) var isSaving = false
     private(set) var previousPerformance: [UUID: [SchemaV1.LoggedSet]] = [:]
@@ -24,7 +24,6 @@ final class TemplateFormViewModel {
     private let workoutService: WorkoutServiceProtocol
     private let router: TemplateRouting
     private let templateId: PersistentIdentifier?
-    private var template: SchemaV1.WorkoutTemplate?
 
     // MARK: - Init
 
@@ -50,14 +49,35 @@ final class TemplateFormViewModel {
 
         if let templateId,
            let templateModel = templateService.fetch(by: templateId) {
-            template = templateModel
             name = templateModel.name
             notes = templateModel.notes ?? ""
-            exercises = templateModel.templateExercises.sorted { $0.order < $1.order }
 
-            for templateExercise in exercises {
-                guard let exercise = templateExercise.exercise else { continue }
-                await loadPreviousPerformance(for: exercise)
+            let sortedExercises = templateModel.templateExercises.sorted { $0.order < $1.order }
+            exercises = sortedExercises.map { te in
+                let sortedSets = te.sets.sorted { $0.order < $1.order }
+                return DraftTemplateExercise(
+                    exerciseId: te.exercise?.id ?? UUID(),
+                    exerciseName: te.exercise?.name ?? "Unknown Exercise",
+                    exerciseType: te.exercise?.type ?? .weightAndReps,
+                    exerciseNotes: te.exercise?.notes,
+                    notes: te.notes,
+                    order: te.order,
+                    sets: sortedSets.map { s in
+                        DraftTemplateSet(
+                            order: s.order,
+                            weight: s.weight,
+                            reps: s.reps,
+                            bodyweightModifier: s.bodyweightModifier,
+                            time: s.time,
+                            distance: s.distance,
+                            notes: s.notes
+                        )
+                    }
+                )
+            }
+
+            for draftExercise in exercises {
+                await loadPreviousPerformance(for: draftExercise.exerciseId)
             }
         }
     }
@@ -75,105 +95,87 @@ final class TemplateFormViewModel {
     }
 
     func onExercisesSelected(_ exerciseIds: [PersistentIdentifier]) async {
-        if template == nil {
-            errorMessage = nil
-            do {
-                let newTemplate = try await templateService.create(name: name.isEmpty ? "New Template" : name)
-                newTemplate.notes = notes.isEmpty ? nil : notes
-                template = newTemplate
-                isEditing = true
-            } catch {
-                errorMessage = error.localizedDescription
-                showExercisePicker = false
-                return
-            }
-        }
+        let maxOrder = exercises.map(\.order).max() ?? -1
 
-        guard let template else { return }
-
-        errorMessage = nil
-        for exerciseId in exerciseIds {
+        for (offset, exerciseId) in exerciseIds.enumerated() {
             guard let exercise = exerciseService.fetch(by: exerciseId) else { continue }
-            do {
-                await loadPreviousPerformance(for: exercise)
-                let previousCount = previousPerformance[exercise.id]?.count ?? 0
-                try await templateService.addExerciseWithSets(exercise, to: template, setCount: previousCount)
-            } catch {
-                errorMessage = error.localizedDescription
+
+            await loadPreviousPerformance(for: exercise.id)
+            let previousSets = previousPerformance[exercise.id] ?? []
+            let setCount = max(previousSets.count, 1)
+
+            let draftSets = (0..<setCount).map { i in
+                DraftTemplateSet(order: i)
             }
+
+            let draft = DraftTemplateExercise(
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                exerciseType: exercise.type,
+                exerciseNotes: exercise.notes,
+                order: maxOrder + 1 + offset,
+                sets: draftSets
+            )
+            exercises.append(draft)
         }
-        exercises = template.templateExercises.sorted { $0.order < $1.order }
         showExercisePicker = false
     }
 
-    func removeExercise(_ templateExercise: SchemaV1.TemplateExercise) async {
-        guard let template else {
-            exercises.removeAll { $0.id == templateExercise.id }
-            return
-        }
-
-        errorMessage = nil
-        do {
-            try await templateService.removeExercise(templateExercise, from: template)
-            exercises = template.templateExercises.sorted { $0.order < $1.order }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    func removeExercise(_ exercise: DraftTemplateExercise) {
+        exercises.removeAll { $0.id == exercise.id }
+        reindexExercises()
     }
 
-    func reorderExercises(from source: IndexSet, to destination: Int) async {
+    func reorderExercises(from source: IndexSet, to destination: Int) {
         exercises.move(fromOffsets: source, toOffset: destination)
-
-        guard let template else { return }
-
-        let newOrder = exercises.map { $0.id }
-        errorMessage = nil
-        do {
-            try await templateService.reorderExercises(template, order: newOrder)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        reindexExercises()
     }
 
-    func addSet(to templateExercise: SchemaV1.TemplateExercise) async {
-        errorMessage = nil
-        do {
-            _ = try await templateService.addSet(to: templateExercise)
-            exercises = template?.templateExercises.sorted { $0.order < $1.order } ?? exercises
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    func addSet(to exercise: DraftTemplateExercise) {
+        guard let index = exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
+        let maxOrder = exercises[index].sets.map(\.order).max() ?? -1
+        let newSet = DraftTemplateSet(order: maxOrder + 1)
+        exercises[index].sets.append(newSet)
     }
 
-    func removeSet(_ set: SchemaV1.TemplateSet, from templateExercise: SchemaV1.TemplateExercise) async {
-        errorMessage = nil
-        do {
-            try await templateService.removeSet(set, from: templateExercise)
-            exercises = template?.templateExercises.sorted { $0.order < $1.order } ?? exercises
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    func removeSet(_ set: DraftTemplateSet, from exercise: DraftTemplateExercise) {
+        guard let exIndex = exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
+        exercises[exIndex].sets.removeAll { $0.id == set.id }
+        reindexSets(for: exIndex)
     }
 
     func updateSet(
-        _ set: SchemaV1.TemplateSet,
+        _ set: DraftTemplateSet,
+        in exercise: DraftTemplateExercise,
         weight: Double?,
         reps: Int?,
         bodyweightModifier: Double?,
         time: TimeInterval?,
         distance: Double?,
         notes: String?
-    ) async {
-        do {
-            try await templateService.updateSet(set, weight: weight, reps: reps, bodyweightModifier: bodyweightModifier, time: time, distance: distance, notes: notes)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    ) {
+        guard let exIndex = exercises.firstIndex(where: { $0.id == exercise.id }),
+              let setIndex = exercises[exIndex].sets.firstIndex(where: { $0.id == set.id }) else { return }
+        exercises[exIndex].sets[setIndex].weight = weight
+        exercises[exIndex].sets[setIndex].reps = reps
+        exercises[exIndex].sets[setIndex].bodyweightModifier = bodyweightModifier
+        exercises[exIndex].sets[setIndex].time = time
+        exercises[exIndex].sets[setIndex].distance = distance
+        exercises[exIndex].sets[setIndex].notes = notes
     }
 
-    func updateExerciseNotes(_ templateExercise: SchemaV1.TemplateExercise, notes: String?) async {
+    func updateTemplateExerciseNotes(_ exercise: DraftTemplateExercise, notes: String?) {
+        guard let index = exercises.firstIndex(where: { $0.id == exercise.id }) else { return }
+        exercises[index].notes = notes
+    }
+
+    func updateExerciseNotes(_ draft: DraftTemplateExercise, notes: String?) async {
+        guard let index = exercises.firstIndex(where: { $0.id == draft.id }) else { return }
+        exercises[index].exerciseNotes = notes
         do {
-            try await templateService.updateExerciseNotes(templateExercise, notes: notes)
+            let exercise = try await exerciseService.fetch(id: draft.exerciseId)
+            exercise.notes = notes
+            try await exerciseService.update(exercise)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -185,13 +187,12 @@ final class TemplateFormViewModel {
         isSaving = true
         errorMessage = nil
         do {
-            if isEditing, let template {
-                template.name = name
-                template.notes = notes.isEmpty ? nil : notes
-                try await templateService.update(template)
-            } else {
-                _ = try await templateService.create(name: name)
-            }
+            try await templateService.saveTemplate(
+                existingId: templateId,
+                name: name,
+                notes: notes.isEmpty ? nil : notes,
+                exercises: exercises
+            )
             router.dismissSheet()
         } catch {
             errorMessage = error.localizedDescription
@@ -213,12 +214,25 @@ final class TemplateFormViewModel {
         return true
     }
 
-    private func loadPreviousPerformance(for exercise: SchemaV1.Exercise) async {
+    private func loadPreviousPerformance(for exerciseId: UUID) async {
         do {
+            let exercise = try await exerciseService.fetch(id: exerciseId)
             let sets = try await workoutService.lastPerformedSets(for: exercise)
-            previousPerformance[exercise.id] = sets
+            previousPerformance[exerciseId] = sets
         } catch {
             // Non-critical — just means no placeholders
+        }
+    }
+
+    private func reindexExercises() {
+        for i in exercises.indices {
+            exercises[i].order = i
+        }
+    }
+
+    private func reindexSets(for exerciseIndex: Int) {
+        for i in exercises[exerciseIndex].sets.indices {
+            exercises[exerciseIndex].sets[i].order = i
         }
     }
 }

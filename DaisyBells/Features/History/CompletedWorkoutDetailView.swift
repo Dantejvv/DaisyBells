@@ -84,8 +84,10 @@ struct CompletedWorkoutDetailView: View {
             }
             .padding(.top, 10)
 
-            // Notes
-            notesSection(workout)
+            // Template notes
+            if viewModel.hasTemplate {
+                notesSection(workout)
+            }
         }
         .padding(14)
         .padding(.horizontal, 2)
@@ -109,14 +111,14 @@ struct CompletedWorkoutDetailView: View {
     }
 
     private func notesSection(_ workout: SchemaV1.Workout) -> some View {
-        let currentNotes = workout.notes ?? ""
+        let currentNotes = workout.fromTemplate?.notes ?? ""
         return VStack(alignment: .leading, spacing: .spacingSm) {
             Divider()
                 .background(Color.borderSubtle)
                 .padding(.top, 10)
 
             TextField(
-                "Add workout notes...",
+                "Notes",
                 text: Binding(
                     get: { currentNotes },
                     set: { newValue in
@@ -148,7 +150,7 @@ struct CompletedWorkoutDetailView: View {
             }
 
             // Exercise notes
-            if let notes = loggedExercise.notes, !notes.isEmpty {
+            if let notes = exercise?.notes, !notes.isEmpty {
                 Text(notes)
                     .font(.system(size: 12))
                     .foregroundStyle(Color.textSecondary)
@@ -164,17 +166,21 @@ struct CompletedWorkoutDetailView: View {
                 .frame(height: 1)
 
             ForEach(Array(sets.enumerated()), id: \.element.id) { index, loggedSet in
+                let convertedWeight = convertWeight(loggedSet.weight, storedUnit: loggedSet.resolvedWeightUnit, displayUnit: weightUnit)
+                let convertedBWMod = convertWeight(loggedSet.bodyweightModifier, storedUnit: loggedSet.resolvedWeightUnit, displayUnit: weightUnit)
+                let convertedDistance = convertDistance(loggedSet.distance, storedUnit: loggedSet.resolvedDistanceUnit, displayUnit: distanceUnit)
+
                 ReadOnlySetRow(
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     badgeStyle: .completed,
                     weightUnit: weightUnit,
                     distanceUnit: distanceUnit,
-                    weight: loggedSet.weight,
+                    weight: convertedWeight,
                     reps: loggedSet.reps,
-                    bodyweightModifier: loggedSet.bodyweightModifier,
+                    bodyweightModifier: convertedBWMod,
                     time: loggedSet.time,
-                    distance: loggedSet.distance,
+                    distance: convertedDistance,
                     notes: loggedSet.notes
                 )
             }
@@ -182,5 +188,19 @@ struct CompletedWorkoutDetailView: View {
             Spacer()
                 .frame(height: .spacingSm)
         }
+    }
+
+    // MARK: - Unit Conversion Helpers
+
+    private func convertWeight(_ value: Double?, storedUnit: Units?, displayUnit: Units) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convert(from: from, to: displayUnit)
+    }
+
+    private func convertDistance(_ value: Double?, storedUnit: DistanceUnits?, displayUnit: DistanceUnits) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convertDistance(from: from, to: displayUnit)
     }
 }

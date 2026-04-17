@@ -15,34 +15,34 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - @EnvironmentObject for dependency injection
 
 ## App Structure
-### Tab Structure (4 tabs)
+### Tab Structure (5 tabs)
 - **Home** — Split dashboard, start workouts, quick access to active workout
 - **Library** — Exercise Library + Workout Library (templates)
 - **History** — Completed workouts (read-only, chronological)
 - **Analytics** — Insights, metrics, personal records
+- **Profile** — Settings (units, distance units, appearance), data export/import/reset
 
 ### Core Domain Models
 - **Exercise Library:** `Exercise`, `ExerciseCategory`
-- **Workout Planning:** `WorkoutTemplate`, `TemplateExercise`
+- **Workout Planning:** `WorkoutTemplate`, `TemplateExercise`, `TemplateSet`
 - **Splits:** `Split`, `SplitDay`
 - **Workout Logging:** `Workout`, `LoggedExercise`, `LoggedSet`
-- **Enums:** `ExerciseType`, `WorkoutStatus`, `Units`, `Appearance`
+- **Enums:** `ExerciseType`, `WorkoutStatus`, `Units`, `DistanceUnits`, `Appearance`, `ExerciseSortOption`
 
 ## Current Implementation Status
 **Completed Phases:**
 - ✅ Phase 1: Foundation (Enums, SchemaV1, MigrationPlan)
-- ✅ Phase 2: Services (11 services + protocols, fully tested)
+- ✅ Phase 2: Services (12 services + protocols, tested — SeedingService lacks test coverage)
 - ✅ Phase 3: Infrastructure (DependencyContainer, 4 Routers, extensions)
 - ✅ Phase 4: ViewModels (24+ ViewModels across all features)
 
 **Remaining Work:**
-- ❌ Phase 5: Production Views (no views exist beyond 4 tab root placeholders)
+- 🔨 Phase 5: Production Views (in progress — Home and Library views being built)
 - ❌ Phase 6: Polish + Testing
 
 ## Documentation
 - `docs/ARCHITECTURE.md` — Architecture decisions, MVVM rules, concurrency model
 - `docs/MODELS.md` — Data model definitions and relationships
-- `docs/VIEWS.md` — Complete view inventory, navigation maps, ViewModel bindings, and shared components
 
 ## Architecture Rules
 - **Views:** No business logic, no SwiftData access, call ViewModel intents only
@@ -67,12 +67,15 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - `LoggedSetService` — Set logging and editing
 - `AnalyticsService` — Aggregations and derived analytics (combines cached data with on-demand calculations)
 - `SettingsService` — UserDefaults access for app preferences
+- `SeedingService` — First-launch data seeding from bundled JSON
+- `DataService` — Data export, import, and reset (backup/restore)
 
 ## File Structure
 - `DaisyBells/App/` — App entry point and DependencyContainer
 - `DaisyBells/Models/` — SwiftData @Model classes, shared across features
 - `DaisyBells/Schema/` — VersionedSchema and MigrationPlan
 - `DaisyBells/Services/` — Business logic and persistence, shared across features
+- `DaisyBells/Services/DTOs/` — Export/import data transfer objects (ExportContainer, JSONDocument)
 - `DaisyBells/Features/{Feature}/` — Views, ViewModels, Routers per feature
 - `DaisyBells/Components/` — Reusable UI components used by 2+ features
 - `DaisyBells/Extensions/` — Swift type extensions (e.g., Date+Formatting, Double+Units)
@@ -101,6 +104,11 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 ## View Coupling
 - **ActiveWorkoutView ↔ TemplateDetailView**: TemplateDetailView mirrors ActiveWorkoutView's layout as a read-only preview. When changing ActiveWorkoutView's exercise card or set row layout, update TemplateDetailView to match.
 
+## Building
+- Build command: `xcodebuild build -project /Users/dante/Dev/DaisyBells/DaisyBells.xcodeproj -scheme DaisyBells -destination 'generic/platform=iOS Simulator'`
+- Do NOT use `-quiet` — it hides `BUILD SUCCEEDED`/`BUILD FAILED` and only shows a harmless Xcode IDE warning, making it look like the build failed
+- Check for `BUILD SUCCEEDED` or `error:` in output using `grep -E "(BUILD|error:)"` when piping
+
 ## Testing
 - Do NOT run simulator tests (xcodebuild test). Just build the app to verify compilation.
 
@@ -108,4 +116,3 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - Do not use @Query in views—fetch through services
 - Do not use singletons or global state
 - Do not add third-party packages
-- Do not create views without an entry in docs/VIEWS.md

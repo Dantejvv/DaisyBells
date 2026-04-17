@@ -9,8 +9,10 @@ final class LoggedSetService: LoggedSetServiceProtocol {
         self.modelContext = modelContext
     }
 
-    func create(loggedExercise: SchemaV1.LoggedExercise, order: Int) async throws -> SchemaV1.LoggedSet {
+    func create(loggedExercise: SchemaV1.LoggedExercise, order: Int, weightUnit: Units?, distanceUnit: DistanceUnits?) async throws -> SchemaV1.LoggedSet {
         let loggedSet = SchemaV1.LoggedSet(order: order)
+        loggedSet.weightUnit = weightUnit?.rawValue
+        loggedSet.distanceUnit = distanceUnit?.rawValue
         loggedSet.loggedExercise = loggedExercise
         modelContext.insert(loggedSet)
         try modelContext.save()

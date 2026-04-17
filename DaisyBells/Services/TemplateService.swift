@@ -181,4 +181,47 @@ final class TemplateService: TemplateServiceProtocol {
         templateExercise.notes = notes
         try modelContext.save()
     }
+
+    func saveTemplate(existingId: PersistentIdentifier?, name: String, notes: String?, exercises: [DraftTemplateExercise]) async throws {
+        let template: SchemaV1.WorkoutTemplate
+
+        if let existingId, let existing = fetch(by: existingId) {
+            existing.name = name
+            existing.notes = notes
+            template = existing
+
+            for te in existing.templateExercises {
+                modelContext.delete(te)
+            }
+        } else {
+            template = SchemaV1.WorkoutTemplate(name: name, notes: notes)
+            modelContext.insert(template)
+        }
+
+        for draft in exercises {
+            let exerciseId = draft.exerciseId
+            var descriptor = FetchDescriptor<SchemaV1.Exercise>()
+            descriptor.predicate = #Predicate<SchemaV1.Exercise> { e in e.id == exerciseId }
+            guard let exercise = try modelContext.fetch(descriptor).first else { continue }
+
+            let te = SchemaV1.TemplateExercise(exercise: exercise, order: draft.order)
+            te.notes = draft.notes
+            te.template = template
+            modelContext.insert(te)
+
+            for draftSet in draft.sets {
+                let s = SchemaV1.TemplateSet(order: draftSet.order)
+                s.weight = draftSet.weight
+                s.reps = draftSet.reps
+                s.bodyweightModifier = draftSet.bodyweightModifier
+                s.time = draftSet.time
+                s.distance = draftSet.distance
+                s.notes = draftSet.notes
+                s.templateExercise = te
+                modelContext.insert(s)
+            }
+        }
+
+        try modelContext.save()
+    }
 }

@@ -224,12 +224,8 @@ final class SplitFormViewModel {
         )
 
         for day in days {
-            let newDay = try await splitDayService.create(name: day.name, split: split)
-            for workout in day.assignedWorkouts {
-                if let template = templateService.fetch(by: workout.persistentId) {
-                    try await splitDayService.assignWorkout(template, to: newDay)
-                }
-            }
+            let templates = day.assignedWorkouts.compactMap { templateService.fetch(by: $0.persistentId) }
+            _ = try await splitDayService.create(name: day.name, split: split, assigningWorkouts: templates)
         }
     }
 
@@ -283,13 +279,9 @@ final class SplitFormViewModel {
                     }
                 }
             } else {
-                // New day — create
-                let newDay = try await splitDayService.create(name: day.name, split: split)
-                for workout in day.assignedWorkouts {
-                    if let template = templateService.fetch(by: workout.persistentId) {
-                        try await splitDayService.assignWorkout(template, to: newDay)
-                    }
-                }
+                // New day — create with workouts in one batch
+                let templates = day.assignedWorkouts.compactMap { templateService.fetch(by: $0.persistentId) }
+                let newDay = try await splitDayService.create(name: day.name, split: split, assigningWorkouts: templates)
                 orderedDayModels.append(newDay)
             }
         }

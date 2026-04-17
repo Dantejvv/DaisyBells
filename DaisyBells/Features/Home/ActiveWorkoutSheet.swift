@@ -45,9 +45,16 @@ struct ActiveWorkoutSheet: View {
         vm.onDismiss = {
             manager.clearWorkout()
         }
+        vm.onComplete = {
+            await manager.onWorkoutCompleted?()
+            manager.clearWorkout()
+        }
         vm.onPresentExercisePicker = { callback in
             exercisePickerCallback = callback
             showingExercisePicker = true
+        }
+        vm.onTimerReset = { newDate in
+            manager.updateStartedAt(newDate)
         }
         vm.onDismissExercisePicker = {
             showingExercisePicker = false

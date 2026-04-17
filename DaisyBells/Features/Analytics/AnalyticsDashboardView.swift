@@ -116,7 +116,7 @@ struct AnalyticsDashboardView: View {
 
             Spacer()
 
-            Text(record.displayValue)
+            Text(record.displayValue(displayWeightUnit: viewModel.units, displayDistanceUnit: viewModel.distanceUnits))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.accent)
 

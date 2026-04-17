@@ -1,9 +1,11 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor
 struct ProfileView: View {
     @State var viewModel: SettingsViewModel
     @State private var showResetConfirmation = false
+    @State private var showImportConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -28,6 +30,36 @@ struct ProfileView: View {
                     Task { await viewModel.resetData() }
                 }
             )
+            .destructiveConfirmation(
+                title: "Import Data",
+                message: "Importing will replace all existing data with the contents of the selected file. This action cannot be undone.",
+                isPresented: $showImportConfirmation,
+                onConfirm: {
+                    viewModel.showFileImporter = true
+                }
+            )
+            .fileExporter(
+                isPresented: $viewModel.showFileExporter,
+                document: viewModel.exportDocument,
+                contentType: .json,
+                defaultFilename: "DaisyBells-Backup"
+            ) { result in
+                viewModel.exportDocument = nil
+                if case .failure(let error) = result {
+                    viewModel.errorMessage = error.localizedDescription
+                }
+            }
+            .fileImporter(
+                isPresented: $viewModel.showFileImporter,
+                allowedContentTypes: [.json]
+            ) { result in
+                switch result {
+                case .success(let url):
+                    Task { await viewModel.importData(url: url) }
+                case .failure(let error):
+                    viewModel.errorMessage = error.localizedDescription
+                }
+            }
         }
     }
 
@@ -88,7 +120,7 @@ struct ProfileView: View {
             .disabled(viewModel.isExporting)
 
             Button {
-                // Phase 6: Present file importer
+                showImportConfirmation = true
             } label: {
                 Label("Import Data", systemImage: "square.and.arrow.down")
                     .foregroundStyle(Color.textPrimary)

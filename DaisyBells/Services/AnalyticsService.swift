@@ -17,14 +17,12 @@ final class AnalyticsService: AnalyticsServiceProtocol {
 
         var descriptor = FetchDescriptor<SchemaV1.Workout>()
         let completedStatus = WorkoutStatus.completed.rawValue
+        let distantPast = Date.distantPast
         descriptor.predicate = #Predicate<SchemaV1.Workout> { workout in
-            workout.statusValue == completedStatus
+            workout.statusValue == completedStatus &&
+            (workout.completedAt ?? distantPast) >= startOfWeek
         }
-        let workouts = try modelContext.fetch(descriptor)
-        return workouts.filter { workout in
-            guard let completedAt = workout.completedAt else { return false }
-            return completedAt >= startOfWeek
-        }.count
+        return try modelContext.fetch(descriptor).count
     }
 
     func workoutsThisMonth() async throws -> Int {
@@ -35,14 +33,12 @@ final class AnalyticsService: AnalyticsServiceProtocol {
 
         var descriptor = FetchDescriptor<SchemaV1.Workout>()
         let completedStatus = WorkoutStatus.completed.rawValue
+        let distantPast = Date.distantPast
         descriptor.predicate = #Predicate<SchemaV1.Workout> { workout in
-            workout.statusValue == completedStatus
+            workout.statusValue == completedStatus &&
+            (workout.completedAt ?? distantPast) >= startOfMonth
         }
-        let workouts = try modelContext.fetch(descriptor)
-        return workouts.filter { workout in
-            guard let completedAt = workout.completedAt else { return false }
-            return completedAt >= startOfMonth
-        }.count
+        return try modelContext.fetch(descriptor).count
     }
 
     func recentExercises(limit: Int) async throws -> [SchemaV1.Exercise] {
@@ -79,7 +75,9 @@ final class AnalyticsService: AnalyticsServiceProtocol {
                 reps: exercise.prReps,
                 time: exercise.prTime,
                 distance: exercise.prDistance,
-                bodyweightModifier: nil
+                bodyweightModifier: exercise.prBodyweightModifier,
+                weightUnit: exercise.resolvedPrWeightUnit,
+                distanceUnit: exercise.resolvedPrDistanceUnit
             )
         }
     }
@@ -101,7 +99,9 @@ final class AnalyticsService: AnalyticsServiceProtocol {
             reps: exercise.prReps,
             time: exercise.prTime,
             distance: exercise.prDistance,
-            bodyweightModifier: nil
+            bodyweightModifier: nil,
+            weightUnit: exercise.resolvedPrWeightUnit,
+            distanceUnit: exercise.resolvedPrDistanceUnit
         )
     }
 

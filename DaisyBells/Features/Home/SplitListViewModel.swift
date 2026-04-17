@@ -80,12 +80,11 @@ final class SplitListViewModel {
         guard let split = splitPendingDelete else { return }
         errorMessage = nil
         do {
-            // Clear active split if deleting the active one
             if activeSplitId == split.id {
                 settingsService.activeSplitId = nil
                 activeSplitId = nil
             }
-            try await splitService.delete(split)
+            try await splitService.delete(id: split.id)
             splitPendingDelete = nil
             await loadSplits()
         } catch {

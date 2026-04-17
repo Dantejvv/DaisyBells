@@ -241,4 +241,92 @@ struct TemplateServiceTests {
         #expect(copiedSet.reps == 10)
         #expect(copiedSet.id != set.id)
     }
+
+    // MARK: - saveTemplate Tests
+
+    @Test @MainActor
+    func saveTemplateCreatesNewTemplate() async throws {
+        let container = try makeTestModelContainer()
+        let templateService = TemplateService(modelContext: container.mainContext)
+        let exerciseService = ExerciseService(modelContext: container.mainContext)
+
+        let exercise = try await exerciseService.create(name: "Squat", type: .weightAndReps)
+
+        let drafts = [
+            DraftTemplateExercise(
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                exerciseType: exercise.type,
+                order: 0,
+                sets: [
+                    DraftTemplateSet(order: 0, weight: 225, reps: 5),
+                    DraftTemplateSet(order: 1, weight: 245, reps: 3)
+                ]
+            )
+        ]
+
+        try await templateService.saveTemplate(existingId: nil, name: "Leg Day", notes: "Heavy squats", exercises: drafts)
+
+        let all = try await templateService.fetchAll()
+        #expect(all.count == 1)
+        #expect(all[0].name == "Leg Day")
+        #expect(all[0].notes == "Heavy squats")
+        #expect(all[0].templateExercises.count == 1)
+
+        let sets = all[0].templateExercises[0].sets.sorted { $0.order < $1.order }
+        #expect(sets.count == 2)
+        #expect(sets[0].weight == 225)
+        #expect(sets[0].reps == 5)
+        #expect(sets[1].weight == 245)
+        #expect(sets[1].reps == 3)
+    }
+
+    @Test @MainActor
+    func saveTemplateUpdatesExistingTemplate() async throws {
+        let container = try makeTestModelContainer()
+        let templateService = TemplateService(modelContext: container.mainContext)
+        let exerciseService = ExerciseService(modelContext: container.mainContext)
+
+        let exercise1 = try await exerciseService.create(name: "Bench", type: .weightAndReps)
+        let exercise2 = try await exerciseService.create(name: "OHP", type: .weightAndReps)
+
+        // Create original with exercise1
+        let original = try await templateService.create(name: "Push Day")
+        try await templateService.addExerciseWithSets(exercise1, to: original, setCount: 2)
+        let persistentId = original.persistentModelID
+
+        // Save over it with exercise2
+        let drafts = [
+            DraftTemplateExercise(
+                exerciseId: exercise2.id,
+                exerciseName: exercise2.name,
+                exerciseType: exercise2.type,
+                order: 0,
+                sets: [DraftTemplateSet(order: 0, weight: 95, reps: 8)]
+            )
+        ]
+
+        try await templateService.saveTemplate(existingId: persistentId, name: "Updated Push", notes: nil, exercises: drafts)
+
+        let all = try await templateService.fetchAll()
+        #expect(all.count == 1)
+        #expect(all[0].name == "Updated Push")
+        #expect(all[0].templateExercises.count == 1)
+        #expect(all[0].templateExercises[0].exercise?.id == exercise2.id)
+        #expect(all[0].templateExercises[0].sets.count == 1)
+        #expect(all[0].templateExercises[0].sets[0].weight == 95)
+    }
+
+    @Test @MainActor
+    func saveTemplateCreatesEmptyTemplate() async throws {
+        let container = try makeTestModelContainer()
+        let templateService = TemplateService(modelContext: container.mainContext)
+
+        try await templateService.saveTemplate(existingId: nil, name: "Empty Template", notes: nil, exercises: [])
+
+        let all = try await templateService.fetchAll()
+        #expect(all.count == 1)
+        #expect(all[0].name == "Empty Template")
+        #expect(all[0].templateExercises.isEmpty)
+    }
 }

@@ -36,7 +36,8 @@ struct MainTabView: View {
                     Label("Analytics", systemImage: "chart.bar")
                 }
 
-            ProfileView(viewModel: SettingsViewModel(settingsService: container.settingsService, container: container))
+            ProfileTabRootView()
+                .environment(container)
                 .tabItem {
                     Label("Profile", systemImage: "person")
                 }

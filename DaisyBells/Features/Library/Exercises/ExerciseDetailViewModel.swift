@@ -58,7 +58,8 @@ final class ExerciseDetailViewModel {
 
             exercise = exerciseModel
             let hasHistory = try await exerciseService.hasHistory(exerciseModel)
-            canDelete = !hasHistory
+            let usedInTemplate = try await exerciseService.isReferencedByTemplate(exerciseModel)
+            canDelete = !hasHistory && !usedInTemplate
 
             // Load performance stats
             let lastPerformed = try await analyticsService.lastPerformedDate(exerciseModel)
@@ -118,11 +119,7 @@ final class ExerciseDetailViewModel {
         guard let exercise else { return }
         errorMessage = nil
         do {
-            if canDelete {
-                try await exerciseService.delete(exercise)
-            } else {
-                try await exerciseService.archive(exercise)
-            }
+            try await exerciseService.delete(exercise)
             router.pop()
         } catch {
             errorMessage = error.localizedDescription

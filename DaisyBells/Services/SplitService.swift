@@ -42,18 +42,11 @@ final class SplitService: SplitServiceProtocol {
         try modelContext.save()
     }
 
-    func delete(_ split: SchemaV1.Split) async throws {
+    func delete(id: UUID) async throws {
+        // Fetch fresh from ModelContext to avoid stale references after async boundaries
+        let split = try await fetch(id: id)
         // Cascade delete will automatically remove all SplitDays due to relationship deleteRule
         modelContext.delete(split)
-        try modelContext.save()
-    }
-
-    func setCurrentDay(index: Int, in split: SchemaV1.Split) async throws {
-        let sortedDays = split.days.sorted { $0.order < $1.order }
-        guard index >= 0 && index < sortedDays.count else {
-            throw ServiceError.invalidOperation("Day index \(index) out of range")
-        }
-        split.currentDayIndex = index
         try modelContext.save()
     }
 
@@ -63,44 +56,22 @@ final class SplitService: SplitServiceProtocol {
             throw ServiceError.invalidOperation("Day index \(index) out of range")
         }
         sortedDays[index].isCompletedInCycle = true
-
-        if index == split.currentDayIndex {
-            try await advanceDay(in: split)
-        }
-
-        try await resetCycleIfComplete(split)
+        try modelContext.save()
     }
 
-    func advanceDay(in split: SchemaV1.Split) async throws {
+    func uncompleteDay(at index: Int, in split: SchemaV1.Split) async throws {
         let sortedDays = split.days.sorted { $0.order < $1.order }
-        guard !sortedDays.isEmpty else { return }
-
-        // Find next uncompleted day after currentDayIndex (wrapping)
-        let count = sortedDays.count
-        for offset in 1...count {
-            let candidateIndex = (split.currentDayIndex + offset) % count
-            if !sortedDays[candidateIndex].isCompletedInCycle {
-                split.currentDayIndex = candidateIndex
-                try modelContext.save()
-                return
-            }
+        guard index >= 0 && index < sortedDays.count else {
+            throw ServiceError.invalidOperation("Day index \(index) out of range")
         }
-
-        // All complete — reset cycle
-        try await resetCycleIfComplete(split)
+        sortedDays[index].isCompletedInCycle = false
+        try modelContext.save()
     }
 
-    func resetCycleIfComplete(_ split: SchemaV1.Split) async throws {
-        let sortedDays = split.days.sorted { $0.order < $1.order }
-        guard !sortedDays.isEmpty else { return }
-
-        let allComplete = sortedDays.allSatisfy(\.isCompletedInCycle)
-        guard allComplete else { return }
-
-        for day in sortedDays {
+    func resetCycle(_ split: SchemaV1.Split) async throws {
+        for day in split.days {
             day.isCompletedInCycle = false
         }
-        split.currentDayIndex = 0
         try modelContext.save()
     }
 }

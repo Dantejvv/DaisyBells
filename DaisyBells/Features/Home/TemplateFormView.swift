@@ -104,7 +104,7 @@ struct TemplateFormView: View {
                 .background(Color.borderSubtle)
                 .padding(.top, 10)
 
-            TextField("Notes...", text: $viewModel.notes, axis: .vertical)
+            TextField("Notes", text: $viewModel.notes, axis: .vertical)
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
                 .lineLimit(3...6)
@@ -122,17 +122,16 @@ struct TemplateFormView: View {
 
     // MARK: - Exercise Card
 
-    private func exerciseCard(_ templateExercise: SchemaV1.TemplateExercise) -> some View {
-        let exercise = templateExercise.exercise
-        let exerciseType = exercise?.type ?? .weightAndReps
+    private func exerciseCard(_ templateExercise: DraftTemplateExercise) -> some View {
+        let exerciseType = templateExercise.exerciseType
         let sets = templateExercise.sets.sorted { $0.order < $1.order }
-        let previousSets = exercise.flatMap { viewModel.previousPerformance[$0.id] } ?? []
+        let previousSets = viewModel.previousPerformance[templateExercise.exerciseId] ?? []
 
         return ExerciseCardContainer {
-            ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
+            ExerciseCardHeader(name: templateExercise.exerciseName) {
                 Menu {
                     Button(role: .destructive) {
-                        Task { await viewModel.removeExercise(templateExercise) }
+                        viewModel.removeExercise(templateExercise)
                     } label: {
                         Label("Remove Exercise", systemImage: "trash")
                     }
@@ -143,6 +142,19 @@ struct TemplateFormView: View {
                         .frame(width: 28, height: 28)
                 }
             }
+
+            // Exercise notes
+            TextField("Add note...", text: Binding(
+                get: { templateExercise.exerciseNotes ?? "" },
+                set: { newValue in
+                    Task { await viewModel.updateExerciseNotes(templateExercise, notes: newValue.isEmpty ? nil : newValue) }
+                }
+            ), axis: .vertical)
+            .font(.system(size: 12))
+            .foregroundStyle(Color.textSecondary)
+            .lineLimit(1...3)
+            .padding(.horizontal, 14)
+            .padding(.bottom, .spacingXs)
 
             SetColumnHeaders(exerciseType: exerciseType)
 
@@ -169,69 +181,63 @@ struct TemplateFormView: View {
                     previousDistance: previousSet?.distance,
                     previousNotes: previousSet?.notes,
                     onWeightChange: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                templateSet, weight: newVal, reps: templateSet.reps,
-                                bodyweightModifier: templateSet.bodyweightModifier,
-                                time: templateSet.time, distance: templateSet.distance,
-                                notes: templateSet.notes
-                            )
-                        }
+                        viewModel.updateSet(
+                            templateSet, in: templateExercise,
+                            weight: newVal, reps: templateSet.reps,
+                            bodyweightModifier: templateSet.bodyweightModifier,
+                            time: templateSet.time, distance: templateSet.distance,
+                            notes: templateSet.notes
+                        )
                     },
                     onRepsChange: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                templateSet, weight: templateSet.weight, reps: newVal,
-                                bodyweightModifier: templateSet.bodyweightModifier,
-                                time: templateSet.time, distance: templateSet.distance,
-                                notes: templateSet.notes
-                            )
-                        }
+                        viewModel.updateSet(
+                            templateSet, in: templateExercise,
+                            weight: templateSet.weight, reps: newVal,
+                            bodyweightModifier: templateSet.bodyweightModifier,
+                            time: templateSet.time, distance: templateSet.distance,
+                            notes: templateSet.notes
+                        )
                     },
                     onBodyweightModifierChange: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                templateSet, weight: templateSet.weight, reps: templateSet.reps,
-                                bodyweightModifier: newVal,
-                                time: templateSet.time, distance: templateSet.distance,
-                                notes: templateSet.notes
-                            )
-                        }
+                        viewModel.updateSet(
+                            templateSet, in: templateExercise,
+                            weight: templateSet.weight, reps: templateSet.reps,
+                            bodyweightModifier: newVal,
+                            time: templateSet.time, distance: templateSet.distance,
+                            notes: templateSet.notes
+                        )
                     },
                     onTimeChange: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                templateSet, weight: templateSet.weight, reps: templateSet.reps,
-                                bodyweightModifier: templateSet.bodyweightModifier,
-                                time: newVal, distance: templateSet.distance,
-                                notes: templateSet.notes
-                            )
-                        }
+                        viewModel.updateSet(
+                            templateSet, in: templateExercise,
+                            weight: templateSet.weight, reps: templateSet.reps,
+                            bodyweightModifier: templateSet.bodyweightModifier,
+                            time: newVal, distance: templateSet.distance,
+                            notes: templateSet.notes
+                        )
                     },
                     onDistanceChange: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                templateSet, weight: templateSet.weight, reps: templateSet.reps,
-                                bodyweightModifier: templateSet.bodyweightModifier,
-                                time: templateSet.time, distance: newVal,
-                                notes: templateSet.notes
-                            )
-                        }
+                        viewModel.updateSet(
+                            templateSet, in: templateExercise,
+                            weight: templateSet.weight, reps: templateSet.reps,
+                            bodyweightModifier: templateSet.bodyweightModifier,
+                            time: templateSet.time, distance: newVal,
+                            notes: templateSet.notes
+                        )
                     },
                     onNotesChange: { newVal in
-                        Task {
-                            await viewModel.updateSet(
-                                templateSet, weight: templateSet.weight, reps: templateSet.reps,
-                                bodyweightModifier: templateSet.bodyweightModifier,
-                                time: templateSet.time, distance: templateSet.distance,
-                                notes: newVal
-                            )
-                        }
+                        viewModel.updateSet(
+                            templateSet, in: templateExercise,
+                            weight: templateSet.weight, reps: templateSet.reps,
+                            bodyweightModifier: templateSet.bodyweightModifier,
+                            time: templateSet.time, distance: templateSet.distance,
+                            notes: newVal
+                        )
                     }
                 )
                 .contextMenu {
                     Button(role: .destructive) {
-                        Task { await viewModel.removeSet(templateSet, from: templateExercise) }
+                        viewModel.removeSet(templateSet, from: templateExercise)
                     } label: {
                         Label("Delete Set", systemImage: "trash")
                     }
@@ -239,7 +245,7 @@ struct TemplateFormView: View {
             }
 
             Button {
-                Task { await viewModel.addSet(to: templateExercise) }
+                viewModel.addSet(to: templateExercise)
             } label: {
                 Text("+ Add Set")
                     .font(.system(size: 12, weight: .semibold))

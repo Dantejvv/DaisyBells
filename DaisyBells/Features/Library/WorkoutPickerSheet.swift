@@ -131,6 +131,7 @@ private final class PreviewTemplateService: TemplateServiceProtocol {
     func updateSet(_ set: SchemaV1.TemplateSet, weight: Double?, reps: Int?, bodyweightModifier: Double?, time: TimeInterval?, distance: Double?, notes: String?) async throws {}
     func addExerciseWithSets(_ exercise: SchemaV1.Exercise, to template: SchemaV1.WorkoutTemplate, setCount: Int) async throws {}
     func updateExerciseNotes(_ templateExercise: SchemaV1.TemplateExercise, notes: String?) async throws {}
+    func saveTemplate(existingId: PersistentIdentifier?, name: String, notes: String?, exercises: [DraftTemplateExercise]) async throws {}
 }
 
 #Preview("Empty State") {

@@ -198,7 +198,7 @@ struct ExerciseDetailView: View {
             )
             statRow(
                 label: "Personal Record",
-                value: viewModel.performanceStats?.personalRecord?.displayValue ?? "—"
+                value: viewModel.performanceStats?.personalRecord?.displayValue(displayWeightUnit: viewModel.defaultWeightUnit, displayDistanceUnit: viewModel.defaultDistanceUnit) ?? "—"
             )
             statRow(
                 label: "Total Volume",
@@ -241,10 +241,10 @@ struct ExerciseDetailView: View {
 
     private func formatVolume(_ volume: Double?) -> String {
         guard let volume, volume > 0 else { return "—" }
-        if volume >= 1000 {
-            return String(format: "%.0f", volume)
-        }
-        return String(format: "%.1f", volume)
+        let displayUnit = viewModel.defaultWeightUnit
+        let storedUnit = viewModel.exercise?.resolvedTotalVolumeUnit ?? displayUnit
+        let converted = volume.convert(from: storedUnit, to: displayUnit)
+        return converted.volumeString(units: displayUnit)
     }
 }
 

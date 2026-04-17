@@ -1,4 +1,6 @@
 import SwiftUI
+// UIKit is used solely for UIColor's trait-based initializer to create adaptive light/dark colors.
+// SwiftUI's Color has no equivalent API for programmatic adaptive color definitions.
 import UIKit
 
 // MARK: - Adaptive Color Initializer

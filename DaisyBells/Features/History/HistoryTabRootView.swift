@@ -23,6 +23,7 @@ struct HistoryTabRootView: View {
                     CompletedWorkoutDetailView(
                         viewModel: CompletedWorkoutDetailViewModel(
                             workoutService: container.workoutService,
+                            templateService: container.templateService,
                             settingsService: container.settingsService,
                             router: router,
                             workoutId: workoutId

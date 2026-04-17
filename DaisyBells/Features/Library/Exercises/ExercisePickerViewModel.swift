@@ -41,7 +41,9 @@ final class ExercisePickerViewModel {
     func loadExercises() async {
         isLoading = true
         do {
-            allExercises = try await exerciseService.fetchAll()
+            allExercises = showArchived
+                ? try await exerciseService.fetchArchived()
+                : try await exerciseService.fetchAll()
             categories = try await categoryService.fetchAll()
             applyFilters()
         } catch {
@@ -75,9 +77,9 @@ final class ExercisePickerViewModel {
         applyFilters()
     }
 
-    func toggleArchivedFilter() {
+    func toggleArchivedFilter() async {
         showArchived.toggle()
-        applyFilters()
+        await loadExercises()
     }
 
     func toggleExercise(_ exercise: SchemaV1.Exercise) {
@@ -99,10 +101,6 @@ final class ExercisePickerViewModel {
 
     private func applyFilters() {
         var filtered = allExercises
-
-        if !showArchived {
-            filtered = filtered.filter { !$0.isArchived }
-        }
 
         if showFavoritesOnly {
             filtered = filtered.filter { $0.isFavorite }

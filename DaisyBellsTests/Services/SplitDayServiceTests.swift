@@ -116,25 +116,6 @@ struct SplitDayServiceTests {
     }
 
     @Test @MainActor
-    func deleteReordersRemainingDays() async throws {
-        let container = try makeTestModelContainer()
-        let splitService = SplitService(modelContext: container.mainContext)
-        let dayService = SplitDayService(modelContext: container.mainContext)
-
-        let split = try await splitService.create(name: "Test Split", notes: nil)
-        let day1 = try await dayService.create(name: "Day 1", split: split)
-        let day2 = try await dayService.create(name: "Day 2", split: split)
-        let day3 = try await dayService.create(name: "Day 3", split: split)
-
-        // Delete middle day
-        try await dayService.delete(day2, from: split)
-
-        #expect(split.days.count == 2)
-        #expect(day1.order == 0)
-        #expect(day3.order == 1) // Reordered from 2 to 1
-    }
-
-    @Test @MainActor
     func reorderUpdatesDayOrder() async throws {
         let container = try makeTestModelContainer()
         let splitService = SplitService(modelContext: container.mainContext)
@@ -267,24 +248,104 @@ struct SplitDayServiceTests {
     }
 
     @Test @MainActor
-    func deleteClampCurrentDayIndex() async throws {
+    func deleteReordersRemainingDays() async throws {
         let container = try makeTestModelContainer()
         let splitService = SplitService(modelContext: container.mainContext)
         let dayService = SplitDayService(modelContext: container.mainContext)
 
         let split = try await splitService.create(name: "Test Split", notes: nil)
         _ = try await dayService.create(name: "Day 1", split: split)
-        _ = try await dayService.create(name: "Day 2", split: split)
-        let day3 = try await dayService.create(name: "Day 3", split: split)
+        let day2 = try await dayService.create(name: "Day 2", split: split)
+        _ = try await dayService.create(name: "Day 3", split: split)
 
-        // Set current day to last index
-        split.currentDayIndex = 2
-
-        // Delete last day — currentDayIndex should clamp
-        try await dayService.delete(day3, from: split)
+        // Delete middle day
+        try await dayService.delete(day2, from: split)
 
         #expect(split.days.count == 2)
-        #expect(split.currentDayIndex == 1) // Clamped from 2 to 1
+        let sortedDays = split.days.sorted { $0.order < $1.order }
+        #expect(sortedDays[0].name == "Day 1")
+        #expect(sortedDays[0].order == 0)
+        #expect(sortedDays[1].name == "Day 3")
+        #expect(sortedDays[1].order == 1)
+    }
+
+    @Test @MainActor
+    func reorderPreservesAssignedWorkouts() async throws {
+        let container = try makeTestModelContainer()
+        let splitService = SplitService(modelContext: container.mainContext)
+        let dayService = SplitDayService(modelContext: container.mainContext)
+
+        let split = try await splitService.create(name: "Test Split", notes: nil)
+        let day1 = try await dayService.create(name: "Push", split: split)
+        let day2 = try await dayService.create(name: "Pull", split: split)
+        let day3 = try await dayService.create(name: "Legs", split: split)
+
+        let templateA = SchemaV1.WorkoutTemplate(name: "Workout A")
+        let templateB = SchemaV1.WorkoutTemplate(name: "Workout B")
+        let templateC = SchemaV1.WorkoutTemplate(name: "Workout C")
+        container.mainContext.insert(templateA)
+        container.mainContext.insert(templateB)
+        container.mainContext.insert(templateC)
+        try container.mainContext.save()
+
+        try await dayService.assignWorkout(templateA, to: day1)
+        try await dayService.assignWorkout(templateB, to: day2)
+        try await dayService.assignWorkout(templateC, to: day3)
+
+        // Reorder days
+        try await dayService.reorder(days: [day3, day1, day2], in: split)
+
+        // Verify all workout assignments survived the reorder
+        #expect(day1.assignedWorkouts.count == 1)
+        #expect(day1.assignedWorkouts[0].id == templateA.id)
+        #expect(day2.assignedWorkouts.count == 1)
+        #expect(day2.assignedWorkouts[0].id == templateB.id)
+        #expect(day3.assignedWorkouts.count == 1)
+        #expect(day3.assignedWorkouts[0].id == templateC.id)
+
+        // Verify order was updated
+        #expect(day3.order == 0)
+        #expect(day1.order == 1)
+        #expect(day2.order == 2)
+    }
+
+    @Test @MainActor
+    func batchCreateAssignsWorkoutsCorrectly() async throws {
+        let container = try makeTestModelContainer()
+        let splitService = SplitService(modelContext: container.mainContext)
+        let dayService = SplitDayService(modelContext: container.mainContext)
+
+        let split = try await splitService.create(name: "PPL Split", notes: nil)
+
+        // Create 6 templates (2 per day)
+        var templates: [SchemaV1.WorkoutTemplate] = []
+        for i in 1...6 {
+            let template = SchemaV1.WorkoutTemplate(name: "Workout \(i)")
+            container.mainContext.insert(template)
+            templates.append(template)
+        }
+        try container.mainContext.save()
+
+        // Create 3 days, each with 2 workouts via batch method
+        let day1 = try await dayService.create(name: "Push", split: split, assigningWorkouts: [templates[0], templates[1]])
+        let day2 = try await dayService.create(name: "Pull", split: split, assigningWorkouts: [templates[2], templates[3]])
+        let day3 = try await dayService.create(name: "Legs", split: split, assigningWorkouts: [templates[4], templates[5]])
+
+        // Verify each day has exactly 2 workouts
+        #expect(day1.assignedWorkouts.count == 2)
+        #expect(day2.assignedWorkouts.count == 2)
+        #expect(day3.assignedWorkouts.count == 2)
+
+        // Verify correct workouts on correct days
+        #expect(day1.assignedWorkouts.contains { $0.id == templates[0].id })
+        #expect(day1.assignedWorkouts.contains { $0.id == templates[1].id })
+        #expect(day2.assignedWorkouts.contains { $0.id == templates[2].id })
+        #expect(day2.assignedWorkouts.contains { $0.id == templates[3].id })
+        #expect(day3.assignedWorkouts.contains { $0.id == templates[4].id })
+        #expect(day3.assignedWorkouts.contains { $0.id == templates[5].id })
+
+        // Verify split has 3 days
+        #expect(split.days.count == 3)
     }
 
     @Test @MainActor

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 protocol SettingsServiceProtocol: AnyObject {
     var units: Units { get set }
     var distanceUnits: DistanceUnits { get set }

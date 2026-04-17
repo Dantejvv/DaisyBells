@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 @MainActor @Observable
 final class SettingsViewModel {
@@ -12,16 +13,27 @@ final class SettingsViewModel {
     private(set) var isImporting = false
     var errorMessage: String?
 
+    // Export state for fileExporter
+    var exportDocument: JSONDocument?
+    var showFileExporter = false
+    var showFileImporter = false
+
     // MARK: - Dependencies
 
     private let settingsService: SettingsServiceProtocol
-    private let container: DependencyContainer?
+    private let dataService: DataServiceProtocol?
+    private let onAppearanceChanged: ((Appearance) -> Void)?
 
     // MARK: - Init
 
-    init(settingsService: SettingsServiceProtocol, container: DependencyContainer? = nil) {
+    init(
+        settingsService: SettingsServiceProtocol,
+        dataService: DataServiceProtocol? = nil,
+        onAppearanceChanged: ((Appearance) -> Void)? = nil
+    ) {
         self.settingsService = settingsService
-        self.container = container
+        self.dataService = dataService
+        self.onAppearanceChanged = onAppearanceChanged
     }
 
     // MARK: - Intents
@@ -44,33 +56,51 @@ final class SettingsViewModel {
     }
 
     func updateAppearance(_ newAppearance: Appearance) {
-        if let container {
-            container.updateAppearance(newAppearance)
-        } else {
-            settingsService.appearance = newAppearance
-        }
+        settingsService.appearance = newAppearance
+        onAppearanceChanged?(newAppearance)
         appearance = newAppearance
     }
 
     func exportData() async {
-        // Phase 6 feature - stub for now
+        guard let dataService else { return }
         isExporting = true
         errorMessage = nil
-        // TODO: Implement export to JSON
+        do {
+            let data = try await dataService.exportAllData(settings: settingsService)
+            exportDocument = JSONDocument(data: data)
+            showFileExporter = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
         isExporting = false
     }
 
     func importData(url: URL) async {
-        // Phase 6 feature - stub for now
+        guard let dataService else { return }
         isImporting = true
         errorMessage = nil
-        // TODO: Implement import from JSON
+        do {
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessing { url.stopAccessingSecurityScopedResource() }
+            }
+            let data = try Data(contentsOf: url)
+            try await dataService.importAllData(from: data, settings: settingsService)
+            loadSettings()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
         isImporting = false
     }
 
     func resetData() async {
-        // Phase 6 feature - stub for now
+        guard let dataService else { return }
         errorMessage = nil
-        // TODO: Implement data reset
+        do {
+            try await dataService.resetAllData(settings: settingsService)
+            loadSettings()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

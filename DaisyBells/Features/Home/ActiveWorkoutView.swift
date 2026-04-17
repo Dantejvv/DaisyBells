@@ -46,7 +46,7 @@ struct ActiveWorkoutView: View {
                 Task { await viewModel.saveAsTemplate() }
             }
             Button("Skip", role: .cancel) {
-                viewModel.skipSaveAsTemplate()
+                Task { await viewModel.skipSaveAsTemplate() }
             }
         } message: {
             Text("Save this workout as a reusable template?")
@@ -165,6 +165,12 @@ struct ActiveWorkoutView: View {
 
                 // Right: more button
                 Menu {
+                    Button {
+                        Task { await viewModel.resetTimer() }
+                    } label: {
+                        Label("Reset Timer", systemImage: "timer")
+                    }
+
                     Button(role: .destructive) {
                         viewModel.showCancelConfirmation = true
                     } label: {
@@ -183,6 +189,18 @@ struct ActiveWorkoutView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(Color.textTertiary)
                 .padding(.top, .spacingSm)
+
+            // Workout notes
+            TextField("Notes", text: Binding(
+                get: { viewModel.workoutNotes },
+                set: { newValue in
+                    Task { await viewModel.updateWorkoutNotes(newValue) }
+                }
+            ), axis: .vertical)
+            .font(.system(size: 13))
+            .foregroundStyle(Color.textSecondary)
+            .lineLimit(1...5)
+            .padding(.top, .spacingSm)
 
             // Stats row
             Divider()
@@ -275,6 +293,20 @@ struct ActiveWorkoutView: View {
                 }
             }
 
+            // Exercise notes
+            TextField("Add note...", text: Binding(
+                get: { exercise?.notes ?? "" },
+                set: { newValue in
+                    guard let exercise else { return }
+                    Task { await viewModel.updateExerciseNotes(exercise, notes: newValue.isEmpty ? nil : newValue) }
+                }
+            ), axis: .vertical)
+            .font(.system(size: 12))
+            .foregroundStyle(Color.textSecondary)
+            .lineLimit(1...3)
+            .padding(.horizontal, 14)
+            .padding(.bottom, .spacingXs)
+
             // Column headers
             SetColumnHeaders(exerciseType: exerciseType, showCheckColumn: true, weightUnit: weightUnit, distanceUnit: distanceUnit)
 
@@ -338,11 +370,11 @@ struct ActiveWorkoutView: View {
                 time: loggedSet.time,
                 distance: loggedSet.distance,
                 notes: loggedSet.notes,
-                previousWeight: previous?.weight,
+                previousWeight: convertWeight(previous?.weight, storedUnit: previous?.resolvedWeightUnit, displayUnit: weightUnit),
                 previousReps: previous?.reps,
-                previousBodyweightModifier: previous?.bodyweightModifier,
+                previousBodyweightModifier: convertWeight(previous?.bodyweightModifier, storedUnit: previous?.resolvedWeightUnit, displayUnit: weightUnit),
                 previousTime: previous?.time,
-                previousDistance: previous?.distance,
+                previousDistance: convertDistance(previous?.distance, storedUnit: previous?.resolvedDistanceUnit, displayUnit: distanceUnit),
                 previousNotes: previous?.notes,
                 onWeightChange: { newVal in
                     Task {
@@ -409,11 +441,16 @@ struct ActiveWorkoutView: View {
             checkButton(loggedSet)
                 .padding(.trailing, 14)
         }
+        .swipeToDelete(enabled: viewModel.canDeleteSet(loggedSet, from: loggedExercise)) {
+            Task { await viewModel.deleteSet(loggedSet, from: loggedExercise) }
+        }
         .contextMenu {
-            Button(role: .destructive) {
-                Task { await viewModel.deleteSet(loggedSet, from: loggedExercise) }
-            } label: {
-                Label("Delete Set", systemImage: "trash")
+            if viewModel.canDeleteSet(loggedSet, from: loggedExercise) {
+                Button(role: .destructive) {
+                    Task { await viewModel.deleteSet(loggedSet, from: loggedExercise) }
+                } label: {
+                    Label("Delete Set", systemImage: "trash")
+                }
             }
         }
     }
@@ -462,6 +499,20 @@ struct ActiveWorkoutView: View {
                     .strokeBorder(Color.borderDefault, style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
             )
         }
+    }
+
+    // MARK: - Unit Conversion Helpers
+
+    private func convertWeight(_ value: Double?, storedUnit: Units?, displayUnit: Units) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convert(from: from, to: displayUnit)
+    }
+
+    private func convertDistance(_ value: Double?, storedUnit: DistanceUnits?, displayUnit: DistanceUnits) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convertDistance(from: from, to: displayUnit)
     }
 
     // MARK: - Unit Menu

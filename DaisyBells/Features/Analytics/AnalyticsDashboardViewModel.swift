@@ -15,12 +15,17 @@ final class AnalyticsDashboardViewModel {
     // MARK: - Dependencies
 
     private let analyticsService: AnalyticsServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let router: AnalyticsRouter
+
+    var units: Units { settingsService.units }
+    var distanceUnits: DistanceUnits { settingsService.distanceUnits }
 
     // MARK: - Init
 
-    init(analyticsService: AnalyticsServiceProtocol, router: AnalyticsRouter) {
+    init(analyticsService: AnalyticsServiceProtocol, settingsService: SettingsServiceProtocol, router: AnalyticsRouter) {
         self.analyticsService = analyticsService
+        self.settingsService = settingsService
         self.router = router
     }
 

@@ -37,6 +37,8 @@ final class ActiveWorkoutViewModel {
 
     // Closure-based navigation (decoupled from HomeRouter)
     var onDismiss: () -> Void = {}
+    var onComplete: () async -> Void = {}
+    var onTimerReset: ((Date) -> Void)?
     var onPresentExercisePicker: (@escaping ([PersistentIdentifier]) -> Void) -> Void = { _ in }
     var onDismissExercisePicker: () -> Void = {}
 
@@ -101,7 +103,7 @@ final class ActiveWorkoutViewModel {
 
         workout = workoutModel
         exercises = workoutModel.loggedExercises.sorted { $0.order < $1.order }
-        workoutNotes = workoutModel.notes ?? ""
+        workoutNotes = workoutModel.fromTemplate?.notes ?? ""
         fromTemplateName = workoutModel.fromTemplate?.name
 
         // Load previous performance for each exercise
@@ -144,11 +146,15 @@ final class ActiveWorkoutViewModel {
                 let previousCount = previousPerformance[exercise.id]?.count ?? 0
 
                 let maxOrder = workout.loggedExercises.map(\.order).max() ?? -1
+                let weightUnit = exercise.resolvedWeightUnit(default: defaultWeightUnit)
+                let distanceUnit = exercise.resolvedDistanceUnit(default: defaultDistanceUnit)
                 _ = try await loggedExerciseService.createWithSets(
                     exercise: exercise,
                     workout: workout,
                     order: maxOrder + 1,
-                    setCount: max(previousCount, 1)
+                    setCount: max(previousCount, 1),
+                    weightUnit: weightUnit,
+                    distanceUnit: distanceUnit
                 )
             } catch {
                 errorMessage = error.localizedDescription
@@ -181,7 +187,10 @@ final class ActiveWorkoutViewModel {
         errorMessage = nil
         do {
             let maxOrder = loggedExercise.sets.map(\.order).max() ?? -1
-            _ = try await loggedSetService.create(loggedExercise: loggedExercise, order: maxOrder + 1)
+            let exercise = loggedExercise.exercise
+            let weightUnit = exercise?.resolvedWeightUnit(default: defaultWeightUnit)
+            let distanceUnit = exercise?.resolvedDistanceUnit(default: defaultDistanceUnit)
+            _ = try await loggedSetService.create(loggedExercise: loggedExercise, order: maxOrder + 1, weightUnit: weightUnit, distanceUnit: distanceUnit)
             refreshExercises()
         } catch {
             errorMessage = error.localizedDescription
@@ -213,6 +222,10 @@ final class ActiveWorkoutViewModel {
         }
     }
 
+    func canDeleteSet(_ set: SchemaV1.LoggedSet, from loggedExercise: SchemaV1.LoggedExercise) -> Bool {
+        !set.isCompleted && loggedExercise.sets.count > 1
+    }
+
     func deleteSet(_ set: SchemaV1.LoggedSet, from loggedExercise: SchemaV1.LoggedExercise) async {
         errorMessage = nil
         do {
@@ -226,15 +239,71 @@ final class ActiveWorkoutViewModel {
     func toggleSetCompletion(_ set: SchemaV1.LoggedSet) async {
         errorMessage = nil
         do {
+            if !set.isCompleted {
+                applyPlaceholderValues(to: set)
+            }
             try await loggedSetService.toggleCompletion(set)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
+    private func applyPlaceholderValues(to set: SchemaV1.LoggedSet) {
+        guard let loggedExercise = set.loggedExercise,
+              let exercise = loggedExercise.exercise,
+              let previousSets = previousPerformance[exercise.id] else { return }
+
+        let sortedSets = loggedExercise.sets.sorted { $0.order < $1.order }
+        guard let index = sortedSets.firstIndex(where: { $0.id == set.id }),
+              index < previousSets.count else { return }
+
+        let prev = previousSets[index]
+        let weightUnit = exercise.resolvedWeightUnit(default: defaultWeightUnit)
+        let distanceUnit = exercise.resolvedDistanceUnit(default: defaultDistanceUnit)
+        let prevWeightUnit = prev.resolvedWeightUnit ?? weightUnit
+        let prevDistanceUnit = prev.resolvedDistanceUnit ?? distanceUnit
+
+        if set.weight == nil, let w = prev.weight {
+            set.weight = w.convert(from: prevWeightUnit, to: weightUnit)
+        }
+        if set.reps == nil, let r = prev.reps {
+            set.reps = r
+        }
+        if set.bodyweightModifier == nil, let bw = prev.bodyweightModifier {
+            set.bodyweightModifier = bw.convert(from: prevWeightUnit, to: weightUnit)
+        }
+        if set.time == nil, let t = prev.time {
+            set.time = t
+        }
+        if set.distance == nil, let d = prev.distance {
+            set.distance = d.convertDistance(from: prevDistanceUnit, to: distanceUnit)
+        }
+        if set.notes == nil || set.notes?.isEmpty == true, let n = prev.notes, !n.isEmpty {
+            set.notes = n
+        }
+    }
+
     func updateWeightUnit(_ exercise: SchemaV1.Exercise, unit: Units?) async {
+        let oldUnit = exercise.resolvedWeightUnit(default: defaultWeightUnit)
         exercise.preferredWeightUnit = unit
+        let newUnit = exercise.resolvedWeightUnit(default: defaultWeightUnit)
         errorMessage = nil
+
+        // Convert in-progress set values to the new unit
+        if oldUnit != newUnit {
+            for loggedExercise in exercises where loggedExercise.exercise?.id == exercise.id {
+                for set in loggedExercise.sets {
+                    if let weight = set.weight {
+                        set.weight = weight.convert(from: oldUnit, to: newUnit)
+                    }
+                    if let bw = set.bodyweightModifier {
+                        set.bodyweightModifier = bw.convert(from: oldUnit, to: newUnit)
+                    }
+                    set.weightUnit = newUnit.rawValue
+                }
+            }
+        }
+
         do {
             try await exerciseService.update(exercise)
         } catch {
@@ -243,8 +312,23 @@ final class ActiveWorkoutViewModel {
     }
 
     func updateDistanceUnit(_ exercise: SchemaV1.Exercise, unit: DistanceUnits?) async {
+        let oldUnit = exercise.resolvedDistanceUnit(default: defaultDistanceUnit)
         exercise.preferredDistanceUnit = unit
+        let newUnit = exercise.resolvedDistanceUnit(default: defaultDistanceUnit)
         errorMessage = nil
+
+        // Convert in-progress set values to the new unit
+        if oldUnit != newUnit {
+            for loggedExercise in exercises where loggedExercise.exercise?.id == exercise.id {
+                for set in loggedExercise.sets {
+                    if let distance = set.distance {
+                        set.distance = distance.convertDistance(from: oldUnit, to: newUnit)
+                    }
+                    set.distanceUnit = newUnit.rawValue
+                }
+            }
+        }
+
         do {
             try await exerciseService.update(exercise)
         } catch {
@@ -252,16 +336,24 @@ final class ActiveWorkoutViewModel {
         }
     }
 
-    func updateExerciseNotes(_ loggedExercise: SchemaV1.LoggedExercise, notes: String) {
-        loggedExercise.notes = notes.isEmpty ? nil : notes
+    func updateExerciseNotes(_ exercise: SchemaV1.Exercise, notes: String?) async {
+        exercise.notes = notes
+        do {
+            try await exerciseService.update(exercise)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
+    var hasTemplate: Bool { workout?.fromTemplate != nil }
+
     func updateWorkoutNotes(_ notes: String) async {
-        guard let workout else { return }
+        guard let template = workout?.fromTemplate else { return }
         workoutNotes = notes
+        template.notes = notes.isEmpty ? nil : notes
         errorMessage = nil
         do {
-            try await workoutService.updateNotes(workout, notes: notes.isEmpty ? nil : notes)
+            try await templateService.update(template)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -276,7 +368,7 @@ final class ActiveWorkoutViewModel {
             if workout.fromTemplate == nil && !exercises.isEmpty {
                 showSaveAsTemplatePrompt = true
             } else {
-                onDismiss()
+                await onComplete()
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -303,15 +395,15 @@ final class ActiveWorkoutViewModel {
             }
             didSaveAsTemplate = true
             showSaveAsTemplatePrompt = false
-            onDismiss()
+            await onComplete()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func skipSaveAsTemplate() {
+    func skipSaveAsTemplate() async {
         showSaveAsTemplatePrompt = false
-        onDismiss()
+        await onComplete()
     }
 
     func cancelWorkout() async {
@@ -331,6 +423,21 @@ final class ActiveWorkoutViewModel {
     private func refreshExercises() {
         guard let workout else { return }
         exercises = workout.loggedExercises.sorted { $0.order < $1.order }
+    }
+
+    func resetTimer() async {
+        guard let workout else { return }
+        let now = Date()
+        workout.startedAt = now
+        do {
+            try await workoutService.update(workout)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        elapsedTime = 0
+        stopTimer()
+        startTimer()
+        onTimerReset?(now)
     }
 
     private func startTimer() {

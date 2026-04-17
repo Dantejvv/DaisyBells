@@ -5,6 +5,8 @@ enum ServiceError: LocalizedError {
     case saveFailed(String)
     case deleteFailed(String)
     case invalidOperation(String)
+    case exportFailed(String)
+    case importFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +18,10 @@ enum ServiceError: LocalizedError {
             return "Failed to delete: \(reason)"
         case .invalidOperation(let reason):
             return "Invalid operation: \(reason)"
+        case .exportFailed(let reason):
+            return "Export failed: \(reason)"
+        case .importFailed(let reason):
+            return "Import failed: \(reason)"
         }
     }
 }

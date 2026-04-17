@@ -100,11 +100,14 @@ final class HistoryListViewModel {
     // MARK: - Helpers
 
     func totalVolume(for workout: SchemaV1.Workout) -> Double {
+        let displayUnit = units
         var volume: Double = 0
         for loggedExercise in workout.loggedExercises {
             for set in loggedExercise.sets {
                 if let weight = set.weight, let reps = set.reps {
-                    volume += weight * Double(reps)
+                    let storedUnit = set.resolvedWeightUnit ?? displayUnit
+                    let converted = weight.convert(from: storedUnit, to: displayUnit)
+                    volume += converted * Double(reps)
                 }
             }
         }

@@ -10,7 +10,9 @@ protocol ExerciseServiceProtocol {
     func fetch(by persistentId: PersistentIdentifier) -> SchemaV1.Exercise?
     func create(name: String, type: ExerciseType) async throws -> SchemaV1.Exercise
     func update(_ exercise: SchemaV1.Exercise) async throws
+    func fetchArchived() async throws -> [SchemaV1.Exercise]
     func delete(_ exercise: SchemaV1.Exercise) async throws
     func archive(_ exercise: SchemaV1.Exercise) async throws
     func hasHistory(_ exercise: SchemaV1.Exercise) async throws -> Bool
+    func isReferencedByTemplate(_ exercise: SchemaV1.Exercise) async throws -> Bool
 }

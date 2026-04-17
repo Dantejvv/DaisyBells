@@ -108,19 +108,4 @@ enum ExerciseSortOption: String, Codable, CaseIterable {
         }
     }
 
-    var shortDisplayName: String {
-        switch self {
-        case .alphabetical: "Abc"
-        case .creationDate: "Date"
-        case .favoritesFirst: "Fav"
-        }
-    }
-
-    var iconName: String {
-        switch self {
-        case .alphabetical: "textformat.abc"
-        case .creationDate: "calendar.badge.plus"
-        case .favoritesFirst: "star"
-        }
-    }
 }

@@ -7,7 +7,7 @@ struct EditableNotesField: View {
 
     var body: some View {
         let current = currentNotes ?? ""
-        let placeholderText = previousNotes ?? "Notes..."
+        let placeholderText = previousNotes ?? "Notes"
 
         TextField(
             placeholderText,

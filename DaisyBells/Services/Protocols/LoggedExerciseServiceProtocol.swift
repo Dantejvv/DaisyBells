@@ -4,8 +4,8 @@ import SwiftData
 @MainActor
 protocol LoggedExerciseServiceProtocol {
     // CRUD operations
-    func create(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int) async throws -> SchemaV1.LoggedExercise
-    func createWithSets(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, setCount: Int) async throws -> SchemaV1.LoggedExercise
+    func create(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, weightUnit: Units?, distanceUnit: DistanceUnits?) async throws -> SchemaV1.LoggedExercise
+    func createWithSets(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, setCount: Int, weightUnit: Units?, distanceUnit: DistanceUnits?) async throws -> SchemaV1.LoggedExercise
     func update(_ loggedExercise: SchemaV1.LoggedExercise) async throws
     func delete(_ loggedExercise: SchemaV1.LoggedExercise) async throws
 

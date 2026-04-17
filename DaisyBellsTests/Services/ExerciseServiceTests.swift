@@ -120,4 +120,72 @@ struct ExerciseServiceTests {
 
         #expect(!hasHistory)
     }
+
+    @Test @MainActor
+    func fetchArchivedReturnsOnlyArchivedExercises() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        let active = try await service.create(name: "Active", type: .weightAndReps)
+        let archived = try await service.create(name: "Archived", type: .weightAndReps)
+        try await service.archive(archived)
+
+        let results = try await service.fetchArchived()
+
+        #expect(results.count == 1)
+        #expect(results[0].id == archived.id)
+    }
+
+    @Test @MainActor
+    func isReferencedByTemplateReturnsFalseWhenNotUsed() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        let exercise = try await service.create(name: "Lonely", type: .weightAndReps)
+
+        let referenced = try await service.isReferencedByTemplate(exercise)
+
+        #expect(!referenced)
+    }
+
+    @Test @MainActor
+    func isReferencedByTemplateReturnsTrueWhenUsed() async throws {
+        let container = try makeTestModelContainer()
+        let context = container.mainContext
+        let service = ExerciseService(modelContext: context)
+
+        let exercise = try await service.create(name: "Used", type: .weightAndReps)
+        let template = SchemaV1.WorkoutTemplate(name: "Test Template")
+        context.insert(template)
+        let templateExercise = SchemaV1.TemplateExercise(exercise: exercise, order: 0)
+        templateExercise.template = template
+        context.insert(templateExercise)
+        try context.save()
+
+        let referenced = try await service.isReferencedByTemplate(exercise)
+
+        #expect(referenced)
+    }
+
+    @Test @MainActor
+    func deleteArchivesExerciseReferencedByTemplate() async throws {
+        let container = try makeTestModelContainer()
+        let context = container.mainContext
+        let service = ExerciseService(modelContext: context)
+
+        let exercise = try await service.create(name: "InTemplate", type: .weightAndReps)
+        let template = SchemaV1.WorkoutTemplate(name: "Test Template")
+        context.insert(template)
+        let templateExercise = SchemaV1.TemplateExercise(exercise: exercise, order: 0)
+        templateExercise.template = template
+        context.insert(templateExercise)
+        try context.save()
+
+        try await service.delete(exercise)
+
+        // Should be archived, not deleted
+        #expect(exercise.isArchived)
+        let fetched = try await service.fetch(id: exercise.id)
+        #expect(fetched.id == exercise.id)
+    }
 }

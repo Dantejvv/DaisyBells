@@ -38,12 +38,18 @@ final class WorkoutService: WorkoutServiceProtocol {
 
             let previousSets = try await lastPerformedSets(for: exercise)
 
+            // Resolve current units for this exercise
+            let weightUnit = exercise.preferredWeightUnit
+            let distanceUnit = exercise.preferredDistanceUnit
+
             if previousSets.isEmpty {
                 // No history — fall back to template sets
                 let sortedTemplateSets = templateExercise.sets.sorted { $0.order < $1.order }
                 let setCount = max(sortedTemplateSets.count, 1)
                 for i in 0..<setCount {
                     let loggedSet = SchemaV1.LoggedSet(order: i)
+                    loggedSet.weightUnit = weightUnit?.rawValue
+                    loggedSet.distanceUnit = distanceUnit?.rawValue
                     if i < sortedTemplateSets.count {
                         let templateSet = sortedTemplateSets[i]
                         loggedSet.weight = templateSet.weight
@@ -59,6 +65,8 @@ final class WorkoutService: WorkoutServiceProtocol {
                 // Has history — use previous performance count
                 for i in 0..<previousSets.count {
                     let loggedSet = SchemaV1.LoggedSet(order: i)
+                    loggedSet.weightUnit = weightUnit?.rawValue
+                    loggedSet.distanceUnit = distanceUnit?.rawValue
                     loggedSet.loggedExercise = loggedExercise
                     modelContext.insert(loggedSet)
                 }
@@ -116,18 +124,25 @@ final class WorkoutService: WorkoutServiceProtocol {
             exercise.hasCompletedWorkout = true
 
             var sessionVolume: Double = 0
+            // Determine the unit for this session's sets (all sets share the same unit)
+            let sessionWeightUnit = loggedExercise.sets.first?.resolvedWeightUnit
+
             for set in loggedExercise.sets {
                 if let weight = set.weight, let reps = set.reps {
                     sessionVolume += weight * Double(reps)
                 }
 
-                if shouldUpdatePersonalRecord(exercise: exercise, set: set) {
-                    exercise.prWeight = set.weight
-                    exercise.prReps = set.reps
-                    exercise.prTime = set.time
-                    exercise.prDistance = set.distance
-                    exercise.prAchievedAt = completedAt
-                    exercise.prEstimated1RM = calculateEstimated1RM(weight: set.weight, reps: set.reps)
+                if exercise.shouldUpdatePR(with: set) {
+                    exercise.applyPR(from: set, completedAt: completedAt)
+                }
+            }
+
+            // Convert session volume to match existing totalVolume unit if needed
+            if let sessionUnit = sessionWeightUnit, sessionVolume > 0 {
+                if let existingUnit = exercise.resolvedTotalVolumeUnit, existingUnit != sessionUnit {
+                    sessionVolume = sessionVolume.convert(from: sessionUnit, to: existingUnit)
+                } else if exercise.totalVolumeUnit == nil {
+                    exercise.totalVolumeUnit = sessionUnit.rawValue
                 }
             }
             exercise.totalVolume += sessionVolume
@@ -142,33 +157,6 @@ final class WorkoutService: WorkoutServiceProtocol {
                 set.completedAt = completedAt
             }
         }
-    }
-
-    private func shouldUpdatePersonalRecord(exercise: SchemaV1.Exercise, set: SchemaV1.LoggedSet) -> Bool {
-        switch exercise.type {
-        case .weightAndReps:
-            guard let newEstimate = calculateEstimated1RM(weight: set.weight, reps: set.reps) else {
-                return false
-            }
-            return newEstimate > (exercise.prEstimated1RM ?? 0)
-
-        case .bodyweightAndReps, .reps:
-            guard let newReps = set.reps else { return false }
-            return newReps > (exercise.prReps ?? 0)
-
-        case .time, .weightAndTime:
-            guard let newTime = set.time else { return false }
-            return newTime > (exercise.prTime ?? 0)
-
-        case .distanceAndTime:
-            guard let newDistance = set.distance else { return false }
-            return newDistance > (exercise.prDistance ?? 0)
-        }
-    }
-
-    private func calculateEstimated1RM(weight: Double?, reps: Int?) -> Double? {
-        guard let weight, let reps, reps > 0 else { return nil }
-        return weight * (1 + Double(reps) / 30.0)
     }
 
     func cancel(_ workout: SchemaV1.Workout) async throws {
@@ -225,11 +213,6 @@ final class WorkoutService: WorkoutServiceProtocol {
         for workout in workouts {
             modelContext.delete(workout)
         }
-        try modelContext.save()
-    }
-
-    func updateNotes(_ workout: SchemaV1.Workout, notes: String?) async throws {
-        workout.notes = notes
         try modelContext.save()
     }
 

@@ -2,6 +2,12 @@ import Foundation
 
 extension Double {
 
+    /// Rounds to a specified number of decimal places
+    func rounded(toPlaces places: Int) -> Double {
+        let multiplier = pow(10.0, Double(places))
+        return (self * multiplier).rounded() / multiplier
+    }
+
     // MARK: - Weight Formatting
 
     /// Formats weight with unit suffix (e.g., "135 lbs" or "61.2 kg")
@@ -14,36 +20,16 @@ extension Double {
         }
     }
 
-    /// Formats weight without unit suffix for input fields
-    func weightInputString(units: Units) -> String {
-        switch units {
-        case .lbs:
-            return String(format: "%.0f", self)
-        case .kg:
-            return String(format: "%.1f", self)
-        }
-    }
-
-    /// Formats weight compactly (e.g., "135" or "61.2")
-    func weightCompactString(units: Units) -> String {
-        switch units {
-        case .lbs:
-            return String(format: "%.0f", self)
-        case .kg:
-            return String(format: "%.1f", self)
-        }
-    }
-
     // MARK: - Weight Conversion
 
     /// Converts from lbs to kg
     var lbsToKg: Double {
-        self * 0.45359237
+        (self * 0.45359237).rounded(toPlaces: 1)
     }
 
     /// Converts from kg to lbs
     var kgToLbs: Double {
-        self / 0.45359237
+        (self / 0.45359237).rounded(toPlaces: 1)
     }
 
     /// Converts weight between unit systems
@@ -61,16 +47,6 @@ extension Double {
 
     // MARK: - Distance Formatting
 
-    /// Formats distance in miles (e.g., "3.2 mi")
-    var distanceMilesString: String {
-        String(format: "%.1f mi", self)
-    }
-
-    /// Formats distance in kilometers (e.g., "5.1 km")
-    var distanceKmString: String {
-        String(format: "%.1f km", self)
-    }
-
     /// Formats distance with unit suffix based on user preference (e.g., "3.2 mi" or "5.1 km")
     func distanceString(units: DistanceUnits) -> String {
         switch units {
@@ -83,12 +59,12 @@ extension Double {
 
     /// Converts from miles to kilometers
     var milesToKm: Double {
-        self * 1.609344
+        (self * 1.609344).rounded(toPlaces: 1)
     }
 
     /// Converts from kilometers to miles
     var kmToMiles: Double {
-        self / 1.609344
+        (self / 1.609344).rounded(toPlaces: 1)
     }
 
     /// Converts distance between unit systems
@@ -202,16 +178,6 @@ extension TimeInterval {
 // MARK: - Int Extension for Reps/Sets
 
 extension Int {
-
-    /// Formats reps count (e.g., "12 reps" or "1 rep")
-    var repsString: String {
-        self == 1 ? "1 rep" : "\(self) reps"
-    }
-
-    /// Formats sets count (e.g., "3 sets" or "1 set")
-    var setsString: String {
-        self == 1 ? "1 set" : "\(self) sets"
-    }
 
     /// Formats reps compactly (e.g., "12")
     var repsCompactString: String {

@@ -15,6 +15,5 @@ protocol WorkoutServiceProtocol {
     func fetchActive() async throws -> SchemaV1.Workout?
     func delete(_ workout: SchemaV1.Workout) async throws
     func deleteAll() async throws
-    func updateNotes(_ workout: SchemaV1.Workout, notes: String?) async throws
     func fetchRecent(limit: Int) async throws -> [SchemaV1.Workout]
 }

@@ -17,6 +17,7 @@ final class DependencyContainer {
     let workoutService: WorkoutService
     let analyticsService: AnalyticsService
     let seedingService: SeedingService
+    let dataService: DataService
 
     // Appearance
     private(set) var currentAppearance: Appearance = .system
@@ -57,6 +58,7 @@ final class DependencyContainer {
         )
         self.analyticsService = AnalyticsService(modelContext: modelContext)
         self.seedingService = SeedingService(modelContext: modelContext)
+        self.dataService = DataService(modelContext: modelContext, seedingService: seedingService)
 
         // Initialize active workout manager
         self.activeWorkoutManager = ActiveWorkoutManager(workoutService: workoutService)

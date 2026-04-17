@@ -12,7 +12,8 @@ final class HomeDashboardViewModel {
     var errorMessage: String?
 
     // Delete confirmation state
-    var templatePendingDelete: SchemaV1.WorkoutTemplate?
+    var showDeleteConfirmation = false
+    private(set) var templatePendingDelete: SchemaV1.WorkoutTemplate?
 
     // MARK: - Dependencies
 
@@ -25,7 +26,10 @@ final class HomeDashboardViewModel {
 
     var hasActiveWorkout: Bool { activeWorkoutManager.hasActiveWorkout }
     var completedDayCount: Int { splitDays.filter(\.isCompletedInCycle).count }
-    var currentDayIndex: Int { activeSplit?.currentDayIndex ?? 0 }
+    var isCycleComplete: Bool { activeSplit != nil && !splitDays.isEmpty && splitDays.allSatisfy(\.isCompletedInCycle) }
+    var suggestedDayIndex: Int? {
+        splitDays.firstIndex(where: { !$0.isCompletedInCycle })
+    }
 
     // MARK: - Init
 
@@ -83,10 +87,7 @@ final class HomeDashboardViewModel {
 
     func requestDelete(_ template: SchemaV1.WorkoutTemplate) {
         templatePendingDelete = template
-    }
-
-    func cancelDelete() {
-        templatePendingDelete = nil
+        showDeleteConfirmation = true
     }
 
     func confirmDelete() async {
@@ -134,17 +135,58 @@ final class HomeDashboardViewModel {
         }
     }
 
+    func startSplitDayWorkout(_ template: SchemaV1.WorkoutTemplate, dayIndex: Int) async {
+        guard !hasActiveWorkout else { return }
+        errorMessage = nil
+        do {
+            let workout = try await workoutService.createFromTemplate(template)
+            activeWorkoutManager.onWorkoutCompleted = { [weak self] in
+                await self?.completeSplitDay()
+            }
+            activeWorkoutManager.start(
+                workoutId: workout.persistentModelID,
+                name: template.name,
+                startedAt: workout.startedAt,
+                splitDayIndex: dayIndex
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func resumeActiveWorkout() {
         activeWorkoutManager.showSheet()
     }
 
     // MARK: - Cycle Tracking
 
-    func setCurrentDay(index: Int) async {
+    private func completeSplitDay() async {
+        guard let split = activeSplit,
+              let dayIndex = activeWorkoutManager.activeSplitDayIndex else { return }
+        do {
+            try await splitService.skipDay(at: dayIndex, in: split)
+            await loadDashboard()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func resetCycle() async {
+        guard let split = activeSplit else { return }
+        errorMessage = nil
+        do {
+            try await splitService.resetCycle(split)
+            await loadDashboard()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func uncompleteDay(at index: Int) async {
         errorMessage = nil
         do {
             guard let split = activeSplit else { return }
-            try await splitService.setCurrentDay(index: index, in: split)
+            try await splitService.uncompleteDay(at: index, in: split)
             await loadDashboard()
         } catch {
             errorMessage = error.localizedDescription

@@ -7,9 +7,6 @@ enum LibraryRoute: Hashable {
     // Exercise routes
     case exerciseList(categoryId: PersistentIdentifier?)
     case exerciseDetail(exerciseId: PersistentIdentifier)
-
-    // Template routes
-    case templateDetail(templateId: PersistentIdentifier)
 }
 
 // MARK: - Sheet Enum
@@ -17,7 +14,6 @@ enum LibraryRoute: Hashable {
 enum LibrarySheet: Identifiable {
     case exerciseForm(exerciseId: PersistentIdentifier?)
     case exercisePicker
-    case templateForm(templateId: PersistentIdentifier?)
 
     var id: String {
         switch self {
@@ -25,8 +21,6 @@ enum LibrarySheet: Identifiable {
             return "exerciseForm-\(exerciseId?.hashValue ?? 0)"
         case .exercisePicker:
             return "exercisePicker"
-        case .templateForm(let templateId):
-            return "templateForm-\(templateId?.hashValue ?? 0)"
         }
     }
 }
@@ -35,7 +29,7 @@ enum LibrarySheet: Identifiable {
 
 @MainActor
 @Observable
-final class LibraryRouter: TemplateRouting {
+final class LibraryRouter {
     var path: [LibraryRoute] = []
     var presentedSheet: LibrarySheet?
 
@@ -68,10 +62,6 @@ final class LibraryRouter: TemplateRouting {
         presentedSheet = .exercisePicker
     }
 
-    func presentTemplateForm(templateId: PersistentIdentifier? = nil) {
-        presentedSheet = .templateForm(templateId: templateId)
-    }
-
     func dismissSheet() {
         presentedSheet = nil
         onExerciseSelected = nil
@@ -85,9 +75,5 @@ final class LibraryRouter: TemplateRouting {
 
     func navigateToExerciseDetail(exerciseId: PersistentIdentifier) {
         push(.exerciseDetail(exerciseId: exerciseId))
-    }
-
-    func navigateToTemplateDetail(templateId: PersistentIdentifier) {
-        push(.templateDetail(templateId: templateId))
     }
 }

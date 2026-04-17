@@ -50,7 +50,9 @@ final class ExerciseListViewModel {
 
             var allExercises: [SchemaV1.Exercise]
 
-            if let categoryId = selectedCategoryId,
+            if showArchived {
+                allExercises = try await exerciseService.fetchArchived()
+            } else if let categoryId = selectedCategoryId,
                let category = categoryService.fetch(by: categoryId) {
                 allExercises = try await exerciseService.fetchByCategory(category)
             } else {
@@ -120,12 +122,7 @@ final class ExerciseListViewModel {
         guard let exercise = exercisePendingDelete else { return }
         errorMessage = nil
         do {
-            let hasHistory = try await exerciseService.hasHistory(exercise)
-            if hasHistory {
-                try await exerciseService.archive(exercise)
-            } else {
-                try await exerciseService.delete(exercise)
-            }
+            try await exerciseService.delete(exercise)
             exercisePendingDelete = nil
             await loadExercises()
         } catch {
@@ -138,10 +135,6 @@ final class ExerciseListViewModel {
 
     private func filterAndSortExercises(_ allExercises: [SchemaV1.Exercise]) -> [SchemaV1.Exercise] {
         var filtered = allExercises
-
-        if !showArchived {
-            filtered = filtered.filter { !$0.isArchived }
-        }
 
         if showFavoritesOnly {
             filtered = filtered.filter { $0.isFavorite }

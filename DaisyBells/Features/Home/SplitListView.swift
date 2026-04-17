@@ -56,11 +56,12 @@ struct SplitListView: View {
             ForEach(viewModel.splits, id: \.id) { split in
                 splitRow(split)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
+                        Button {
                             viewModel.requestDelete(split)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
+                        .tint(.red)
 
                         Button {
                             viewModel.editSplit(split)
@@ -93,67 +94,67 @@ struct SplitListView: View {
     // MARK: - None Row
 
     private var noneRow: some View {
-        Button {
-            viewModel.clearActiveSplit()
-        } label: {
-            HStack {
-                Text("None")
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Color.textPrimary)
+        HStack {
+            Text("None")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Color.textPrimary)
 
-                Spacer()
+            Spacer()
 
-                if viewModel.activeSplitId == nil {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accent)
-                        .font(.title3)
-                }
+            if viewModel.activeSplitId == nil {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accent)
+                    .font(.title3)
             }
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            viewModel.clearActiveSplit()
+        }
         .listRowBackground(Color.bgCard)
     }
 
     // MARK: - Split Row
 
     private func splitRow(_ split: SchemaV1.Split) -> some View {
-        let isPendingDelete = viewModel.splitPendingDelete?.id == split.id
         let isActive = viewModel.activeSplitId == split.id
+        let isPendingDelete = viewModel.splitPendingDelete?.id == split.id
         let dayCount = split.days.count
 
-        return Button {
+        return HStack {
+            VStack(alignment: .leading, spacing: .spacing2xs) {
+                Text(split.name)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(isPendingDelete ? Color.textTertiary : Color.textPrimary)
+                Text("\(dayCount) day\(dayCount == 1 ? "" : "s")")
+                    .font(.caption)
+                    .foregroundStyle(isPendingDelete ? Color.textTertiary : Color.textSecondary)
+            }
+
+            Spacer()
+
+            if isPendingDelete {
+                deleteConfirmationButtons()
+            } else if isActive {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accent)
+                    .font(.title3)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
             if !isPendingDelete {
                 viewModel.setActiveSplit(split)
             }
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: .spacing2xs) {
-                    Text(split.name)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(isPendingDelete ? Color.textTertiary : Color.textPrimary)
-                    Text("\(dayCount) day\(dayCount == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundStyle(isPendingDelete ? Color.textTertiary : Color.textSecondary)
-                }
-
-                Spacer()
-
-                if isPendingDelete {
-                    deleteConfirmationButtons(split)
-                } else if isActive {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accent)
-                        .font(.title3)
-                }
-            }
         }
-        .buttonStyle(.plain)
         .opacity(isPendingDelete ? 0.5 : 1.0)
     }
 
-    // MARK: - Delete Confirmation
+    // MARK: - Delete Confirmation Buttons
 
-    private func deleteConfirmationButtons(_ split: SchemaV1.Split) -> some View {
+    private func deleteConfirmationButtons() -> some View {
         HStack(spacing: .spacingSm) {
             Button {
                 viewModel.cancelDelete()

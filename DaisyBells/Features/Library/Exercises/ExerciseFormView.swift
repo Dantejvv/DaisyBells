@@ -41,7 +41,7 @@ struct ExerciseFormView: View {
                     .foregroundStyle(Color.textPrimary)
                     .padding(.bottom, .spacingSm)
                 Divider()
-                TextField("Optional notes.......", text: $viewModel.notes, axis: .vertical)
+                TextField("Notes", text: $viewModel.notes, axis: .vertical)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(3...6)
                     .padding(.top, .spacingMd)

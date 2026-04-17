@@ -9,7 +9,7 @@ final class LoggedExerciseService: LoggedExerciseServiceProtocol {
         self.modelContext = modelContext
     }
 
-    func create(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int) async throws -> SchemaV1.LoggedExercise {
+    func create(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, weightUnit: Units?, distanceUnit: DistanceUnits?) async throws -> SchemaV1.LoggedExercise {
         let loggedExercise = SchemaV1.LoggedExercise(
             exercise: exercise,
             order: order
@@ -17,8 +17,10 @@ final class LoggedExerciseService: LoggedExerciseServiceProtocol {
         loggedExercise.workout = workout
         modelContext.insert(loggedExercise)
 
-        // Create initial empty set
+        // Create initial empty set with unit stamps
         let loggedSet = SchemaV1.LoggedSet(order: 0)
+        loggedSet.weightUnit = weightUnit?.rawValue
+        loggedSet.distanceUnit = distanceUnit?.rawValue
         loggedSet.loggedExercise = loggedExercise
         modelContext.insert(loggedSet)
 
@@ -26,7 +28,7 @@ final class LoggedExerciseService: LoggedExerciseServiceProtocol {
         return loggedExercise
     }
 
-    func createWithSets(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, setCount: Int) async throws -> SchemaV1.LoggedExercise {
+    func createWithSets(exercise: SchemaV1.Exercise, workout: SchemaV1.Workout, order: Int, setCount: Int, weightUnit: Units?, distanceUnit: DistanceUnits?) async throws -> SchemaV1.LoggedExercise {
         let loggedExercise = SchemaV1.LoggedExercise(
             exercise: exercise,
             order: order
@@ -37,6 +39,8 @@ final class LoggedExerciseService: LoggedExerciseServiceProtocol {
         let count = max(setCount, 1)
         for i in 0..<count {
             let loggedSet = SchemaV1.LoggedSet(order: i)
+            loggedSet.weightUnit = weightUnit?.rawValue
+            loggedSet.distanceUnit = distanceUnit?.rawValue
             loggedSet.loggedExercise = loggedExercise
             modelContext.insert(loggedSet)
         }

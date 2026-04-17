@@ -46,7 +46,7 @@ struct AnalyticsServiceTests {
 
         let exercise = try await exerciseService.create(name: "Bench", type: .weightAndReps)
         let workout = try await workoutService.createEmpty()
-        _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
+        _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0, weightUnit: .lbs, distanceUnit: nil)
         try await workoutService.complete(workout)
 
         let recent = try await analyticsService.recentExercises(limit: 10)
@@ -66,7 +66,7 @@ struct AnalyticsServiceTests {
 
         let exercise = try await exerciseService.create(name: "Squat", type: .weightAndReps)
         let workout = try await workoutService.createEmpty()
-        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
+        let logged = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0, weightUnit: .lbs, distanceUnit: nil)
 
         try await loggedSetService.update(logged.sets[0], weight: 100, reps: 10, bodyweightModifier: nil, time: nil, distance: nil, notes: nil)
 
@@ -87,7 +87,7 @@ struct AnalyticsServiceTests {
 
         let exercise = try await exerciseService.create(name: "Deadlift", type: .weightAndReps)
         let workout = try await workoutService.createEmpty()
-        _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0)
+        _ = try await loggedExerciseService.create(exercise: exercise, workout: workout, order: 0, weightUnit: .lbs, distanceUnit: nil)
         try await workoutService.complete(workout)
 
         let lastDate = try await analyticsService.lastPerformedDate(exercise)

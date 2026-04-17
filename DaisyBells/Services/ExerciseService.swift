@@ -67,14 +67,33 @@ final class ExerciseService: ExerciseServiceProtocol {
         try modelContext.save()
     }
     
+    func fetchArchived() async throws -> [SchemaV1.Exercise] {
+        var descriptor = FetchDescriptor<SchemaV1.Exercise>(
+            sortBy: [SortDescriptor(\.name)]
+        )
+        descriptor.predicate = #Predicate<SchemaV1.Exercise> { exercise in
+            exercise.isArchived == true
+        }
+        return try modelContext.fetch(descriptor)
+    }
+
     func delete(_ exercise: SchemaV1.Exercise) async throws {
         let hasExistingHistory = try await hasHistory(exercise)
-        if hasExistingHistory {
+        let usedInTemplate = try await isReferencedByTemplate(exercise)
+        if hasExistingHistory || usedInTemplate {
             try await archive(exercise)
         } else {
             modelContext.delete(exercise)
             try modelContext.save()
         }
+    }
+
+    func isReferencedByTemplate(_ exercise: SchemaV1.Exercise) async throws -> Bool {
+        let exerciseId = exercise.persistentModelID
+        var descriptor = FetchDescriptor<SchemaV1.TemplateExercise>()
+        descriptor.fetchLimit = 1
+        let templateExercises = try modelContext.fetch(descriptor)
+        return templateExercises.contains { $0.exercise?.persistentModelID == exerciseId }
     }
     
     func archive(_ exercise: SchemaV1.Exercise) async throws {

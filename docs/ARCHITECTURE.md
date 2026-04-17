@@ -40,7 +40,9 @@ Use Swift Concurrency (async/await, @MainActor, Task { }, actors, Sendable)
   never by passing model instances directly
 - Enable **Strict Concurrency Checking: Complete** in build settings
 
-### Background Operations
+### Background Operations (not yet used)
+All SwiftData access currently runs on the `MainActor`. If background persistence
+is needed in the future, use the following pattern:
 - Use `@ModelActor` to isolate all background SwiftData access
 - Each `@ModelActor` owns exactly one `ModelContext`
 - Do not access SwiftData from arbitrary background tasks
@@ -202,6 +204,22 @@ Analytics use a hybrid approach: some data is cached for performance, some is de
 
 ---
 
+# Data Management
+## Decision
+Use a dedicated DataService for export, import, and reset operations
+
+## Structure
+- `DataService` handles full-database export (JSON), import (with relationship reconstruction), and factory reset
+- Export produces a self-contained JSON file via `ExportContainer` DTOs (see MODELS.md)
+- Import clears all data, re-inserts in dependency order, and recalculates cached exercise stats
+- Reset deletes all data, restores defaults via SeedingService, and resets settings
+
+## Rules
+- All export/import/reset operations go through DataService — no direct model manipulation
+- Import reconstructs relationships via UUID-based lookups (not nested object references)
+
+---
+
 # Dependency Injection
 ## Decision
 Use manual dependency injection with a grouped composition root (DependencyContainer)
@@ -222,6 +240,11 @@ The DependencyContainer:
 - Does not perform lazy resolution
 - Does not act as a service locator
 
+## Appearance Propagation
+- `DependencyContainer` holds `currentAppearance: Appearance` which drives the app-level `.preferredColorScheme()`
+- `SettingsViewModel` receives an `onAppearanceChanged` closure (not the container itself) to propagate appearance changes
+- This avoids ViewModels depending on the composition root while still allowing app-wide appearance updates
+
 ---
 
 # Navigation Pattern
@@ -233,14 +256,14 @@ Use NavigationStack with enum-based routing and per-tab Routers
 **Route Enums:**
 - One `Hashable` enum per tab defining all navigable destinations
 - Associated values for passing data between screens
-- Naming convention: `WorkoutsRoute`, `ExercisesRoute`, etc.
+- Naming convention: `HomeRoute`, `LibraryRoute`, `HistoryRoute`, `AnalyticsRoute`
 
 **Routers:**
 - One `@Observable` router class per tab
 - Created in `DependencyContainer`, injected into ViewModels
 - Owns a `[Route]` array representing the navigation stack
 - Exposes methods: `push(_:)`, `pop()`, `popToRoot()`
-- Naming convention: `WorkoutsRouter`, `ExercisesRouter`, etc.
+- Naming convention: `HomeRouter`, `LibraryRouter`, `HistoryRouter`, `AnalyticsRouter`
 
 **NavigationStack:**
 - One per tab root view, bound to the router's path
@@ -251,11 +274,15 @@ Use NavigationStack with enum-based routing and per-tab Routers
 - ViewModels call router methods to navigate
 - Routes are exhaustively handled via switch statements
 - Use `NavigationLink(value:)`, not `NavigationLink(destination:)` with inline views
+- When a domain spans multiple tabs, extract shared navigation methods into a cross-feature routing protocol (e.g., `TemplateRouting` in `Features/Library/`) that each relevant tab router conforms to
 
 ## Implementation Notes
 - Router path binding: `NavigationStack(path: $router.path)`
 - ViewModel receives router via initializer, not environment
 - Tab root view receives router from parent (which gets it from DependencyContainer)
+
+## Exceptions
+- **Profile tab** has no router — it is a single-screen settings page with no sub-navigation. If it gains sub-navigation in the future, add a `ProfileRouter` then.
 
 ---
 
@@ -291,8 +318,8 @@ Services use `async throws`; ViewModels catch and translate to UI state
 
 ## Service Layer
 - All fallible service methods are declared `async throws`
-- Services throw domain-specific errors (e.g., `WorkoutServiceError`)
-- Error enums conform to `Error` and `LocalizedError` for user-friendly messages
+- Services throw a shared `ServiceError` enum (cases: `.notFound`, `.saveFailed`, `.deleteFailed`, `.invalidOperation`, `.exportFailed`, `.importFailed`)
+- `ServiceError` conforms to `Error` and `LocalizedError` for user-friendly messages
 
 ## ViewModel Layer
 - ViewModels call services in `do/catch` blocks
@@ -340,10 +367,6 @@ Seed default data from bundled JSON at app launch
 - Tests can choose whether to seed or start empty
 - Previews seed sample data into in-memory containers
 
-## Placeholder Data (temporary)
-- Categories: Category 1, Category 2, ... Category 7
-- Exercises: Exercise 1, Exercise 2, ... Exercise 50
-- Replace with real fitness data before release
 
 ---
 
@@ -387,7 +410,12 @@ Focus tests on Services and ViewModels
 
 ## Workout Planning
 - WorkoutTemplate
-- Ordered list of exercises
+- TemplateExercise (ordered exercises within a template)
+- TemplateSet (target sets within a template exercise)
+
+## Splits
+- Split (training program with ordered days)
+- SplitDay (individual day within a split, assigned workout templates)
 
 ## Workout Logging
 - Workout (with WorkoutStatus: active, completed, cancelled)
@@ -398,4 +426,4 @@ Focus tests on Services and ViewModels
 - Derived from logged data (not persisted)
 
 ## App Management
-- User settings (units, etc.)
+- User settings (units, distance units, appearance, active split)
