@@ -4,6 +4,8 @@ import SwiftData
 @MainActor
 struct ExerciseFormView: View {
     @State var viewModel: ExerciseFormViewModel
+    @FocusState private var nameFocused: Bool
+    @FocusState private var notesFocused: Bool
 
     var body: some View {
         List {
@@ -30,6 +32,17 @@ struct ExerciseFormView: View {
         }
         .task { await viewModel.load() }
         .errorAlert(errorMessage: $viewModel.errorMessage)
+        .alert("New Category", isPresented: $viewModel.showNewCategoryAlert) {
+            TextField("Category name", text: $viewModel.newCategoryName)
+            Button("Cancel", role: .cancel) {
+                viewModel.newCategoryName = ""
+            }
+            Button("Add") {
+                Task { await viewModel.createCategory() }
+            }
+        } message: {
+            Text("Enter a name for the new category.")
+        }
     }
 
     // MARK: - Sections
@@ -38,10 +51,14 @@ struct ExerciseFormView: View {
         Section {
             VStack(spacing: 0) {
                 TextField("Exercise name", text: $viewModel.name)
+                    .focused($nameFocused)
+                    .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .padding(.bottom, .spacingSm)
                 Divider()
                 TextField("Notes", text: $viewModel.notes, axis: .vertical)
+                    .focused($notesFocused)
+                    .doneKeyboardToolbar(isFocused: notesFocused) { notesFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(3...6)
                     .padding(.top, .spacingMd)
@@ -79,6 +96,12 @@ struct ExerciseFormView: View {
                         }
                     }
                 }
+            }
+            Divider()
+            Button {
+                viewModel.showNewCategoryAlert = true
+            } label: {
+                Label("New Category", systemImage: "plus")
             }
         } label: {
             dropdownLabel(

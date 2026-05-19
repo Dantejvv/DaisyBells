@@ -1,11 +1,22 @@
 import SwiftUI
 
+enum FocusedSetField: Hashable {
+    case weight(AnyHashable)
+    case reps(AnyHashable)
+    case bodyweightModifier(AnyHashable)
+    case time(AnyHashable)
+    case distance(AnyHashable)
+}
+
 struct EditableSetRow: View {
     let exerciseType: ExerciseType
     let setNumber: Int
     let badgeStyle: SetNumberBadge.Style
     var weightUnit: Units = .lbs
     var distanceUnit: DistanceUnits = .mi
+
+    let setID: AnyHashable
+    var focusedField: FocusState<FocusedSetField?>.Binding
 
     let weight: Double?
     let reps: Int?
@@ -39,6 +50,9 @@ struct EditableSetRow: View {
                     rightValue: reps.map { Double($0) },
                     leftPlaceholder: previousWeight.map { String(format: "%g", $0) } ?? weightUnit.shortLabel.lowercased(),
                     rightPlaceholder: previousReps.map { "\($0)" } ?? "reps",
+                    leftField: .weight(setID),
+                    rightField: .reps(setID),
+                    focusedField: focusedField,
                     onLeftCommit: { onWeightChange($0) },
                     onRightCommit: { onRepsChange($0.map { Int($0) }) }
                 )
@@ -48,6 +62,9 @@ struct EditableSetRow: View {
                     rightValue: reps.map { Double($0) },
                     leftPlaceholder: previousBodyweightModifier.map { String(format: "%+g", $0) } ?? "+/-",
                     rightPlaceholder: previousReps.map { "\($0)" } ?? "reps",
+                    leftField: .bodyweightModifier(setID),
+                    rightField: .reps(setID),
+                    focusedField: focusedField,
                     onLeftCommit: { onBodyweightModifierChange($0) },
                     onRightCommit: { onRepsChange($0.map { Int($0) }) }
                 )
@@ -57,6 +74,9 @@ struct EditableSetRow: View {
                     rightValue: time,
                     leftPlaceholder: previousDistance.map { String(format: "%.1f", $0) } ?? distanceUnit.shortLabel.lowercased(),
                     rightPlaceholder: previousTime.map { $0.setDurationString } ?? "m:ss",
+                    leftField: .distance(setID),
+                    rightField: .time(setID),
+                    focusedField: focusedField,
                     onLeftCommit: { onDistanceChange($0) },
                     onRightCommit: { onTimeChange($0) }
                 )
@@ -66,6 +86,9 @@ struct EditableSetRow: View {
                     rightValue: time,
                     leftPlaceholder: previousWeight.map { String(format: "%g", $0) } ?? weightUnit.shortLabel.lowercased(),
                     rightPlaceholder: previousTime.map { $0.setDurationString } ?? "m:ss",
+                    leftField: .weight(setID),
+                    rightField: .time(setID),
+                    focusedField: focusedField,
                     onLeftCommit: { onWeightChange($0) },
                     onRightCommit: { onTimeChange($0) }
                 )
@@ -73,12 +96,16 @@ struct EditableSetRow: View {
                 EditableSinglePill(
                     value: reps.map { Double($0) },
                     placeholder: previousReps.map { "\($0)" } ?? "reps",
+                    field: .reps(setID),
+                    focusedField: focusedField,
                     onCommit: { onRepsChange($0.map { Int($0) }) }
                 )
             case .time:
                 EditableSinglePill(
                     value: time,
                     placeholder: previousTime.map { $0.setDurationString } ?? "m:ss",
+                    field: .time(setID),
+                    focusedField: focusedField,
                     onCommit: { onTimeChange($0) }
                 )
             }

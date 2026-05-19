@@ -6,6 +6,7 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 
 - **Exercise Library** — Browse, search, and manage exercises by category
 - **Workout Templates** — Create reusable workout plans
+- **Splits** — Organize templates into training programs with ordered days
 - **Workout Logging** — Track sets, reps, weight, time, and distance
 - **Workout History** — View past workouts chronologically
 - **Analytics** — Personal records, volume tracking, and trends
@@ -29,7 +30,7 @@ MVVM + Services with manual dependency injection. See [docs/ARCHITECTURE.md](doc
 ## Requirements
 
 - iOS 17.0+
-- Xcode 15.0+
+- Xcode 16.0+
 
 ## License
 

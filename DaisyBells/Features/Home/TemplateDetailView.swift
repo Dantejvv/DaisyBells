@@ -70,23 +70,12 @@ struct TemplateDetailView: View {
 
     private func statusCard(_ template: SchemaV1.WorkoutTemplate) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Template name
-            Text(template.name)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
-                .frame(maxWidth: .infinity)
-
-            Divider()
-                .background(Color.borderSubtle)
-                .padding(.top, 10)
-
             // Stats row
             HStack(spacing: .spacingXl) {
                 statusStatItem(label: "Exercises", value: "\(viewModel.exercises.count)")
                 statusStatItem(label: "Sets", value: "\(totalSetCount)")
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 10)
 
             // Notes
             if let notes = template.notes, !notes.isEmpty {

@@ -29,17 +29,6 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - **Workout Logging:** `Workout`, `LoggedExercise`, `LoggedSet`
 - **Enums:** `ExerciseType`, `WorkoutStatus`, `Units`, `DistanceUnits`, `Appearance`, `ExerciseSortOption`
 
-## Current Implementation Status
-**Completed Phases:**
-- ✅ Phase 1: Foundation (Enums, SchemaV1, MigrationPlan)
-- ✅ Phase 2: Services (12 services + protocols, tested — SeedingService lacks test coverage)
-- ✅ Phase 3: Infrastructure (DependencyContainer, 4 Routers, extensions)
-- ✅ Phase 4: ViewModels (24+ ViewModels across all features)
-
-**Remaining Work:**
-- 🔨 Phase 5: Production Views (in progress — Home and Library views being built)
-- ❌ Phase 6: Polish + Testing
-
 ## Documentation
 - `docs/ARCHITECTURE.md` — Architecture decisions, MVVM rules, concurrency model
 - `docs/MODELS.md` — Data model definitions and relationships
@@ -111,6 +100,7 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 
 ## Testing
 - Do NOT run simulator tests (xcodebuild test). Just build the app to verify compilation.
+- Known gaps: `SeedingService` has no test coverage; `DaisyBellsTests/ViewModels/` is empty (no ViewModel tests yet).
 
 ## Avoid
 - Do not use @Query in views—fetch through services

@@ -5,6 +5,7 @@ import SwiftData
 struct ExercisePickerSheet: View {
     @State var viewModel: ExercisePickerViewModel
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,8 +25,14 @@ struct ExercisePickerSheet: View {
                         title: "No Exercises",
                         message: hasActiveFilters
                             ? "No exercises match your filters."
-                            : "Create exercises in the Library first."
-                    )
+                            : "Create your first exercise to get started."
+                    ) {
+                        Button(emptyStateCreateLabel) {
+                            viewModel.presentExerciseForm(prefillName: viewModel.searchQuery)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.accent)
+                    }
                 } else {
                     exerciseList
                 }
@@ -39,6 +46,14 @@ struct ExercisePickerSheet: View {
                     dismiss()
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    viewModel.presentExerciseForm()
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel("Create Exercise")
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Add (\(viewModel.selectedIds.count))") {
                     viewModel.confirmSelection()
@@ -50,7 +65,36 @@ struct ExercisePickerSheet: View {
         .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
             if shouldDismiss { dismiss() }
         }
+        .sheet(isPresented: $viewModel.showCategoryManager, onDismiss: {
+            Task { await viewModel.loadExercises() }
+        }) {
+            CategoryManagerSheet(
+                viewModel: CategoryManagerViewModel(
+                    categoryService: viewModel.categoryService
+                )
+            )
+        }
+        .sheet(isPresented: $viewModel.showExerciseForm) {
+            NavigationStack {
+                ExerciseFormView(
+                    viewModel: ExerciseFormViewModel(
+                        exerciseService: viewModel.exerciseService,
+                        categoryService: viewModel.categoryService,
+                        initialName: viewModel.exerciseFormPrefillName,
+                        onSaved: { id in
+                            Task { await viewModel.onExerciseCreated(id) }
+                        },
+                        onDismiss: { viewModel.showExerciseForm = false }
+                    )
+                )
+            }
+        }
         .background(Color.bgPrimary)
+    }
+
+    private var emptyStateCreateLabel: String {
+        let query = viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty ? "Create Exercise" : "Create \"\(query)\""
     }
 
     private var hasActiveFilters: Bool {
@@ -71,6 +115,8 @@ struct ExercisePickerSheet: View {
                 get: { viewModel.searchQuery },
                 set: { viewModel.search(query: $0) }
             ))
+            .focused($searchFocused)
+            .doneKeyboardToolbar(isFocused: searchFocused) { searchFocused = false }
             .foregroundStyle(Color.textPrimary)
             if !viewModel.searchQuery.isEmpty {
                 Button {
@@ -111,6 +157,12 @@ struct ExercisePickerSheet: View {
                 } label: {
                     menuItem(category.name, isSelected: viewModel.selectedCategoryFilter?.id == category.id)
                 }
+            }
+            Divider()
+            Button {
+                viewModel.showCategoryManager = true
+            } label: {
+                Label("Manage Categories", systemImage: "folder.badge.gearshape")
             }
         } label: {
             filterChip(

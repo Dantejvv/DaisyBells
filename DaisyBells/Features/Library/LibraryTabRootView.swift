@@ -27,6 +27,7 @@ struct LibraryTabRootView: View {
                             viewModel: ExerciseDetailViewModel(
                                 exerciseService: container.exerciseService,
                                 analyticsService: container.analyticsService,
+                                workoutService: container.workoutService,
                                 settingsService: container.settingsService,
                                 router: router,
                                 exerciseId: exerciseId
@@ -34,6 +35,15 @@ struct LibraryTabRootView: View {
                         )
                     }
                 }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if container.activeWorkoutManager.hasActiveWorkout && !container.activeWorkoutManager.isShowingSheet {
+                        ActiveWorkoutFloatingButton()
+                            .environment(container.activeWorkoutManager)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.snappy(duration: 0.3), value: container.activeWorkoutManager.hasActiveWorkout)
+                .animation(.snappy(duration: 0.3), value: container.activeWorkoutManager.isShowingSheet)
         }
         .sheet(item: $router.presentedSheet) { sheet in
             switch sheet {

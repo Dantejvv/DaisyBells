@@ -108,6 +108,10 @@ final class WorkoutService: WorkoutServiceProtocol {
         workout.status = .completed
         workout.completedAt = completedAt
 
+        if workout.notes == nil {
+            workout.notes = workout.fromTemplate?.notes
+        }
+
         updateExerciseStats(for: workout, completedAt: completedAt)
         updateLoggedSetDenormalization(for: workout, completedAt: completedAt)
 

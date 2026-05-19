@@ -5,6 +5,7 @@ import SwiftData
 struct ExerciseListView: View {
     @State var viewModel: ExerciseListViewModel
     @Environment(LibraryRouter.self) private var router
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,6 +60,15 @@ struct ExerciseListView: View {
             }
         }
         .errorAlert(errorMessage: $viewModel.errorMessage)
+        .sheet(isPresented: $viewModel.showCategoryManager, onDismiss: {
+            Task { await viewModel.loadExercises() }
+        }) {
+            CategoryManagerSheet(
+                viewModel: CategoryManagerViewModel(
+                    categoryService: viewModel.categoryService
+                )
+            )
+        }
         .background(Color.bgPrimary)
     }
 
@@ -89,6 +99,8 @@ struct ExerciseListView: View {
                     Task { await viewModel.search(query: newValue) }
                 }
             ))
+            .focused($searchFocused)
+            .doneKeyboardToolbar(isFocused: searchFocused) { searchFocused = false }
             .foregroundStyle(Color.textPrimary)
             if !viewModel.searchQuery.isEmpty {
                 Button {
@@ -129,6 +141,12 @@ struct ExerciseListView: View {
                 } label: {
                     menuItem(category.name, isSelected: viewModel.selectedCategoryFilter?.id == category.id)
                 }
+            }
+            Divider()
+            Button {
+                viewModel.showCategoryManager = true
+            } label: {
+                Label("Manage Categories", systemImage: "folder.badge.gearshape")
             }
         } label: {
             filterChip(

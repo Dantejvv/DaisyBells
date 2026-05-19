@@ -16,11 +16,14 @@ final class ExerciseDetailViewModel {
     var errorMessage: String?
     private(set) var canDelete = true
     private(set) var performanceStats: ExerciseStats?
+    private(set) var lastSessionSets: [SchemaV1.LoggedSet] = []
+    private(set) var lastSessionDate: Date?
 
     // MARK: - Dependencies
 
     private let exerciseService: ExerciseServiceProtocol
     private let analyticsService: AnalyticsServiceProtocol
+    private let workoutService: WorkoutServiceProtocol
     private let settingsService: SettingsServiceProtocol
     private let router: LibraryRouter
     private let exerciseId: PersistentIdentifier
@@ -30,12 +33,14 @@ final class ExerciseDetailViewModel {
     init(
         exerciseService: ExerciseServiceProtocol,
         analyticsService: AnalyticsServiceProtocol,
+        workoutService: WorkoutServiceProtocol,
         settingsService: SettingsServiceProtocol,
         router: LibraryRouter,
         exerciseId: PersistentIdentifier
     ) {
         self.exerciseService = exerciseService
         self.analyticsService = analyticsService
+        self.workoutService = workoutService
         self.settingsService = settingsService
         self.router = router
         self.exerciseId = exerciseId
@@ -71,6 +76,10 @@ final class ExerciseDetailViewModel {
                 personalRecord: personalRecord,
                 totalVolume: totalVolume
             )
+
+            let lastSets = try await workoutService.lastPerformedSets(for: exerciseModel)
+            lastSessionSets = lastSets.sorted { $0.order < $1.order }
+            lastSessionDate = lastSets.first?.completedAt
         } catch {
             errorMessage = error.localizedDescription
         }

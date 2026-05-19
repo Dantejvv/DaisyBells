@@ -103,7 +103,7 @@ final class ActiveWorkoutViewModel {
 
         workout = workoutModel
         exercises = workoutModel.loggedExercises.sorted { $0.order < $1.order }
-        workoutNotes = workoutModel.fromTemplate?.notes ?? ""
+        workoutNotes = workoutModel.fromTemplate?.notes ?? workoutModel.notes ?? ""
         fromTemplateName = workoutModel.fromTemplate?.name
 
         // Load previous performance for each exercise
@@ -348,12 +348,17 @@ final class ActiveWorkoutViewModel {
     var hasTemplate: Bool { workout?.fromTemplate != nil }
 
     func updateWorkoutNotes(_ notes: String) async {
-        guard let template = workout?.fromTemplate else { return }
+        let trimmed = notes.isEmpty ? nil : notes
         workoutNotes = notes
-        template.notes = notes.isEmpty ? nil : notes
         errorMessage = nil
         do {
-            try await templateService.update(template)
+            if let template = workout?.fromTemplate {
+                template.notes = trimmed
+                try await templateService.update(template)
+            } else if let workout {
+                workout.notes = trimmed
+                try await workoutService.update(workout)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

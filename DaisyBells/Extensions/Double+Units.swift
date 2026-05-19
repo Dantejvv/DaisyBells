@@ -8,13 +8,20 @@ extension Double {
         return (self * multiplier).rounded() / multiplier
     }
 
+    /// Rounds to the nearest increment (e.g., 0.5 for gym plate weights)
+    func roundedToNearest(_ increment: Double) -> Double {
+        (self / increment).rounded() * increment
+    }
+
     // MARK: - Weight Formatting
 
     /// Formats weight with unit suffix (e.g., "135 lbs" or "61.2 kg")
     func weightString(units: Units) -> String {
         switch units {
         case .lbs:
-            return String(format: "%.0f lbs", self)
+            return self.truncatingRemainder(dividingBy: 1) == 0
+                ? String(format: "%.0f lbs", self)
+                : String(format: "%.1f lbs", self)
         case .kg:
             return String(format: "%.1f kg", self)
         }
@@ -22,14 +29,14 @@ extension Double {
 
     // MARK: - Weight Conversion
 
-    /// Converts from lbs to kg
+    /// Converts from lbs to kg, rounded to nearest 0.5 kg
     var lbsToKg: Double {
-        (self * 0.45359237).rounded(toPlaces: 1)
+        (self * 0.45359237).roundedToNearest(0.5)
     }
 
-    /// Converts from kg to lbs
+    /// Converts from kg to lbs, rounded to nearest 0.5 lbs
     var kgToLbs: Double {
-        (self / 0.45359237).rounded(toPlaces: 1)
+        (self / 0.45359237).roundedToNearest(0.5)
     }
 
     /// Converts weight between unit systems
@@ -105,7 +112,9 @@ extension Double {
         let prefix = self >= 0 ? "+" : ""
         switch units {
         case .lbs:
-            return String(format: "%@%.0f lbs", prefix, self)
+            return self.truncatingRemainder(dividingBy: 1) == 0
+                ? String(format: "%@%.0f lbs", prefix, self)
+                : String(format: "%@%.1f lbs", prefix, self)
         case .kg:
             return String(format: "%@%.1f kg", prefix, self)
         }

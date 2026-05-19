@@ -6,6 +6,9 @@ struct SplitFormView: View {
     @State var viewModel: SplitFormViewModel
     @Environment(DependencyContainer.self) private var container
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var nameFocused: Bool
+    @FocusState private var notesFocused: Bool
+    @FocusState private var dayNameFocused: Bool
 
     var body: some View {
         List {
@@ -67,10 +70,14 @@ struct SplitFormView: View {
         Section {
             VStack(spacing: 0) {
                 TextField("Split name", text: $viewModel.name)
+                    .focused($nameFocused)
+                    .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .padding(.bottom, .spacingSm)
                 Divider()
                 TextField("Notes", text: $viewModel.notes, axis: .vertical)
+                    .focused($notesFocused)
+                    .doneKeyboardToolbar(isFocused: notesFocused) { notesFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(3...6)
                     .padding(.top, .spacingMd)
@@ -112,6 +119,8 @@ struct SplitFormView: View {
                     set: { viewModel.updateDayName($0, at: index) }
                 )
             )
+            .focused($dayNameFocused)
+            .doneKeyboardToolbar(isFocused: dayNameFocused) { dayNameFocused = false }
             .font(.body.weight(.medium))
             .foregroundStyle(Color.textPrimary)
 

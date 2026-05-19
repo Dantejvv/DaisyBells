@@ -55,6 +55,9 @@ struct ExerciseDetailView: View {
             }
             unitSection(exercise)
             statsSection
+            if !viewModel.lastSessionSets.isEmpty {
+                lastSessionSection(exercise)
+            }
             actionsSection
         }
         .listStyle(.insetGrouped)
@@ -211,6 +214,35 @@ struct ExerciseDetailView: View {
         .listRowBackground(Color.bgCard)
     }
 
+    private func lastSessionSection(_ exercise: SchemaV1.Exercise) -> some View {
+        let weightUnit = exercise.resolvedWeightUnit(default: viewModel.defaultWeightUnit)
+        let distanceUnit = exercise.resolvedDistanceUnit(default: viewModel.defaultDistanceUnit)
+
+        return Section {
+            ForEach(Array(viewModel.lastSessionSets.enumerated()), id: \.element.id) { index, loggedSet in
+                ReadOnlySetRow(
+                    exerciseType: exercise.type,
+                    setNumber: index + 1,
+                    badgeStyle: .completed,
+                    weightUnit: weightUnit,
+                    distanceUnit: distanceUnit,
+                    weight: convertWeight(loggedSet.weight, storedUnit: loggedSet.resolvedWeightUnit, displayUnit: weightUnit),
+                    reps: loggedSet.reps,
+                    bodyweightModifier: convertWeight(loggedSet.bodyweightModifier, storedUnit: loggedSet.resolvedWeightUnit, displayUnit: weightUnit),
+                    time: loggedSet.time,
+                    distance: convertDistance(loggedSet.distance, storedUnit: loggedSet.resolvedDistanceUnit, displayUnit: distanceUnit),
+                    notes: loggedSet.notes
+                )
+                .listRowInsets(EdgeInsets())
+            }
+        } header: {
+            let dateText = viewModel.lastSessionDate?.relativeDescription ?? ""
+            Text("Last Session\(dateText.isEmpty ? "" : " — \(dateText)")")
+                .foregroundStyle(Color.textSecondary)
+        }
+        .listRowBackground(Color.bgCard)
+    }
+
     private var actionsSection: some View {
         Section {
             Button(role: .destructive) {
@@ -245,6 +277,18 @@ struct ExerciseDetailView: View {
         let storedUnit = viewModel.exercise?.resolvedTotalVolumeUnit ?? displayUnit
         let converted = volume.convert(from: storedUnit, to: displayUnit)
         return converted.volumeString(units: displayUnit)
+    }
+
+    private func convertWeight(_ value: Double?, storedUnit: Units?, displayUnit: Units) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convert(from: from, to: displayUnit)
+    }
+
+    private func convertDistance(_ value: Double?, storedUnit: DistanceUnits?, displayUnit: DistanceUnits) -> Double? {
+        guard let value else { return nil }
+        let from = storedUnit ?? displayUnit
+        return value.convertDistance(from: from, to: displayUnit)
     }
 }
 

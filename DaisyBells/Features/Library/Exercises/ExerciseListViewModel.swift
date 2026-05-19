@@ -17,13 +17,16 @@ final class ExerciseListViewModel {
     var selectedTypeFilter: ExerciseType?
     let selectedCategoryId: PersistentIdentifier?
 
+    // Sheet state
+    var showCategoryManager = false
+
     // Delete confirmation state
     var exercisePendingDelete: SchemaV1.Exercise?
 
     // MARK: - Dependencies
 
     private let exerciseService: ExerciseServiceProtocol
-    private let categoryService: CategoryServiceProtocol
+    let categoryService: CategoryServiceProtocol
     private let router: LibraryRouter
 
     // MARK: - Init

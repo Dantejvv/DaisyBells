@@ -3,7 +3,7 @@
 ## Enums
 
 ```swift
-enum ExerciseType: String, Codable {
+enum ExerciseType: String, Codable, CaseIterable {
     case weightAndReps      // bench press
     case bodyweightAndReps  // pull-ups
     case reps               // box jumps
@@ -18,7 +18,7 @@ enum WorkoutStatus: String, Codable {
     case cancelled
 }
 
-enum Units: String, Codable {
+enum Units: String, Codable, CaseIterable {
     case lbs
     case kg
 }
@@ -28,7 +28,7 @@ enum DistanceUnits: String, Codable, CaseIterable {
     case km
 }
 
-enum Appearance: String, Codable {
+enum Appearance: String, Codable, CaseIterable {
     case light
     case dark
     case system
@@ -117,6 +117,7 @@ final class Exercise {
     var prReps: Int?
     var prTime: TimeInterval?
     var prDistance: Double?
+    var prBodyweightModifier: Double?
     var prEstimated1RM: Double?
     var prAchievedAt: Date?
 
@@ -167,12 +168,16 @@ final class WorkoutTemplate {
     @Relationship
     var splitDays: [SplitDay]
 
+    // Inverse of Workout.fromTemplate (declared with @Relationship on the Workout side).
+    var workouts: [Workout] = []
+
     init(name: String, notes: String? = nil) {
         self.id = UUID()
         self.name = name
         self.notes = notes
         self.templateExercises = []
         self.splitDays = []
+        self.workouts = []
     }
 }
 
@@ -277,6 +282,7 @@ final class Workout {
     @Attribute(.unique) var id: UUID
     var startedAt: Date
     var completedAt: Date?
+    var notes: String?
 
     // Store as raw string for predicate support
     var statusValue: String
@@ -286,7 +292,7 @@ final class Workout {
         set { statusValue = newValue.rawValue }
     }
 
-    @Relationship
+    @Relationship(deleteRule: .nullify, inverse: \WorkoutTemplate.workouts)
     var fromTemplate: WorkoutTemplate?
 
     @Relationship(deleteRule: .cascade, inverse: \LoggedExercise.workout)
@@ -296,6 +302,7 @@ final class Workout {
         self.id = UUID()
         self.statusValue = WorkoutStatus.active.rawValue
         self.startedAt = Date()
+        self.notes = nil
         self.fromTemplate = fromTemplate
         self.loggedExercises = []
     }
@@ -530,9 +537,10 @@ The export/import system uses Codable DTOs separate from SwiftData models to avo
 - **Inverse:** `WorkoutTemplate.splitDays`
 - **Note:** A workout can be assigned to multiple split days, and a split day can have multiple workouts
 
-### Workout → WorkoutTemplate
+### Workout ↔ WorkoutTemplate
 - **Type:** Many-to-One (optional)
 - **Delete Rule:** Nullify
+- **Inverse:** `WorkoutTemplate.workouts` ↔ `Workout.fromTemplate`
 
 ### Workout → LoggedExercise
 - **Type:** One-to-Many

@@ -114,12 +114,15 @@ enum SchemaV1: VersionedSchema {
         @Relationship
         var splitDays: [SplitDay]
 
+        var workouts: [Workout] = []
+
         init(name: String, notes: String? = nil) {
             self.id = UUID()
             self.name = name
             self.notes = notes
             self.templateExercises = []
             self.splitDays = []
+            self.workouts = []
         }
     }
 
@@ -212,6 +215,7 @@ enum SchemaV1: VersionedSchema {
         @Attribute(.unique) var id: UUID
         var startedAt: Date
         var completedAt: Date?
+        var notes: String?
 
         // Store as raw string for predicate support (internal for predicate access)
         var statusValue: String
@@ -221,7 +225,7 @@ enum SchemaV1: VersionedSchema {
             set { statusValue = newValue.rawValue }
         }
 
-        @Relationship
+        @Relationship(deleteRule: .nullify, inverse: \WorkoutTemplate.workouts)
         var fromTemplate: WorkoutTemplate?
 
         @Relationship(deleteRule: .cascade, inverse: \LoggedExercise.workout)
@@ -231,6 +235,7 @@ enum SchemaV1: VersionedSchema {
             self.id = UUID()
             self.statusValue = WorkoutStatus.active.rawValue
             self.startedAt = Date()
+            self.notes = nil
             self.fromTemplate = fromTemplate
             self.loggedExercises = []
         }

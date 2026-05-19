@@ -5,60 +5,70 @@ import UniformTypeIdentifiers
 struct ProfileView: View {
     @State var viewModel: SettingsViewModel
     @State private var showResetConfirmation = false
+    @State private var showResetTypeToConfirm = false
     @State private var showImportConfirmation = false
 
     var body: some View {
-        NavigationStack {
-            List {
-                preferencesSection
-                dataSection
-                dangerZoneSection
-                aboutSection
+        List {
+            preferencesSection
+            dataSection
+            dangerZoneSection
+            aboutSection
+        }
+        .scrollContentBackground(.hidden)
+        .background(Color.bgPrimary)
+        .navigationTitle("Profile")
+        .task {
+            viewModel.loadSettings()
+        }
+        .errorAlert(errorMessage: $viewModel.errorMessage)
+        .destructiveConfirmation(
+            title: "Reset All Data",
+            message: "This will permanently delete all exercises, workouts, templates, and settings. This action cannot be undone.",
+            isPresented: $showResetConfirmation,
+            onConfirm: {
+                showResetTypeToConfirm = true
             }
-            .scrollContentBackground(.hidden)
-            .background(Color.bgPrimary)
-            .navigationTitle("Profile")
-            .task {
-                viewModel.loadSettings()
-            }
-            .errorAlert(errorMessage: $viewModel.errorMessage)
-            .destructiveConfirmation(
+        )
+        .sheet(isPresented: $showResetTypeToConfirm) {
+            TypeToConfirmSheet(
                 title: "Reset All Data",
                 message: "This will permanently delete all exercises, workouts, templates, and settings. This action cannot be undone.",
-                isPresented: $showResetConfirmation,
+                confirmationPhrase: "DELETE",
+                confirmButtonLabel: "Reset All Data",
                 onConfirm: {
                     Task { await viewModel.resetData() }
                 }
             )
-            .destructiveConfirmation(
-                title: "Import Data",
-                message: "Importing will replace all existing data with the contents of the selected file. This action cannot be undone.",
-                isPresented: $showImportConfirmation,
-                onConfirm: {
-                    viewModel.showFileImporter = true
-                }
-            )
-            .fileExporter(
-                isPresented: $viewModel.showFileExporter,
-                document: viewModel.exportDocument,
-                contentType: .json,
-                defaultFilename: "DaisyBells-Backup"
-            ) { result in
-                viewModel.exportDocument = nil
-                if case .failure(let error) = result {
-                    viewModel.errorMessage = error.localizedDescription
-                }
+        }
+        .destructiveConfirmation(
+            title: "Import Data",
+            message: "Importing will replace all existing data with the contents of the selected file. This action cannot be undone.",
+            isPresented: $showImportConfirmation,
+            onConfirm: {
+                viewModel.showFileImporter = true
             }
-            .fileImporter(
-                isPresented: $viewModel.showFileImporter,
-                allowedContentTypes: [.json]
-            ) { result in
-                switch result {
-                case .success(let url):
-                    Task { await viewModel.importData(url: url) }
-                case .failure(let error):
-                    viewModel.errorMessage = error.localizedDescription
-                }
+        )
+        .fileExporter(
+            isPresented: $viewModel.showFileExporter,
+            document: viewModel.exportDocument,
+            contentType: .json,
+            defaultFilename: "DaisyBells-Backup"
+        ) { result in
+            viewModel.exportDocument = nil
+            if case .failure(let error) = result {
+                viewModel.errorMessage = error.localizedDescription
+            }
+        }
+        .fileImporter(
+            isPresented: $viewModel.showFileImporter,
+            allowedContentTypes: [.json]
+        ) { result in
+            switch result {
+            case .success(let url):
+                Task { await viewModel.importData(url: url) }
+            case .failure(let error):
+                viewModel.errorMessage = error.localizedDescription
             }
         }
     }
@@ -163,5 +173,7 @@ struct ProfileView: View {
 // MARK: - Preview
 
 #Preview {
-    ProfileView(viewModel: SettingsViewModel(settingsService: SettingsService()))
+    NavigationStack {
+        ProfileView(viewModel: SettingsViewModel(settingsService: SettingsService()))
+    }
 }

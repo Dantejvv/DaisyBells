@@ -69,11 +69,11 @@ final class CompletedWorkoutDetailViewModel {
     var hasTemplate: Bool { workout?.fromTemplate != nil }
 
     func updateNotes(_ notes: String) async {
-        guard let template = workout?.fromTemplate else { return }
-        template.notes = notes.isEmpty ? nil : notes
+        guard let workout else { return }
+        workout.notes = notes.isEmpty ? nil : notes
         errorMessage = nil
         do {
-            try await templateService.update(template)
+            try await workoutService.update(workout)
         } catch {
             errorMessage = error.localizedDescription
         }

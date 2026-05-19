@@ -13,13 +13,17 @@ final class ExerciseFormViewModel {
     private(set) var isEditing = false
     private(set) var isSaving = false
     var errorMessage: String?
+    var showNewCategoryAlert = false
+    var newCategoryName = ""
 
     // MARK: - Dependencies
 
     private let exerciseService: ExerciseServiceProtocol
     private let categoryService: CategoryServiceProtocol
-    private let router: LibraryRouter
+    private let router: LibraryRouter?
     private let exerciseId: PersistentIdentifier?
+    private let onSaved: ((PersistentIdentifier) -> Void)?
+    private let onDismiss: (() -> Void)?
     private var exercise: SchemaV1.Exercise?
 
     // MARK: - Init
@@ -27,14 +31,20 @@ final class ExerciseFormViewModel {
     init(
         exerciseService: ExerciseServiceProtocol,
         categoryService: CategoryServiceProtocol,
-        router: LibraryRouter,
-        exerciseId: PersistentIdentifier? = nil
+        router: LibraryRouter? = nil,
+        exerciseId: PersistentIdentifier? = nil,
+        initialName: String = "",
+        onSaved: ((PersistentIdentifier) -> Void)? = nil,
+        onDismiss: (() -> Void)? = nil
     ) {
         self.exerciseService = exerciseService
         self.categoryService = categoryService
         self.router = router
         self.exerciseId = exerciseId
+        self.onSaved = onSaved
+        self.onDismiss = onDismiss
         self.isEditing = exerciseId != nil
+        self.name = initialName
     }
 
     // MARK: - Intents
@@ -77,6 +87,20 @@ final class ExerciseFormViewModel {
         }
     }
 
+    func createCategory() async {
+        let name = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        errorMessage = nil
+        do {
+            let newCategory = try await categoryService.create(name: name)
+            newCategoryName = ""
+            availableCategories = try await categoryService.fetchAll()
+            selectedCategories.append(newCategory)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func save() async {
         guard validate() else { return }
 
@@ -94,8 +118,9 @@ final class ExerciseFormViewModel {
                 newExercise.notes = notes.isEmpty ? nil : notes
                 newExercise.categories = selectedCategories
                 try await exerciseService.update(newExercise)
+                onSaved?(newExercise.persistentModelID)
             }
-            router.dismissSheet()
+            dismiss()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -103,10 +128,18 @@ final class ExerciseFormViewModel {
     }
 
     func cancel() {
-        router.dismissSheet()
+        dismiss()
     }
 
     // MARK: - Private
+
+    private func dismiss() {
+        if let router {
+            router.dismissSheet()
+        } else {
+            onDismiss?()
+        }
+    }
 
     private func validate() -> Bool {
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

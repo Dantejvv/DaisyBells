@@ -4,6 +4,11 @@ import SwiftData
 @MainActor
 struct ActiveWorkoutView: View {
     @State var viewModel: ActiveWorkoutViewModel
+    @State private var notesDraft: String = ""
+    @State private var notesPersistTask: Task<Void, Never>?
+    @FocusState private var focusedField: FocusedSetField?
+    @FocusState private var workoutNotesFocused: Bool
+    @FocusState private var exerciseNotesFocused: Bool
 
     var body: some View {
         Group {
@@ -119,6 +124,7 @@ struct ActiveWorkoutView: View {
                     .frame(width: 32, height: 32)
                     .background(Color.white.opacity(0.06))
                     .clipShape(Circle())
+                    .minTouchTarget()
             }
 
             Spacer()
@@ -133,6 +139,7 @@ struct ActiveWorkoutView: View {
                     .padding(.vertical, 7)
                     .background(Color.accent)
                     .clipShape(Capsule())
+                    .minTouchTarget()
             }
             .disabled(viewModel.exercises.isEmpty)
         }
@@ -181,6 +188,7 @@ struct ActiveWorkoutView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(Color.textTertiary)
                         .frame(width: 28, height: 28)
+                        .minTouchTarget()
                 }
             }
 
@@ -191,16 +199,30 @@ struct ActiveWorkoutView: View {
                 .padding(.top, .spacingSm)
 
             // Workout notes
-            TextField("Notes", text: Binding(
-                get: { viewModel.workoutNotes },
-                set: { newValue in
-                    Task { await viewModel.updateWorkoutNotes(newValue) }
+            TextField("Notes", text: $notesDraft, axis: .vertical)
+                .font(.system(size: 13))
+                .foregroundStyle(Color.textSecondary)
+                .lineLimit(1...5)
+                .frame(minHeight: 44)
+                .focused($workoutNotesFocused)
+                .doneKeyboardToolbar(isFocused: workoutNotesFocused) { workoutNotesFocused = false }
+                .padding(.top, .spacingSm)
+                .onChange(of: notesDraft) { _, newValue in
+                    notesPersistTask?.cancel()
+                    notesPersistTask = Task {
+                        try? await Task.sleep(for: .milliseconds(500))
+                        if Task.isCancelled { return }
+                        await viewModel.updateWorkoutNotes(newValue)
+                    }
                 }
-            ), axis: .vertical)
-            .font(.system(size: 13))
-            .foregroundStyle(Color.textSecondary)
-            .lineLimit(1...5)
-            .padding(.top, .spacingSm)
+                .onChange(of: viewModel.workoutNotes) { _, newValue in
+                    if notesPersistTask == nil && notesDraft != newValue {
+                        notesDraft = newValue
+                    }
+                }
+                .task {
+                    notesDraft = viewModel.workoutNotes
+                }
 
             // Stats row
             Divider()
@@ -290,6 +312,7 @@ struct ActiveWorkoutView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(Color.textTertiary)
                         .frame(width: 28, height: 28)
+                        .minTouchTarget()
                 }
             }
 
@@ -304,6 +327,9 @@ struct ActiveWorkoutView: View {
             .font(.system(size: 12))
             .foregroundStyle(Color.textSecondary)
             .lineLimit(1...3)
+            .frame(minHeight: 44)
+            .focused($exerciseNotesFocused)
+            .doneKeyboardToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
             .padding(.horizontal, 14)
             .padding(.bottom, .spacingXs)
 
@@ -330,16 +356,22 @@ struct ActiveWorkoutView: View {
             }
 
             // Add set button
-            Button {
-                Task { await viewModel.addSet(to: loggedExercise) }
-            } label: {
-                Text("+ Add Set")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.accent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, .spacingSm)
-                    .padding(.bottom, 10)
+            HStack {
+                Spacer()
+                Button {
+                    Task { await viewModel.addSet(to: loggedExercise) }
+                } label: {
+                    Text("+ Add Set")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.accent)
+                        .padding(.horizontal, .spacingBase)
+                        .padding(.vertical, .spacingSm)
+                        .contentShape(Rectangle())
+                }
+                Spacer()
             }
+            .padding(.top, .spacingSm)
+            .padding(.bottom, 10)
         }
     }
 
@@ -364,6 +396,8 @@ struct ActiveWorkoutView: View {
                 badgeStyle: loggedSet.isCompleted ? .completed : isActive ? .active : .pending,
                 weightUnit: weightUnit,
                 distanceUnit: distanceUnit,
+                setID: AnyHashable(loggedSet.persistentModelID),
+                focusedField: $focusedField,
                 weight: loggedSet.weight,
                 reps: loggedSet.reps,
                 bodyweightModifier: loggedSet.bodyweightModifier,
@@ -439,8 +473,14 @@ struct ActiveWorkoutView: View {
             )
 
             checkButton(loggedSet)
-                .padding(.trailing, 14)
+                .padding(.trailing, 3)
         }
+        .background(
+            loggedSet.isCompleted
+                ? RoundedRectangle(cornerRadius: .radiusSm)
+                    .fill(Color.success.opacity(0.1))
+                : nil
+        )
         .swipeToDelete(enabled: viewModel.canDeleteSet(loggedSet, from: loggedExercise)) {
             Task { await viewModel.deleteSet(loggedSet, from: loggedExercise) }
         }
@@ -459,20 +499,25 @@ struct ActiveWorkoutView: View {
 
     private func checkButton(_ loggedSet: SchemaV1.LoggedSet) -> some View {
         Button {
+            focusedField = nil
             Task { await viewModel.toggleSetCompletion(loggedSet) }
         } label: {
-            if loggedSet.isCompleted {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
-                    .background(Color.success)
-                    .clipShape(Circle())
-            } else {
-                Circle()
-                    .stroke(Color.borderDefault, lineWidth: 1.5)
-                    .frame(width: 22, height: 22)
+            Group {
+                if loggedSet.isCompleted {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                        .background(Color.success)
+                        .clipShape(Circle())
+                } else {
+                    Circle()
+                        .stroke(Color.borderDefault, lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+                }
             }
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

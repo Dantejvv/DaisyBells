@@ -41,14 +41,9 @@ Use Swift Concurrency (async/await, @MainActor, Task { }, actors, Sendable)
 - Enable **Strict Concurrency Checking: Complete** in build settings
 
 ### Background Operations (not yet used)
-All SwiftData access currently runs on the `MainActor`. If background persistence
-is needed in the future, use the following pattern:
-- Use `@ModelActor` to isolate all background SwiftData access
-- Each `@ModelActor` owns exactly one `ModelContext`
-- Do not access SwiftData from arbitrary background tasks
-- Avoid `Task {}` for background persistence work if it inherits `MainActor`
-- Use `Task.detached` only when actor inheritance must be explicitly avoided;
-  prefer actor-based isolation over manual task management
+All SwiftData access currently runs on the `MainActor`. When background persistence
+becomes necessary, isolate it in a `@ModelActor` with its own `ModelContext` —
+do not access SwiftData from arbitrary background tasks.
 
 **ViewModels:**
 - Annotated with @MainActor
@@ -164,7 +159,7 @@ The Exercise model includes denormalized fields for performance:
 - `lastPerformedAt: Date?` — Quick access to last workout date
 - `hasCompletedWorkout: Bool` — Fast history check for archive logic
 - `totalVolume: Double` — Cached total volume across all workouts
-- PR fields (prWeight, prReps, prTime, prDistance, prEstimated1RM, prAchievedAt) — Cached personal records
+- PR fields (prWeight, prReps, prTime, prDistance, prBodyweightModifier, prEstimated1RM, prAchievedAt) — Cached personal records
 
 ## LoggedSet Denormalization
 The LoggedSet model includes:
@@ -282,7 +277,7 @@ Use NavigationStack with enum-based routing and per-tab Routers
 - Tab root view receives router from parent (which gets it from DependencyContainer)
 
 ## Exceptions
-- **Profile tab** has no router — it is a single-screen settings page with no sub-navigation. If it gains sub-navigation in the future, add a `ProfileRouter` then.
+- **Profile tab** (folder: `Features/Settings/`) has no router — it is a single-screen settings page with no sub-navigation. If it gains sub-navigation in the future, add a `ProfileRouter` then.
 
 ---
 
@@ -326,14 +321,13 @@ Services use `async throws`; ViewModels catch and translate to UI state
 - Errors are caught and translated to UI state (e.g., `errorMessage: String?`, or a `LoadingState` enum)
 - ViewModels never expose raw `Error` types to views—they expose user-friendly representations
 
-## LoadingState Pattern (optional, per-screen)
-For screens with async data loading, use a state enum:
-- `.idle` – not yet started
-- `.loading` – in progress
-- `.failed(Error)` – operation failed
-- `.loaded(T)` – success with data
+## ViewModel State Pattern
+ViewModels expose async-load state as discrete properties rather than a single state enum:
+- `isLoading: Bool` — true while an async operation is in flight
+- `errorMessage: String?` — non-nil when the last operation failed
+- Data properties are populated directly (e.g., `exercises: [Exercise]`)
 
-Views switch on this state to show spinners, error views, or content.
+Views read these properties directly. If a screen grows complex enough to benefit from a unified state enum, introduce one locally — there is no shared `LoadingState` type today.
 
 ## Rules
 - Services throw; ViewModels catch

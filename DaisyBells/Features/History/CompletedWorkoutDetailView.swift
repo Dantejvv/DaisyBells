@@ -84,10 +84,13 @@ struct CompletedWorkoutDetailView: View {
             }
             .padding(.top, 10)
 
-            // Template notes
-            if viewModel.hasTemplate {
-                notesSection(workout)
-            }
+            // Workout notes (snapshot for completed workouts)
+            CompletedWorkoutNotesField(
+                initialValue: workout.notes ?? workout.fromTemplate?.notes ?? "",
+                onCommit: { newValue in
+                    await viewModel.updateNotes(newValue)
+                }
+            )
         }
         .padding(14)
         .padding(.horizontal, 2)
@@ -110,28 +113,6 @@ struct CompletedWorkoutDetailView: View {
         }
     }
 
-    private func notesSection(_ workout: SchemaV1.Workout) -> some View {
-        let currentNotes = workout.fromTemplate?.notes ?? ""
-        return VStack(alignment: .leading, spacing: .spacingSm) {
-            Divider()
-                .background(Color.borderSubtle)
-                .padding(.top, 10)
-
-            TextField(
-                "Notes",
-                text: Binding(
-                    get: { currentNotes },
-                    set: { newValue in
-                        Task { await viewModel.updateNotes(newValue) }
-                    }
-                ),
-                axis: .vertical
-            )
-            .font(.system(size: 13))
-            .foregroundStyle(Color.textSecondary)
-            .lineLimit(1...5)
-        }
-    }
 
     // MARK: - Exercise Card
 
@@ -202,5 +183,46 @@ struct CompletedWorkoutDetailView: View {
         guard let value else { return nil }
         let from = storedUnit ?? displayUnit
         return value.convertDistance(from: from, to: displayUnit)
+    }
+}
+
+@MainActor
+private struct CompletedWorkoutNotesField: View {
+    let initialValue: String
+    let onCommit: (String) async -> Void
+
+    @State private var draft: String = ""
+    @State private var persistTask: Task<Void, Never>?
+    @State private var didSeed = false
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: .spacingSm) {
+            Divider()
+                .background(Color.borderSubtle)
+                .padding(.top, 10)
+
+            TextField("Notes", text: $draft, axis: .vertical)
+                .focused($isFocused)
+                .doneKeyboardToolbar(isFocused: isFocused) { isFocused = false }
+                .font(.system(size: 13))
+                .foregroundStyle(Color.textSecondary)
+                .lineLimit(1...5)
+        }
+        .task {
+            if !didSeed {
+                draft = initialValue
+                didSeed = true
+            }
+        }
+        .onChange(of: draft) { _, newValue in
+            guard didSeed else { return }
+            persistTask?.cancel()
+            persistTask = Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                if Task.isCancelled { return }
+                await onCommit(newValue)
+            }
+        }
     }
 }

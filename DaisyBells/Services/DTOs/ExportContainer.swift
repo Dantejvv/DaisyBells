@@ -105,6 +105,7 @@ struct WorkoutExportDTO: Codable {
     let startedAt: Date
     let completedAt: Date?
     let statusValue: String
+    let notes: String?
     let templateId: UUID?
     let exercises: [LoggedExerciseExportDTO]
 }

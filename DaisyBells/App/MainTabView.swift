@@ -42,21 +42,12 @@ struct MainTabView: View {
                     Label("Profile", systemImage: "person")
                 }
         }
-        .overlay(alignment: .bottom) {
-            if manager.hasActiveWorkout && !manager.isShowingSheet {
-                ActiveWorkoutFloatingButton()
-                    .environment(container.activeWorkoutManager)
-                    .padding(.bottom, 52)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
         .sheet(isPresented: $manager.isShowingSheet) {
             ActiveWorkoutSheet()
                 .environment(container)
                 .environment(container.activeWorkoutManager)
                 .interactiveDismissDisabled(false)
         }
-        .animation(.snappy(duration: 0.3), value: manager.hasActiveWorkout)
         .animation(.snappy(duration: 0.3), value: manager.isShowingSheet)
     }
 }

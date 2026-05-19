@@ -5,6 +5,10 @@ import SwiftData
 struct TemplateFormView: View {
     @State var viewModel: TemplateFormViewModel
     @Environment(DependencyContainer.self) private var container
+    @FocusState private var focusedField: FocusedSetField?
+    @FocusState private var nameFocused: Bool
+    @FocusState private var notesFocused: Bool
+    @FocusState private var exerciseNotesFocused: Bool
 
     var body: some View {
         Group {
@@ -24,6 +28,7 @@ struct TemplateFormView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
+                    focusedField = nil
                     Task { await viewModel.save() }
                 }
                 .disabled(viewModel.isSaving || viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -97,6 +102,8 @@ struct TemplateFormView: View {
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             TextField("Template name", text: $viewModel.name)
+                .focused($nameFocused)
+                .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
 
@@ -105,6 +112,8 @@ struct TemplateFormView: View {
                 .padding(.top, 10)
 
             TextField("Notes", text: $viewModel.notes, axis: .vertical)
+                .focused($notesFocused)
+                .doneKeyboardToolbar(isFocused: notesFocused) { notesFocused = false }
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
                 .lineLimit(3...6)
@@ -150,6 +159,8 @@ struct TemplateFormView: View {
                     Task { await viewModel.updateExerciseNotes(templateExercise, notes: newValue.isEmpty ? nil : newValue) }
                 }
             ), axis: .vertical)
+            .focused($exerciseNotesFocused)
+            .doneKeyboardToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
             .font(.system(size: 12))
             .foregroundStyle(Color.textSecondary)
             .lineLimit(1...3)
@@ -168,6 +179,8 @@ struct TemplateFormView: View {
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     badgeStyle: .neutral,
+                    setID: AnyHashable(templateSet.id),
+                    focusedField: $focusedField,
                     weight: templateSet.weight,
                     reps: templateSet.reps,
                     bodyweightModifier: templateSet.bodyweightModifier,

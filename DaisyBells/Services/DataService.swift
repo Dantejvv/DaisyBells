@@ -184,6 +184,7 @@ final class DataService: DataServiceProtocol {
             startedAt: workout.startedAt,
             completedAt: workout.completedAt,
             statusValue: workout.statusValue,
+            notes: workout.notes,
             templateId: workout.fromTemplate?.id,
             exercises: workout.loggedExercises
                 .sorted { $0.order < $1.order }
@@ -350,6 +351,7 @@ final class DataService: DataServiceProtocol {
             workout.startedAt = dto.startedAt
             workout.completedAt = dto.completedAt
             workout.statusValue = dto.statusValue
+            workout.notes = dto.notes
             modelContext.insert(workout)
 
             for exerciseDTO in dto.exercises {

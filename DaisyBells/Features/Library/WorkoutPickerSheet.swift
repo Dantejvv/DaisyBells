@@ -5,6 +5,7 @@ import SwiftData
 struct WorkoutPickerSheet: View {
     @State var viewModel: WorkoutPickerViewModel
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,6 +55,8 @@ struct WorkoutPickerSheet: View {
                 get: { viewModel.searchQuery },
                 set: { viewModel.search(query: $0) }
             ))
+            .focused($searchFocused)
+            .doneKeyboardToolbar(isFocused: searchFocused) { searchFocused = false }
             .foregroundStyle(Color.textPrimary)
             if !viewModel.searchQuery.isEmpty {
                 Button {

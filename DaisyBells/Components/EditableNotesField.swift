@@ -5,6 +5,8 @@ struct EditableNotesField: View {
     let previousNotes: String?
     let onChange: (String?) -> Void
 
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         let current = currentNotes ?? ""
         let placeholderText = previousNotes ?? "Notes"
@@ -18,6 +20,8 @@ struct EditableNotesField: View {
                 }
             )
         )
+        .focused($isFocused)
+        .doneKeyboardToolbar(isFocused: isFocused) { isFocused = false }
         .font(.system(size: 11))
         .italic(current.isEmpty)
         .foregroundStyle(Color.textPrimary)
@@ -29,5 +33,8 @@ struct EditableNotesField: View {
             RoundedRectangle(cornerRadius: .radiusSm)
                 .stroke(Color.borderSubtle, lineWidth: 1)
         )
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
+        .onTapGesture { isFocused = true }
     }
 }

@@ -13,14 +13,17 @@ final class ExercisePickerViewModel {
     var sortOption: ExerciseSortOption = .alphabetical
     var showFavoritesOnly = false
     var showArchived = false
+    var showCategoryManager = false
+    var showExerciseForm = false
+    var exerciseFormPrefillName: String = ""
     var selectedIds: Set<PersistentIdentifier> = []
     private(set) var isLoading = false
     private(set) var shouldDismiss = false
 
     // MARK: - Dependencies
 
-    private let exerciseService: ExerciseServiceProtocol
-    private let categoryService: CategoryServiceProtocol
+    let exerciseService: ExerciseServiceProtocol
+    let categoryService: CategoryServiceProtocol
     private let onSelect: ([PersistentIdentifier]) -> Void
     private var allExercises: [SchemaV1.Exercise] = []
 
@@ -95,6 +98,16 @@ final class ExercisePickerViewModel {
         guard !selectedIds.isEmpty else { return }
         onSelect(Array(selectedIds))
         shouldDismiss = true
+    }
+
+    func presentExerciseForm(prefillName: String = "") {
+        exerciseFormPrefillName = prefillName
+        showExerciseForm = true
+    }
+
+    func onExerciseCreated(_ id: PersistentIdentifier) async {
+        selectedIds.insert(id)
+        await loadExercises()
     }
 
     // MARK: - Private

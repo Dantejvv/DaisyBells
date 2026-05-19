@@ -93,6 +93,15 @@ final class TemplateService: TemplateServiceProtocol {
     }
 
     func delete(_ template: SchemaV1.WorkoutTemplate) async throws {
+        let templateId = template.id
+        var descriptor = FetchDescriptor<SchemaV1.Workout>()
+        descriptor.predicate = #Predicate<SchemaV1.Workout> { workout in
+            workout.fromTemplate?.id == templateId
+        }
+        let referencing = try modelContext.fetch(descriptor)
+        for workout in referencing {
+            workout.fromTemplate = nil
+        }
         modelContext.delete(template)
         try modelContext.save()
     }

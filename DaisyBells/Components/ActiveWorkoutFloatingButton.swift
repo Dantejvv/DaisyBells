@@ -41,7 +41,8 @@ struct ActiveWorkoutFloatingButton: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, .spacingBase)
-        .padding(.bottom, .spacingSm)
+        .padding(.top, -8)
+        .padding(.bottom, .spacingMd)
     }
 
     // MARK: - Subviews
