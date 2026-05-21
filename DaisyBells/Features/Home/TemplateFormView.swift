@@ -235,6 +235,9 @@ struct TemplateFormView: View {
                     sameAsLastBodyweightModifier: sameAsLastSet?.bodyweightModifier,
                     sameAsLastTime: sameAsLastSet?.time,
                     sameAsLastDistance: sameAsLastSet?.distance,
+                    resolveNextField: { [keyboardCoordinator] field in
+                        keyboardCoordinator.next(of: field)
+                    },
                     onWeightChange: { newVal in
                         viewModel.updateSet(
                             templateSet, in: templateExercise,

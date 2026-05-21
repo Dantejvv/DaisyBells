@@ -29,6 +29,10 @@ final class KeyboardFocusCoordinator {
         self.labels = labels
     }
 
+    /// Returns the index of `field` in the ordered list, or nil if the field
+    /// isn't tracked. Returning nil for stale fields (e.g. a set that was
+    /// deleted while focused) is intentional — callers should treat it the
+    /// same as "no next/previous available" and dismiss the keyboard.
     func index(of field: FocusedSetField?) -> Int? {
         guard let field else { return nil }
         return orderedFields.firstIndex(of: field)

@@ -8,9 +8,14 @@ struct PillTextField: View {
     @Binding var focusedField: FocusedSetField?
     var fieldKind: NumericKeypad.FieldKind = .decimal
     let previousValue: Double?
+    /// Resolves the next field at Next-tap time. Passed in as a closure
+    /// (rather than read from @Environment) so PillTextField has no observation
+    /// dependency on the coordinator. Observing the @Observable coordinator
+    /// here would feed a SwiftUI AttributeGraph cycle with the keypad's
+    /// hosted view tree.
+    let resolveNextField: (FocusedSetField) -> FocusedSetField?
     let onCommit: (Double?) -> Void
 
-    @Environment(KeyboardFocusCoordinator.self) private var coordinator
     @State private var draft: String = ""
     @State private var isFocusedBridge: Bool = false
 
@@ -30,6 +35,16 @@ struct PillTextField: View {
         }
     }
 
+    private var accessibilityLabelText: String {
+        switch field {
+        case .weight: return "Weight"
+        case .reps: return "Reps"
+        case .bodyweightModifier: return "Bodyweight modifier"
+        case .time: return "Time in seconds"
+        case .distance: return "Distance"
+        }
+    }
+
     var body: some View {
         InputViewTextField(
             text: $draft,
@@ -40,10 +55,15 @@ struct PillTextField: View {
             textColor: UIColor(Color.textPrimary),
             placeholderColor: UIColor(Color.textTertiary),
             keypad: {
+                // canNext is always true here; if no next field exists when
+                // the user taps Next the resolver returns nil and we dismiss.
+                // Reading coordinator.hasNext(of:) here would observe the
+                // @Observable coordinator from inside the hosted SwiftUI
+                // subtree and feed an AttributeGraph cycle.
                 NumericKeypad(
                     fieldKind: fieldKind,
                     canSameAsLast: previousValue != nil,
-                    canNext: coordinator.hasNext(of: field),
+                    canNext: true,
                     draft: $draft,
                     onSameAsLast: {
                         if let prev = previousValue {
@@ -51,10 +71,17 @@ struct PillTextField: View {
                         }
                     },
                     onNext: {
-                        onCommit(Double(draft))
-                        if let next = coordinator.next(of: field) {
+                        // Order matters: drop our own focus flag before the
+                        // commit so the parent re-render triggered by
+                        // onCommit sees `isFocused == false` and doesn't
+                        // re-call becomeFirstResponder in updateUIView.
+                        if let next = resolveNextField(field) {
+                            isFocusedBridge = false
+                            onCommit(Double(draft))
                             focusedField = next
                         } else {
+                            isFocusedBridge = false
+                            onCommit(Double(draft))
                             focusedField = nil
                             UIApplication.shared.sendAction(
                                 #selector(UIResponder.resignFirstResponder),
@@ -63,6 +90,7 @@ struct PillTextField: View {
                         }
                     },
                     onDone: {
+                        isFocusedBridge = false
                         onCommit(Double(draft))
                         focusedField = nil
                         UIApplication.shared.sendAction(
@@ -75,6 +103,8 @@ struct PillTextField: View {
         )
         .padding(.vertical, 5)
         .padding(.horizontal, 4)
+        .accessibilityLabel(accessibilityLabelText)
+        .accessibilityValue(draft.isEmpty ? "Empty" : draft)
         .onAppear {
             if draft.isEmpty {
                 draft = Self.format(value)
@@ -125,6 +155,7 @@ struct EditableDualPill: View {
     var rightFieldKind: NumericKeypad.FieldKind = .decimal
     let leftPreviousValue: Double?
     let rightPreviousValue: Double?
+    let resolveNextField: (FocusedSetField) -> FocusedSetField?
     let onLeftCommit: (Double?) -> Void
     let onRightCommit: (Double?) -> Void
 
@@ -137,6 +168,7 @@ struct EditableDualPill: View {
                 focusedField: $focusedField,
                 fieldKind: leftFieldKind,
                 previousValue: leftPreviousValue,
+                resolveNextField: resolveNextField,
                 onCommit: onLeftCommit
             )
             Rectangle()
@@ -149,6 +181,7 @@ struct EditableDualPill: View {
                 focusedField: $focusedField,
                 fieldKind: rightFieldKind,
                 previousValue: rightPreviousValue,
+                resolveNextField: resolveNextField,
                 onCommit: onRightCommit
             )
         }
@@ -176,6 +209,7 @@ struct EditableSinglePill: View {
     @Binding var focusedField: FocusedSetField?
     var fieldKind: NumericKeypad.FieldKind = .decimal
     let previousValue: Double?
+    let resolveNextField: (FocusedSetField) -> FocusedSetField?
     let onCommit: (Double?) -> Void
 
     var body: some View {
@@ -186,6 +220,7 @@ struct EditableSinglePill: View {
             focusedField: $focusedField,
             fieldKind: fieldKind,
             previousValue: previousValue,
+            resolveNextField: resolveNextField,
             onCommit: onCommit
         )
         .frame(width: 46, height: 30)

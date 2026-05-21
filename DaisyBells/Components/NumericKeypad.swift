@@ -29,9 +29,10 @@ struct NumericKeypad: View {
 
     private let haptic = UIImpactFeedbackGenerator(style: .light)
 
-    private var canSign: Bool { fieldKind.allowsSign && !draft.isEmpty }
-    private var canDecimal: Bool { fieldKind.allowsDecimal && !draft.contains(".") }
-    private var canBackspace: Bool { !draft.isEmpty }
+    // Internal because unit tests reach in to verify state predicates.
+    var canSign: Bool { fieldKind.allowsSign && !draft.isEmpty }
+    var canDecimal: Bool { fieldKind.allowsDecimal && !draft.contains(".") }
+    var canBackspace: Bool { !draft.isEmpty }
 
     var body: some View {
         Grid(horizontalSpacing: 8, verticalSpacing: 8) {
@@ -73,6 +74,7 @@ struct NumericKeypad: View {
             label: digit,
             style: .number,
             isEnabled: true,
+            accessibilityLabel: "Digit \(digit)",
             action: {
                 haptic.impactOccurred()
                 draft.append(digit)
@@ -85,6 +87,7 @@ struct NumericKeypad: View {
             label: "±",
             style: .utility,
             isEnabled: canSign,
+            accessibilityLabel: "Toggle sign",
             action: {
                 haptic.impactOccurred()
                 if draft.hasPrefix("-") {
@@ -101,6 +104,7 @@ struct NumericKeypad: View {
             label: ".",
             style: .utility,
             isEnabled: canDecimal,
+            accessibilityLabel: "Decimal point",
             action: {
                 haptic.impactOccurred()
                 draft.append(".")
@@ -114,6 +118,15 @@ struct NumericKeypad: View {
             systemImage: "delete.left",
             style: .utility,
             isEnabled: canBackspace,
+            accessibilityLabel: "Backspace",
+            accessibilityCustomActions: [
+                .init(name: "Clear field") {
+                    guard !draft.isEmpty else { return false }
+                    haptic.impactOccurred()
+                    draft = ""
+                    return true
+                }
+            ],
             action: {
                 haptic.impactOccurred()
                 if !draft.isEmpty { draft.removeLast() }
@@ -130,6 +143,7 @@ struct NumericKeypad: View {
             label: "Same as\nlast set",
             style: .utility,
             isEnabled: canSameAsLast,
+            accessibilityLabel: "Same as last set",
             action: {
                 haptic.impactOccurred()
                 onSameAsLast()
@@ -143,6 +157,7 @@ struct NumericKeypad: View {
             systemImage: "arrow.down",
             style: .utility,
             isEnabled: canNext,
+            accessibilityLabel: "Next field",
             action: {
                 haptic.impactOccurred()
                 onNext()
@@ -155,6 +170,7 @@ struct NumericKeypad: View {
             label: "Done",
             style: .primary,
             isEnabled: true,
+            accessibilityLabel: "Dismiss keypad",
             action: {
                 haptic.impactOccurred()
                 onDone()
@@ -172,8 +188,20 @@ private struct KeypadKey: View {
     var systemImage: String? = nil
     let style: Style
     let isEnabled: Bool
+    let accessibilityLabel: String
+    var accessibilityCustomActions: [AccessibilityCustomAction] = []
     let action: () -> Void
     var longPressAction: (() -> Void)? = nil
+
+    // Scale with Dynamic Type so large-text users still see legible keys.
+    @ScaledMetric(relativeTo: .title2) private var numberFontSize: CGFloat = 24
+    @ScaledMetric(relativeTo: .footnote) private var utilityFontSize: CGFloat = 13
+    @ScaledMetric(relativeTo: .body) private var primaryFontSize: CGFloat = 16
+
+    struct AccessibilityCustomAction {
+        let name: String
+        let perform: () -> Bool
+    }
 
     var body: some View {
         Button(action: action) {
@@ -185,6 +213,12 @@ private struct KeypadKey: View {
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1.0 : 0.3)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityActions {
+            ForEach(accessibilityCustomActions, id: \.name) { action in
+                Button(action.name) { _ = action.perform() }
+            }
+        }
         .simultaneousGesture(
             LongPressGesture(minimumDuration: 0.4)
                 .onEnded { _ in
@@ -207,6 +241,7 @@ private struct KeypadKey: View {
                     .foregroundStyle(foreground)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.7)
             }
         }
         .padding(.horizontal, 4)
@@ -214,9 +249,9 @@ private struct KeypadKey: View {
 
     private var font: Font {
         switch style {
-        case .number: return .system(size: 24, weight: .regular)
-        case .utility: return .system(size: 13, weight: .medium)
-        case .primary: return .system(size: 16, weight: .semibold)
+        case .number: return .system(size: numberFontSize, weight: .regular)
+        case .utility: return .system(size: utilityFontSize, weight: .medium)
+        case .primary: return .system(size: primaryFontSize, weight: .semibold)
         }
     }
 

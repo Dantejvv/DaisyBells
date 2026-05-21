@@ -40,6 +40,10 @@ struct EditableSetRow: View {
     var sameAsLastTime: TimeInterval?
     var sameAsLastDistance: Double?
 
+    /// Closure used by the numeric keypad's Next button. Passed through here
+    /// so PillTextField can avoid observing the focus coordinator directly.
+    let resolveNextField: (FocusedSetField) -> FocusedSetField?
+
     let onWeightChange: (Double?) -> Void
     let onRepsChange: (Int?) -> Void
     let onBodyweightModifierChange: (Double?) -> Void
@@ -65,6 +69,7 @@ struct EditableSetRow: View {
                     rightFieldKind: .integer,
                     leftPreviousValue: sameAsLastWeight,
                     rightPreviousValue: sameAsLastReps.map { Double($0) },
+                    resolveNextField: resolveNextField,
                     onLeftCommit: { onWeightChange($0) },
                     onRightCommit: { onRepsChange($0.map { Int($0) }) }
                 )
@@ -81,6 +86,7 @@ struct EditableSetRow: View {
                     rightFieldKind: .integer,
                     leftPreviousValue: sameAsLastBodyweightModifier,
                     rightPreviousValue: sameAsLastReps.map { Double($0) },
+                    resolveNextField: resolveNextField,
                     onLeftCommit: { onBodyweightModifierChange($0) },
                     onRightCommit: { onRepsChange($0.map { Int($0) }) }
                 )
@@ -97,6 +103,7 @@ struct EditableSetRow: View {
                     rightFieldKind: .decimal,
                     leftPreviousValue: sameAsLastDistance,
                     rightPreviousValue: sameAsLastTime,
+                    resolveNextField: resolveNextField,
                     onLeftCommit: { onDistanceChange($0) },
                     onRightCommit: { onTimeChange($0) }
                 )
@@ -113,6 +120,7 @@ struct EditableSetRow: View {
                     rightFieldKind: .decimal,
                     leftPreviousValue: sameAsLastWeight,
                     rightPreviousValue: sameAsLastTime,
+                    resolveNextField: resolveNextField,
                     onLeftCommit: { onWeightChange($0) },
                     onRightCommit: { onTimeChange($0) }
                 )
@@ -124,6 +132,7 @@ struct EditableSetRow: View {
                     focusedField: $focusedField,
                     fieldKind: .integer,
                     previousValue: sameAsLastReps.map { Double($0) },
+                    resolveNextField: resolveNextField,
                     onCommit: { onRepsChange($0.map { Int($0) }) }
                 )
             case .time:
@@ -134,6 +143,7 @@ struct EditableSetRow: View {
                     focusedField: $focusedField,
                     fieldKind: .decimal,
                     previousValue: sameAsLastTime,
+                    resolveNextField: resolveNextField,
                     onCommit: { onTimeChange($0) }
                 )
             }

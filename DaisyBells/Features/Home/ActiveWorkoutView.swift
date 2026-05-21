@@ -452,6 +452,9 @@ struct ActiveWorkoutView: View {
                 sameAsLastBodyweightModifier: sameAsLast?.bodyweightModifier,
                 sameAsLastTime: sameAsLast?.time,
                 sameAsLastDistance: sameAsLast?.distance,
+                resolveNextField: { [keyboardCoordinator] field in
+                    keyboardCoordinator.next(of: field)
+                },
                 onWeightChange: { newVal in
                     Task {
                         await viewModel.updateSet(

@@ -14,6 +14,14 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - Third-party dependencies
 - @EnvironmentObject for dependency injection
 
+### UIKit exception (carve-out)
+The custom numeric keypad for set logging requires `UITextField.inputView`, which has no SwiftUI equivalent. The UIKit usage is confined to these files:
+- `DaisyBells/Components/InputViewTextField.swift` — `UIViewRepresentable` bridge
+- `DaisyBells/Components/NumericKeypad.swift` — uses `UIImpactFeedbackGenerator` for keypress haptics
+- `DaisyBells/Extensions/View+TapToDismissKeyboard.swift` — uses `UIResponder.resignFirstResponder` for tap-away dismissal
+
+Do not introduce UIKit elsewhere. If you need similar bridging for another feature, prefer extending these existing primitives rather than adding new UIKit imports.
+
 ## App Structure
 ### Tab Structure (5 tabs)
 - **Home** — Split dashboard, start workouts, quick access to active workout
