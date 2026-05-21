@@ -57,14 +57,45 @@ final class ExerciseService: ExerciseServiceProtocol {
     }
     
     func create(name: String, type: ExerciseType) async throws -> SchemaV1.Exercise {
+        if let existing = try await findDuplicate(name: name, type: type, excluding: nil) {
+            throw ExerciseServiceError.duplicateNameAndType(existing: existing)
+        }
         let exercise = SchemaV1.Exercise(name: name, type: type)
         modelContext.insert(exercise)
         try modelContext.save()
         return exercise
     }
-    
+
     func update(_ exercise: SchemaV1.Exercise) async throws {
+        if let existing = try await findDuplicate(
+            name: exercise.name,
+            type: exercise.type,
+            excluding: exercise.persistentModelID
+        ) {
+            throw ExerciseServiceError.duplicateNameAndType(existing: existing)
+        }
         try modelContext.save()
+    }
+
+    func findDuplicate(
+        name: String,
+        type: ExerciseType,
+        excluding: PersistentIdentifier?
+    ) async throws -> SchemaV1.Exercise? {
+        let normalized = Self.normalize(name)
+        guard !normalized.isEmpty else { return nil }
+        // SwiftData #Predicate on enum-typed fields fails at runtime on the persistent store
+        // (works in in-memory test stores). Fetch all and filter in memory.
+        let all = try modelContext.fetch(FetchDescriptor<SchemaV1.Exercise>())
+        return all.first { candidate in
+            candidate.type == type
+                && Self.normalize(candidate.name) == normalized
+                && candidate.persistentModelID != excluding
+        }
+    }
+
+    static func normalize(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
     
     func fetchArchived() async throws -> [SchemaV1.Exercise] {

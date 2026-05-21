@@ -167,6 +167,115 @@ struct ExerciseServiceTests {
         #expect(referenced)
     }
 
+    // MARK: - Duplicate handling
+
+    @Test @MainActor
+    func createThrowsOnDuplicateNameAndType() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        _ = try await service.create(name: "Aa", type: .weightAndReps)
+
+        await #expect(throws: ExerciseServiceError.self) {
+            _ = try await service.create(name: "Aa", type: .weightAndReps)
+        }
+    }
+
+    @Test @MainActor
+    func createAllowsSameNameDifferentType() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        let weightVariant = try await service.create(name: "Aa", type: .weightAndReps)
+        let repsVariant = try await service.create(name: "Aa", type: .reps)
+
+        #expect(weightVariant.id != repsVariant.id)
+        #expect(weightVariant.type == .weightAndReps)
+        #expect(repsVariant.type == .reps)
+    }
+
+    @Test @MainActor
+    func createIsCaseInsensitive() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        _ = try await service.create(name: "Aa", type: .weightAndReps)
+
+        await #expect(throws: ExerciseServiceError.self) {
+            _ = try await service.create(name: "aa", type: .weightAndReps)
+        }
+    }
+
+    @Test @MainActor
+    func createTrimsWhitespace() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        _ = try await service.create(name: "Aa", type: .weightAndReps)
+
+        await #expect(throws: ExerciseServiceError.self) {
+            _ = try await service.create(name: "  Aa  ", type: .weightAndReps)
+        }
+    }
+
+    @Test @MainActor
+    func createBlockedByArchivedDuplicate() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        let first = try await service.create(name: "Aa", type: .weightAndReps)
+        try await service.archive(first)
+
+        var caughtArchived = false
+        do {
+            _ = try await service.create(name: "Aa", type: .weightAndReps)
+        } catch let ExerciseServiceError.duplicateNameAndType(existing) {
+            caughtArchived = existing.isArchived
+        }
+        #expect(caughtArchived)
+    }
+
+    @Test @MainActor
+    func updateThrowsOnCollision() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        _ = try await service.create(name: "Aa", type: .weightAndReps)
+        let second = try await service.create(name: "Bb", type: .weightAndReps)
+
+        second.name = "Aa"
+        await #expect(throws: ExerciseServiceError.self) {
+            try await service.update(second)
+        }
+    }
+
+    @Test @MainActor
+    func updateAllowsSelf() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        let exercise = try await service.create(name: "Aa", type: .weightAndReps)
+        exercise.notes = "Some notes"
+
+        try await service.update(exercise)
+        #expect(exercise.notes == "Some notes")
+    }
+
+    @Test @MainActor
+    func findDuplicateReturnsNilWhenAbsent() async throws {
+        let container = try makeTestModelContainer()
+        let service = ExerciseService(modelContext: container.mainContext)
+
+        _ = try await service.create(name: "Aa", type: .weightAndReps)
+
+        let result = try await service.findDuplicate(
+            name: "Bb",
+            type: .weightAndReps,
+            excluding: nil
+        )
+        #expect(result == nil)
+    }
+
     @Test @MainActor
     func deleteArchivesExerciseReferencedByTemplate() async throws {
         let container = try makeTestModelContainer()

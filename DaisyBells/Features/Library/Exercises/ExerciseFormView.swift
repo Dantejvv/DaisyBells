@@ -29,10 +29,16 @@ struct ExerciseFormView: View {
                 Button("Save") {
                     Task { await viewModel.save() }
                 }
-                .disabled(viewModel.isSaving || viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(!viewModel.canSave)
             }
         }
         .task { await viewModel.load() }
+        .onChange(of: viewModel.name) {
+            Task { await viewModel.checkForDuplicate() }
+        }
+        .onChange(of: viewModel.type) {
+            Task { await viewModel.checkForDuplicate() }
+        }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .alert("New Category", isPresented: $viewModel.showNewCategoryAlert) {
             TextField("Category name", text: $viewModel.newCategoryName)
@@ -66,6 +72,16 @@ struct ExerciseFormView: View {
                     .task {
                         if !viewModel.isEditing { nameFocused = true }
                     }
+                if let duplicate = viewModel.duplicateExercise {
+                    HStack(spacing: .spacingXs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text(duplicateMessage(for: duplicate))
+                        Spacer(minLength: 0)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(Color.warning)
+                    .padding(.bottom, .spacingSm)
+                }
                 Divider()
                 TextField("Notes", text: $viewModel.notes, axis: .vertical)
                     .focused($notesFocused)
@@ -77,6 +93,11 @@ struct ExerciseFormView: View {
             }
         }
         .listRowBackground(Color.bgCard)
+    }
+
+    private func duplicateMessage(for duplicate: SchemaV1.Exercise) -> String {
+        let archivedSuffix = duplicate.isArchived ? " (archived)" : ""
+        return "Already exists as \(duplicate.type.displayName)\(archivedSuffix)"
     }
 
     private var dropdownRow: some View {

@@ -64,7 +64,14 @@ final class SeedingService: SeedingServiceProtocol {
         let categories = try modelContext.fetch(descriptor)
         let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.name, $0) })
 
+        let existing = try modelContext.fetch(FetchDescriptor<SchemaV1.Exercise>())
+        var seen: Set<String> = Set(existing.map { Self.dedupKey(name: $0.name, type: $0.type) })
+
         for dto in exerciseDTOs {
+            let key = Self.dedupKey(name: dto.name, type: dto.type)
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+
             let exercise = SchemaV1.Exercise(name: dto.name, type: dto.type)
             modelContext.insert(exercise)
 
@@ -76,6 +83,10 @@ final class SeedingService: SeedingServiceProtocol {
         }
 
         try modelContext.save()
+    }
+
+    private static func dedupKey(name: String, type: ExerciseType) -> String {
+        "\(ExerciseService.normalize(name))|\(type.rawValue)"
     }
 }
 

@@ -1,6 +1,18 @@
 import Foundation
 import SwiftData
 
+enum ExerciseServiceError: LocalizedError {
+    case duplicateNameAndType(existing: SchemaV1.Exercise)
+
+    var errorDescription: String? {
+        switch self {
+        case .duplicateNameAndType(let existing):
+            let state = existing.isArchived ? " (archived)" : ""
+            return "An exercise named \"\(existing.name)\" with type \(existing.type.displayName) already exists\(state)."
+        }
+    }
+}
+
 @MainActor
 protocol ExerciseServiceProtocol {
     func fetchAll() async throws -> [SchemaV1.Exercise]
@@ -15,4 +27,9 @@ protocol ExerciseServiceProtocol {
     func archive(_ exercise: SchemaV1.Exercise) async throws
     func hasHistory(_ exercise: SchemaV1.Exercise) async throws -> Bool
     func isReferencedByTemplate(_ exercise: SchemaV1.Exercise) async throws -> Bool
+    func findDuplicate(
+        name: String,
+        type: ExerciseType,
+        excluding: PersistentIdentifier?
+    ) async throws -> SchemaV1.Exercise?
 }

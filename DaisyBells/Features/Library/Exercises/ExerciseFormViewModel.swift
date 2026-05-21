@@ -15,6 +15,13 @@ final class ExerciseFormViewModel {
     var errorMessage: String?
     var showNewCategoryAlert = false
     var newCategoryName = ""
+    private(set) var duplicateExercise: SchemaV1.Exercise?
+
+    var canSave: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && duplicateExercise == nil
+            && !isSaving
+    }
 
     // MARK: - Dependencies
 
@@ -62,21 +69,10 @@ final class ExerciseFormViewModel {
                 notes = exerciseModel.notes ?? ""
                 selectedCategories = exerciseModel.categories
             }
+            await checkForDuplicate()
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-
-    func updateName(_ newName: String) {
-        name = newName
-    }
-
-    func updateType(_ newType: ExerciseType) {
-        type = newType
-    }
-
-    func updateNotes(_ newNotes: String) {
-        notes = newNotes
     }
 
     func toggleCategory(_ category: SchemaV1.ExerciseCategory) {
@@ -129,6 +125,18 @@ final class ExerciseFormViewModel {
 
     func cancel() {
         dismiss()
+    }
+
+    func checkForDuplicate() async {
+        do {
+            duplicateExercise = try await exerciseService.findDuplicate(
+                name: name,
+                type: type,
+                excluding: exercise?.persistentModelID
+            )
+        } catch {
+            duplicateExercise = nil
+        }
     }
 
     // MARK: - Private
