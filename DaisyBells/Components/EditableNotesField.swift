@@ -21,7 +21,10 @@ struct EditableNotesField: View {
             )
         )
         .focused($isFocused)
-        .doneKeyboardToolbar(isFocused: isFocused) { isFocused = false }
+        .submitLabel(.done)
+        .textInputAutocapitalization(.sentences)
+        .onSubmit { isFocused = false }
+        .keyboardDoneToolbar(isFocused: isFocused) { isFocused = false }
         .font(.system(size: 11))
         .italic(current.isEmpty)
         .foregroundStyle(Color.textPrimary)

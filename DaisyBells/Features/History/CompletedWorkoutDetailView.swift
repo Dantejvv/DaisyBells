@@ -38,6 +38,7 @@ struct CompletedWorkoutDetailView: View {
         )
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
     }
 
     // MARK: - Workout Content
@@ -204,7 +205,8 @@ private struct CompletedWorkoutNotesField: View {
 
             TextField("Notes", text: $draft, axis: .vertical)
                 .focused($isFocused)
-                .doneKeyboardToolbar(isFocused: isFocused) { isFocused = false }
+                .textInputAutocapitalization(.sentences)
+                .keyboardDoneToolbar(isFocused: isFocused) { isFocused = false }
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
                 .lineLimit(1...5)

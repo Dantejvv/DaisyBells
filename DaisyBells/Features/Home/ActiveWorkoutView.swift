@@ -6,9 +6,27 @@ struct ActiveWorkoutView: View {
     @State var viewModel: ActiveWorkoutViewModel
     @State private var notesDraft: String = ""
     @State private var notesPersistTask: Task<Void, Never>?
-    @FocusState private var focusedField: FocusedSetField?
+    @State private var keyboardCoordinator = KeyboardFocusCoordinator()
+    @State private var focusedField: FocusedSetField?
     @FocusState private var workoutNotesFocused: Bool
     @FocusState private var exerciseNotesFocused: Bool
+
+    private func rebuildFocusList() {
+        var inputs: [SetFocusInput] = []
+        for exercise in viewModel.exercises {
+            guard let type = exercise.exercise?.type else { continue }
+            let sortedSets = exercise.sets.sorted { $0.order < $1.order }
+            for (idx, set) in sortedSets.enumerated() {
+                inputs.append(SetFocusInput(
+                    exerciseName: exercise.exercise?.name ?? "",
+                    exerciseType: type,
+                    setNumber: idx + 1,
+                    setID: AnyHashable(set.persistentModelID)
+                ))
+            }
+        }
+        keyboardCoordinator.update(from: inputs)
+    }
 
     var body: some View {
         Group {
@@ -47,6 +65,9 @@ struct ActiveWorkoutView: View {
         }
         .alert("Save as Template", isPresented: $viewModel.showSaveAsTemplatePrompt) {
             TextField("Template name", text: $viewModel.templateName)
+                .submitLabel(.done)
+                .textInputAutocapitalization(.words)
+                .onSubmit { Task { await viewModel.saveAsTemplate() } }
             Button("Save") {
                 Task { await viewModel.saveAsTemplate() }
             }
@@ -58,7 +79,18 @@ struct ActiveWorkoutView: View {
         }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
         .navigationBarHidden(true)
+        .environment(keyboardCoordinator)
+        .onChange(of: viewModel.exercises.map(\.id)) { _, _ in
+            rebuildFocusList()
+        }
+        .onChange(of: viewModel.exercises.flatMap { $0.sets.map(\.id) }) { _, _ in
+            rebuildFocusList()
+        }
+        .task {
+            rebuildFocusList()
+        }
     }
 
     // MARK: - Empty State
@@ -205,7 +237,8 @@ struct ActiveWorkoutView: View {
                 .lineLimit(1...5)
                 .frame(minHeight: 44)
                 .focused($workoutNotesFocused)
-                .doneKeyboardToolbar(isFocused: workoutNotesFocused) { workoutNotesFocused = false }
+                .textInputAutocapitalization(.sentences)
+                .keyboardDoneToolbar(isFocused: workoutNotesFocused) { workoutNotesFocused = false }
                 .padding(.top, .spacingSm)
                 .onChange(of: notesDraft) { _, newValue in
                     notesPersistTask?.cancel()
@@ -329,7 +362,8 @@ struct ActiveWorkoutView: View {
             .lineLimit(1...3)
             .frame(minHeight: 44)
             .focused($exerciseNotesFocused)
-            .doneKeyboardToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
+            .textInputAutocapitalization(.sentences)
+            .keyboardDoneToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
             .padding(.horizontal, 14)
             .padding(.bottom, .spacingXs)
 
@@ -344,12 +378,14 @@ struct ActiveWorkoutView: View {
             // Set rows
             ForEach(Array(sets.enumerated()), id: \.element.id) { index, loggedSet in
                 let previousSet = index < previousSets.count ? previousSets[index] : nil
+                let sameAsLastSet = index > 0 ? sets[index - 1] : nil
                 let isActive = index == firstNonCompletedIndex
                 setRow(
                     loggedSet,
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     previous: previousSet,
+                    sameAsLast: sameAsLastSet,
                     isActive: isActive,
                     loggedExercise: loggedExercise
                 )
@@ -382,6 +418,7 @@ struct ActiveWorkoutView: View {
         exerciseType: ExerciseType,
         setNumber: Int,
         previous: SchemaV1.LoggedSet?,
+        sameAsLast: SchemaV1.LoggedSet?,
         isActive: Bool,
         loggedExercise: SchemaV1.LoggedExercise
     ) -> some View {
@@ -410,6 +447,11 @@ struct ActiveWorkoutView: View {
                 previousTime: previous?.time,
                 previousDistance: convertDistance(previous?.distance, storedUnit: previous?.resolvedDistanceUnit, displayUnit: distanceUnit),
                 previousNotes: previous?.notes,
+                sameAsLastWeight: sameAsLast?.weight,
+                sameAsLastReps: sameAsLast?.reps,
+                sameAsLastBodyweightModifier: sameAsLast?.bodyweightModifier,
+                sameAsLastTime: sameAsLast?.time,
+                sameAsLastDistance: sameAsLast?.distance,
                 onWeightChange: { newVal in
                     Task {
                         await viewModel.updateSet(

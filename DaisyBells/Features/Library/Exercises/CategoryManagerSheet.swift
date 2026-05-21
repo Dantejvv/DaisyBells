@@ -46,6 +46,9 @@ struct CategoryManagerSheet: View {
             .errorAlert(errorMessage: $viewModel.errorMessage)
             .alert("New Category", isPresented: $viewModel.showNewCategoryAlert) {
                 TextField("Category name", text: $viewModel.newCategoryName)
+                    .submitLabel(.done)
+                    .textInputAutocapitalization(.words)
+                    .onSubmit { Task { await viewModel.createCategory() } }
                 Button("Cancel", role: .cancel) {
                     viewModel.newCategoryName = ""
                 }
@@ -87,7 +90,9 @@ struct CategoryManagerSheet: View {
             .listRowBackground(Color.bgCard)
         }
         .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
         .scrollContentBackground(.hidden)
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
     }
 }

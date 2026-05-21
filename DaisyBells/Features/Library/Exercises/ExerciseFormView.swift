@@ -13,8 +13,10 @@ struct ExerciseFormView: View {
             dropdownRow
         }
         .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
         .scrollContentBackground(.hidden)
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
         .navigationTitle(viewModel.isEditing ? "Edit Exercise" : "New Exercise")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -34,6 +36,9 @@ struct ExerciseFormView: View {
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .alert("New Category", isPresented: $viewModel.showNewCategoryAlert) {
             TextField("Category name", text: $viewModel.newCategoryName)
+                .submitLabel(.done)
+                .textInputAutocapitalization(.words)
+                .onSubmit { Task { await viewModel.createCategory() } }
             Button("Cancel", role: .cancel) {
                 viewModel.newCategoryName = ""
             }
@@ -52,13 +57,20 @@ struct ExerciseFormView: View {
             VStack(spacing: 0) {
                 TextField("Exercise name", text: $viewModel.name)
                     .focused($nameFocused)
-                    .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
+                    .submitLabel(.done)
+                    .textInputAutocapitalization(.words)
+                    .onSubmit { nameFocused = false }
+                    .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .padding(.bottom, .spacingSm)
+                    .task {
+                        if !viewModel.isEditing { nameFocused = true }
+                    }
                 Divider()
                 TextField("Notes", text: $viewModel.notes, axis: .vertical)
                     .focused($notesFocused)
-                    .doneKeyboardToolbar(isFocused: notesFocused) { notesFocused = false }
+                    .textInputAutocapitalization(.sentences)
+                    .keyboardDoneToolbar(isFocused: notesFocused) { notesFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(3...6)
                     .padding(.top, .spacingMd)

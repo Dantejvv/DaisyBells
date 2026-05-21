@@ -5,7 +5,6 @@ import SwiftData
 struct WorkoutPickerSheet: View {
     @State var viewModel: WorkoutPickerViewModel
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,34 +42,20 @@ struct WorkoutPickerSheet: View {
             if shouldDismiss { dismiss() }
         }
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
     }
 
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: .spacingSm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color.textTertiary)
-            TextField("Search templates", text: Binding(
+        SearchBar(
+            placeholder: "Search templates",
+            text: Binding(
                 get: { viewModel.searchQuery },
                 set: { viewModel.search(query: $0) }
-            ))
-            .focused($searchFocused)
-            .doneKeyboardToolbar(isFocused: searchFocused) { searchFocused = false }
-            .foregroundStyle(Color.textPrimary)
-            if !viewModel.searchQuery.isEmpty {
-                Button {
-                    viewModel.search(query: "")
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color.textTertiary)
-                }
-            }
-        }
-        .padding(.horizontal, .spacingSm)
-        .padding(.vertical, .spacingSm)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusMd))
+            ),
+            onClear: { viewModel.search(query: "") }
+        )
     }
 
     // MARK: - Template List
@@ -96,6 +81,7 @@ struct WorkoutPickerSheet: View {
             .listRowBackground(Color.bgCard)
         }
         .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
         .contentMargins(.top, .spacingXs)
         .scrollContentBackground(.hidden)
         .background(Color.bgPrimary)

@@ -16,8 +16,10 @@ struct SplitFormView: View {
             daysSection
         }
         .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
         .scrollContentBackground(.hidden)
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
         .navigationTitle(viewModel.isEditing ? "Edit Split" : "New Split")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -40,6 +42,12 @@ struct SplitFormView: View {
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .alert("Add Day", isPresented: $viewModel.showAddDayPrompt) {
             TextField("Day name", text: $viewModel.newDayName)
+                .submitLabel(.done)
+                .textInputAutocapitalization(.words)
+                .onSubmit {
+                    viewModel.addDay(name: viewModel.newDayName)
+                    viewModel.newDayName = ""
+                }
             Button("Cancel", role: .cancel) {
                 viewModel.newDayName = ""
             }
@@ -71,13 +79,20 @@ struct SplitFormView: View {
             VStack(spacing: 0) {
                 TextField("Split name", text: $viewModel.name)
                     .focused($nameFocused)
-                    .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
+                    .submitLabel(.done)
+                    .textInputAutocapitalization(.words)
+                    .onSubmit { nameFocused = false }
+                    .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .padding(.bottom, .spacingSm)
+                    .task {
+                        if !viewModel.isEditing { nameFocused = true }
+                    }
                 Divider()
                 TextField("Notes", text: $viewModel.notes, axis: .vertical)
                     .focused($notesFocused)
-                    .doneKeyboardToolbar(isFocused: notesFocused) { notesFocused = false }
+                    .textInputAutocapitalization(.sentences)
+                    .keyboardDoneToolbar(isFocused: notesFocused) { notesFocused = false }
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(3...6)
                     .padding(.top, .spacingMd)
@@ -120,7 +135,10 @@ struct SplitFormView: View {
                 )
             )
             .focused($dayNameFocused)
-            .doneKeyboardToolbar(isFocused: dayNameFocused) { dayNameFocused = false }
+            .submitLabel(.done)
+            .textInputAutocapitalization(.words)
+            .onSubmit { dayNameFocused = false }
+            .keyboardDoneToolbar(isFocused: dayNameFocused) { dayNameFocused = false }
             .font(.body.weight(.medium))
             .foregroundStyle(Color.textPrimary)
 

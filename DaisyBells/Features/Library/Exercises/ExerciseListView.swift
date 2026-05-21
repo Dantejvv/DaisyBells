@@ -5,7 +5,6 @@ import SwiftData
 struct ExerciseListView: View {
     @State var viewModel: ExerciseListViewModel
     @Environment(LibraryRouter.self) private var router
-    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -70,6 +69,7 @@ struct ExerciseListView: View {
             )
         }
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
     }
 
     // MARK: - Exercise List
@@ -82,6 +82,7 @@ struct ExerciseListView: View {
             .listRowBackground(Color.bgCard)
         }
         .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
         .contentMargins(.top, .spacingXs)
         .scrollContentBackground(.hidden)
         .background(Color.bgPrimary)
@@ -90,31 +91,16 @@ struct ExerciseListView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: .spacingSm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color.textTertiary)
-            TextField("Search exercises", text: Binding(
+        SearchBar(
+            placeholder: "Search exercises",
+            text: Binding(
                 get: { viewModel.searchQuery },
                 set: { newValue in
                     Task { await viewModel.search(query: newValue) }
                 }
-            ))
-            .focused($searchFocused)
-            .doneKeyboardToolbar(isFocused: searchFocused) { searchFocused = false }
-            .foregroundStyle(Color.textPrimary)
-            if !viewModel.searchQuery.isEmpty {
-                Button {
-                    Task { await viewModel.search(query: "") }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color.textTertiary)
-                }
-            }
-        }
-        .padding(.horizontal, .spacingSm)
-        .padding(.vertical, .spacingSm)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusMd))
+            ),
+            onClear: { Task { await viewModel.search(query: "") } }
+        )
     }
 
     // MARK: - Filter Bar

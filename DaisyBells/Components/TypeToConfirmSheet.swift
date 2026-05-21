@@ -31,7 +31,7 @@ struct TypeToConfirmSheet: View {
                         .textInputAutocapitalization(.characters)
                         .focused($fieldFocused)
                         .submitLabel(.done)
-                        .doneKeyboardToolbar(isFocused: fieldFocused) { fieldFocused = false }
+                        .keyboardDoneToolbar(isFocused: fieldFocused) { fieldFocused = false }
                 } header: {
                     Text("Type \(confirmationPhrase) to confirm")
                         .foregroundStyle(Color.textSecondary)
@@ -54,6 +54,7 @@ struct TypeToConfirmSheet: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(Color.bgPrimary)
+            .tapToDismissKeyboard()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

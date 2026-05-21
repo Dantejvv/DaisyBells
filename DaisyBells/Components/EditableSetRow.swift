@@ -16,7 +16,7 @@ struct EditableSetRow: View {
     var distanceUnit: DistanceUnits = .mi
 
     let setID: AnyHashable
-    var focusedField: FocusState<FocusedSetField?>.Binding
+    @Binding var focusedField: FocusedSetField?
 
     let weight: Double?
     let reps: Int?
@@ -31,6 +31,14 @@ struct EditableSetRow: View {
     var previousTime: TimeInterval?
     var previousDistance: Double?
     var previousNotes: String?
+
+    // Value of the immediately preceding set in this same workout (drives
+    // the "Same as last set" keypad button).
+    var sameAsLastWeight: Double?
+    var sameAsLastReps: Int?
+    var sameAsLastBodyweightModifier: Double?
+    var sameAsLastTime: TimeInterval?
+    var sameAsLastDistance: Double?
 
     let onWeightChange: (Double?) -> Void
     let onRepsChange: (Int?) -> Void
@@ -52,7 +60,11 @@ struct EditableSetRow: View {
                     rightPlaceholder: previousReps.map { "\($0)" } ?? "reps",
                     leftField: .weight(setID),
                     rightField: .reps(setID),
-                    focusedField: focusedField,
+                    focusedField: $focusedField,
+                    leftFieldKind: .decimal,
+                    rightFieldKind: .integer,
+                    leftPreviousValue: sameAsLastWeight,
+                    rightPreviousValue: sameAsLastReps.map { Double($0) },
                     onLeftCommit: { onWeightChange($0) },
                     onRightCommit: { onRepsChange($0.map { Int($0) }) }
                 )
@@ -64,7 +76,11 @@ struct EditableSetRow: View {
                     rightPlaceholder: previousReps.map { "\($0)" } ?? "reps",
                     leftField: .bodyweightModifier(setID),
                     rightField: .reps(setID),
-                    focusedField: focusedField,
+                    focusedField: $focusedField,
+                    leftFieldKind: .signedDecimal,
+                    rightFieldKind: .integer,
+                    leftPreviousValue: sameAsLastBodyweightModifier,
+                    rightPreviousValue: sameAsLastReps.map { Double($0) },
                     onLeftCommit: { onBodyweightModifierChange($0) },
                     onRightCommit: { onRepsChange($0.map { Int($0) }) }
                 )
@@ -73,10 +89,14 @@ struct EditableSetRow: View {
                     leftValue: distance,
                     rightValue: time,
                     leftPlaceholder: previousDistance.map { String(format: "%.1f", $0) } ?? distanceUnit.shortLabel.lowercased(),
-                    rightPlaceholder: previousTime.map { $0.setDurationString } ?? "m:ss",
+                    rightPlaceholder: previousTime.map { $0.setDurationString } ?? "secs",
                     leftField: .distance(setID),
                     rightField: .time(setID),
-                    focusedField: focusedField,
+                    focusedField: $focusedField,
+                    leftFieldKind: .decimal,
+                    rightFieldKind: .decimal,
+                    leftPreviousValue: sameAsLastDistance,
+                    rightPreviousValue: sameAsLastTime,
                     onLeftCommit: { onDistanceChange($0) },
                     onRightCommit: { onTimeChange($0) }
                 )
@@ -85,10 +105,14 @@ struct EditableSetRow: View {
                     leftValue: weight,
                     rightValue: time,
                     leftPlaceholder: previousWeight.map { String(format: "%g", $0) } ?? weightUnit.shortLabel.lowercased(),
-                    rightPlaceholder: previousTime.map { $0.setDurationString } ?? "m:ss",
+                    rightPlaceholder: previousTime.map { $0.setDurationString } ?? "secs",
                     leftField: .weight(setID),
                     rightField: .time(setID),
-                    focusedField: focusedField,
+                    focusedField: $focusedField,
+                    leftFieldKind: .decimal,
+                    rightFieldKind: .decimal,
+                    leftPreviousValue: sameAsLastWeight,
+                    rightPreviousValue: sameAsLastTime,
                     onLeftCommit: { onWeightChange($0) },
                     onRightCommit: { onTimeChange($0) }
                 )
@@ -97,15 +121,19 @@ struct EditableSetRow: View {
                     value: reps.map { Double($0) },
                     placeholder: previousReps.map { "\($0)" } ?? "reps",
                     field: .reps(setID),
-                    focusedField: focusedField,
+                    focusedField: $focusedField,
+                    fieldKind: .integer,
+                    previousValue: sameAsLastReps.map { Double($0) },
                     onCommit: { onRepsChange($0.map { Int($0) }) }
                 )
             case .time:
                 EditableSinglePill(
                     value: time,
-                    placeholder: previousTime.map { $0.setDurationString } ?? "m:ss",
+                    placeholder: previousTime.map { $0.setDurationString } ?? "secs",
                     field: .time(setID),
-                    focusedField: focusedField,
+                    focusedField: $focusedField,
+                    fieldKind: .decimal,
+                    previousValue: sameAsLastTime,
                     onCommit: { onTimeChange($0) }
                 )
             }

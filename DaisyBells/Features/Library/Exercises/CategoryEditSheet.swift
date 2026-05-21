@@ -16,8 +16,12 @@ struct CategoryEditSheet: View {
                 Section {
                     TextField("Category name", text: $name)
                         .focused($nameFocused)
-                        .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
+                        .submitLabel(.done)
+                        .textInputAutocapitalization(.words)
+                        .onSubmit { nameFocused = false }
+                        .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
                         .foregroundStyle(Color.textPrimary)
+                        .task { nameFocused = true }
                 } header: {
                     Text("Name")
                         .foregroundStyle(Color.textSecondary)
@@ -41,8 +45,10 @@ struct CategoryEditSheet: View {
                 .listRowBackground(Color.bgCard)
             }
             .listStyle(.insetGrouped)
+            .scrollDismissesKeyboard(.interactively)
             .scrollContentBackground(.hidden)
             .background(Color.bgPrimary)
+            .tapToDismissKeyboard()
             .navigationTitle("Edit Category")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

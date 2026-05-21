@@ -1,61 +1,115 @@
 import SwiftUI
+import UIKit
 
 struct PillTextField: View {
     let value: Double?
     let placeholder: String
     let field: FocusedSetField
-    var focusedField: FocusState<FocusedSetField?>.Binding
+    @Binding var focusedField: FocusedSetField?
+    var fieldKind: NumericKeypad.FieldKind = .decimal
+    let previousValue: Double?
     let onCommit: (Double?) -> Void
 
+    @Environment(KeyboardFocusCoordinator.self) private var coordinator
     @State private var draft: String = ""
+    @State private var isFocusedBridge: Bool = false
 
     private static func format(_ value: Double?) -> String {
         value.map { String(format: "%g", $0) } ?? ""
     }
 
     private var isFocused: Bool {
-        focusedField.wrappedValue == field
+        focusedField == field
+    }
+
+    private func isAllowed(_ ch: Character) -> Bool {
+        switch fieldKind {
+        case .integer: return ch.isNumber
+        case .decimal: return ch.isNumber || ch == "."
+        case .signedDecimal: return ch.isNumber || ch == "." || ch == "-"
+        }
     }
 
     var body: some View {
-        TextField(placeholder, text: $draft)
-            .focused(focusedField, equals: field)
-            .keyboardType(.decimalPad)
-            .font(.system(size: 13))
-            .foregroundStyle(Color.textPrimary)
-            .multilineTextAlignment(.center)
-            .padding(.vertical, 5)
-            .padding(.horizontal, 4)
-            .onAppear {
-                if draft.isEmpty {
-                    draft = Self.format(value)
-                }
+        InputViewTextField(
+            text: $draft,
+            isFocused: $isFocusedBridge,
+            placeholder: placeholder,
+            textAlignment: .center,
+            font: .systemFont(ofSize: 13),
+            textColor: UIColor(Color.textPrimary),
+            placeholderColor: UIColor(Color.textTertiary),
+            keypad: {
+                NumericKeypad(
+                    fieldKind: fieldKind,
+                    canSameAsLast: previousValue != nil,
+                    canNext: coordinator.hasNext(of: field),
+                    draft: $draft,
+                    onSameAsLast: {
+                        if let prev = previousValue {
+                            draft = Self.format(prev)
+                        }
+                    },
+                    onNext: {
+                        onCommit(Double(draft))
+                        if let next = coordinator.next(of: field) {
+                            focusedField = next
+                        } else {
+                            focusedField = nil
+                            UIApplication.shared.sendAction(
+                                #selector(UIResponder.resignFirstResponder),
+                                to: nil, from: nil, for: nil
+                            )
+                        }
+                    },
+                    onDone: {
+                        onCommit(Double(draft))
+                        focusedField = nil
+                        UIApplication.shared.sendAction(
+                            #selector(UIResponder.resignFirstResponder),
+                            to: nil, from: nil, for: nil
+                        )
+                    }
+                )
             }
-            .onChange(of: draft) { _, newValue in
-                let cleaned = newValue.filter { $0.isNumber || $0 == "." || $0 == "-" }
-                if cleaned != newValue {
-                    draft = cleaned
-                }
+        )
+        .padding(.vertical, 5)
+        .padding(.horizontal, 4)
+        .onAppear {
+            if draft.isEmpty {
+                draft = Self.format(value)
             }
-            .onChange(of: focusedField.wrappedValue) { oldValue, newValue in
-                let wasFocused = oldValue == field
-                let nowFocused = newValue == field
-                if wasFocused && !nowFocused {
-                    onCommit(Double(draft))
-                }
+        }
+        .onChange(of: draft) { _, newValue in
+            let cleaned = String(newValue.filter(isAllowed))
+            if cleaned != newValue {
+                draft = cleaned
             }
-            .onSubmit {
+        }
+        .onChange(of: focusedField) { oldValue, newValue in
+            let wasFocused = oldValue == field
+            let nowFocused = newValue == field
+            if wasFocused && !nowFocused {
                 onCommit(Double(draft))
             }
-            .onChange(of: value) { _, newValue in
-                let formatted = Self.format(newValue)
-                if !isFocused && draft != formatted {
-                    draft = formatted
-                }
+            // Drive UIKit responder from the shared focus state.
+            isFocusedBridge = nowFocused
+        }
+        .onChange(of: isFocusedBridge) { _, nowFocused in
+            // UIKit responder gained/lost focus on its own (e.g. user tapped a pill).
+            // Write back into the shared focus state so other pills resign.
+            if nowFocused && focusedField != field {
+                focusedField = field
+            } else if !nowFocused && focusedField == field {
+                focusedField = nil
             }
-            .doneKeyboardToolbar(isFocused: isFocused) {
-                focusedField.wrappedValue = nil
+        }
+        .onChange(of: value) { _, newValue in
+            let formatted = Self.format(newValue)
+            if !isFocused && draft != formatted {
+                draft = formatted
             }
+        }
     }
 }
 
@@ -66,7 +120,11 @@ struct EditableDualPill: View {
     let rightPlaceholder: String
     let leftField: FocusedSetField
     let rightField: FocusedSetField
-    var focusedField: FocusState<FocusedSetField?>.Binding
+    @Binding var focusedField: FocusedSetField?
+    var leftFieldKind: NumericKeypad.FieldKind = .decimal
+    var rightFieldKind: NumericKeypad.FieldKind = .decimal
+    let leftPreviousValue: Double?
+    let rightPreviousValue: Double?
     let onLeftCommit: (Double?) -> Void
     let onRightCommit: (Double?) -> Void
 
@@ -76,7 +134,9 @@ struct EditableDualPill: View {
                 value: leftValue,
                 placeholder: leftPlaceholder,
                 field: leftField,
-                focusedField: focusedField,
+                focusedField: $focusedField,
+                fieldKind: leftFieldKind,
+                previousValue: leftPreviousValue,
                 onCommit: onLeftCommit
             )
             Rectangle()
@@ -86,7 +146,9 @@ struct EditableDualPill: View {
                 value: rightValue,
                 placeholder: rightPlaceholder,
                 field: rightField,
-                focusedField: focusedField,
+                focusedField: $focusedField,
+                fieldKind: rightFieldKind,
+                previousValue: rightPreviousValue,
                 onCommit: onRightCommit
             )
         }
@@ -100,8 +162,8 @@ struct EditableDualPill: View {
         .frame(minHeight: 44)
         .contentShape(Rectangle())
         .onTapGesture {
-            if focusedField.wrappedValue != leftField && focusedField.wrappedValue != rightField {
-                focusedField.wrappedValue = leftField
+            if focusedField != leftField && focusedField != rightField {
+                focusedField = leftField
             }
         }
     }
@@ -111,7 +173,9 @@ struct EditableSinglePill: View {
     let value: Double?
     let placeholder: String
     let field: FocusedSetField
-    var focusedField: FocusState<FocusedSetField?>.Binding
+    @Binding var focusedField: FocusedSetField?
+    var fieldKind: NumericKeypad.FieldKind = .decimal
+    let previousValue: Double?
     let onCommit: (Double?) -> Void
 
     var body: some View {
@@ -119,7 +183,9 @@ struct EditableSinglePill: View {
             value: value,
             placeholder: placeholder,
             field: field,
-            focusedField: focusedField,
+            focusedField: $focusedField,
+            fieldKind: fieldKind,
+            previousValue: previousValue,
             onCommit: onCommit
         )
         .frame(width: 46, height: 30)
@@ -132,8 +198,8 @@ struct EditableSinglePill: View {
         .frame(minHeight: 44)
         .contentShape(Rectangle())
         .onTapGesture {
-            if focusedField.wrappedValue != field {
-                focusedField.wrappedValue = field
+            if focusedField != field {
+                focusedField = field
             }
         }
     }

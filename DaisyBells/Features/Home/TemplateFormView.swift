@@ -5,10 +5,27 @@ import SwiftData
 struct TemplateFormView: View {
     @State var viewModel: TemplateFormViewModel
     @Environment(DependencyContainer.self) private var container
-    @FocusState private var focusedField: FocusedSetField?
+    @State private var keyboardCoordinator = KeyboardFocusCoordinator()
+    @State private var focusedField: FocusedSetField?
     @FocusState private var nameFocused: Bool
     @FocusState private var notesFocused: Bool
     @FocusState private var exerciseNotesFocused: Bool
+
+    private func rebuildFocusList() {
+        var inputs: [SetFocusInput] = []
+        for exercise in viewModel.exercises {
+            let sortedSets = exercise.sets.sorted { $0.order < $1.order }
+            for (idx, set) in sortedSets.enumerated() {
+                inputs.append(SetFocusInput(
+                    exerciseName: exercise.exerciseName,
+                    exerciseType: exercise.exerciseType,
+                    setNumber: idx + 1,
+                    setID: AnyHashable(set.id)
+                ))
+            }
+        }
+        keyboardCoordinator.update(from: inputs)
+    }
 
     var body: some View {
         Group {
@@ -50,6 +67,17 @@ struct TemplateFormView: View {
             }
         }
         .background(Color.bgPrimary)
+        .tapToDismissKeyboard()
+        .environment(keyboardCoordinator)
+        .onChange(of: viewModel.exercises.map(\.id)) { _, _ in
+            rebuildFocusList()
+        }
+        .onChange(of: viewModel.exercises.flatMap { $0.sets.map(\.id) }) { _, _ in
+            rebuildFocusList()
+        }
+        .task {
+            rebuildFocusList()
+        }
     }
 
     // MARK: - Empty State
@@ -103,9 +131,15 @@ struct TemplateFormView: View {
         VStack(alignment: .leading, spacing: 0) {
             TextField("Template name", text: $viewModel.name)
                 .focused($nameFocused)
-                .doneKeyboardToolbar(isFocused: nameFocused) { nameFocused = false }
+                .submitLabel(.done)
+                .textInputAutocapitalization(.words)
+                .onSubmit { nameFocused = false }
+                .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
+                .task {
+                    if !viewModel.isEditing { nameFocused = true }
+                }
 
             Divider()
                 .background(Color.borderSubtle)
@@ -113,7 +147,8 @@ struct TemplateFormView: View {
 
             TextField("Notes", text: $viewModel.notes, axis: .vertical)
                 .focused($notesFocused)
-                .doneKeyboardToolbar(isFocused: notesFocused) { notesFocused = false }
+                .textInputAutocapitalization(.sentences)
+                .keyboardDoneToolbar(isFocused: notesFocused) { notesFocused = false }
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
                 .lineLimit(3...6)
@@ -160,7 +195,8 @@ struct TemplateFormView: View {
                 }
             ), axis: .vertical)
             .focused($exerciseNotesFocused)
-            .doneKeyboardToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
+            .textInputAutocapitalization(.sentences)
+            .keyboardDoneToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
             .font(.system(size: 12))
             .foregroundStyle(Color.textSecondary)
             .lineLimit(1...3)
@@ -175,6 +211,7 @@ struct TemplateFormView: View {
 
             ForEach(Array(sets.enumerated()), id: \.element.id) { index, templateSet in
                 let previousSet = index < previousSets.count ? previousSets[index] : nil
+                let sameAsLastSet = index > 0 ? sets[index - 1] : nil
                 EditableSetRow(
                     exerciseType: exerciseType,
                     setNumber: index + 1,
@@ -193,6 +230,11 @@ struct TemplateFormView: View {
                     previousTime: previousSet?.time,
                     previousDistance: previousSet?.distance,
                     previousNotes: previousSet?.notes,
+                    sameAsLastWeight: sameAsLastSet?.weight,
+                    sameAsLastReps: sameAsLastSet?.reps,
+                    sameAsLastBodyweightModifier: sameAsLastSet?.bodyweightModifier,
+                    sameAsLastTime: sameAsLastSet?.time,
+                    sameAsLastDistance: sameAsLastSet?.distance,
                     onWeightChange: { newVal in
                         viewModel.updateSet(
                             templateSet, in: templateExercise,
