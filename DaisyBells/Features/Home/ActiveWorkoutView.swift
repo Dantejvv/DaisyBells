@@ -9,7 +9,6 @@ struct ActiveWorkoutView: View {
     @State private var keyboardCoordinator = KeyboardFocusCoordinator()
     @State private var focusedField: FocusedSetField?
     @FocusState private var workoutNotesFocused: Bool
-    @FocusState private var exerciseNotesFocused: Bool
 
     private func rebuildFocusList() {
         var inputs: [SetFocusInput] = []
@@ -132,7 +131,12 @@ struct ActiveWorkoutView: View {
                 statusCard
 
                 ForEach(viewModel.exercises, id: \.id) { loggedExercise in
-                    exerciseCard(loggedExercise)
+                    ExerciseCard(
+                        loggedExercise: loggedExercise,
+                        viewModel: viewModel,
+                        keyboardCoordinator: keyboardCoordinator,
+                        focusedField: $focusedField
+                    )
                 }
 
                 addExerciseButton
@@ -316,9 +320,42 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    // MARK: - Exercise Card
+    // MARK: - Add Exercise Button
 
-    private func exerciseCard(_ loggedExercise: SchemaV1.LoggedExercise) -> some View {
+    private var addExerciseButton: some View {
+        Button {
+            viewModel.addExercise()
+        } label: {
+            HStack(spacing: .spacingSm) {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("Add Exercise")
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(Color.accent)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.bgCard)
+            .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
+            .overlay(
+                RoundedRectangle(cornerRadius: .radiusLg)
+                    .strokeBorder(Color.borderDefault, style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
+            )
+        }
+    }
+}
+
+// MARK: - Exercise Card
+
+@MainActor
+private struct ExerciseCard: View {
+    let loggedExercise: SchemaV1.LoggedExercise
+    let viewModel: ActiveWorkoutViewModel
+    let keyboardCoordinator: KeyboardFocusCoordinator
+    @Binding var focusedField: FocusedSetField?
+    @FocusState private var exerciseNotesFocused: Bool
+
+    var body: some View {
         let exercise = loggedExercise.exercise
         let exerciseType = exercise?.type ?? .weightAndReps
         let sets = loggedExercise.sets.sorted { $0.order < $1.order }
@@ -327,8 +364,7 @@ struct ActiveWorkoutView: View {
         let weightUnit = exercise?.resolvedWeightUnit(default: viewModel.defaultWeightUnit) ?? viewModel.defaultWeightUnit
         let distanceUnit = exercise?.resolvedDistanceUnit(default: viewModel.defaultDistanceUnit) ?? viewModel.defaultDistanceUnit
 
-        return ExerciseCardContainer {
-            // Card header
+        ExerciseCardContainer {
             ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
                 Menu {
                     if let exercise {
@@ -349,7 +385,6 @@ struct ActiveWorkoutView: View {
                 }
             }
 
-            // Exercise notes
             TextField("Add note...", text: Binding(
                 get: { exercise?.notes ?? "" },
                 set: { newValue in
@@ -367,15 +402,12 @@ struct ActiveWorkoutView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, .spacingXs)
 
-            // Column headers
             SetColumnHeaders(exerciseType: exerciseType, showCheckColumn: true, weightUnit: weightUnit, distanceUnit: distanceUnit)
 
-            // Divider below headers
             Rectangle()
                 .fill(Color.borderSubtle)
                 .frame(height: 1)
 
-            // Set rows
             ForEach(Array(sets.enumerated()), id: \.element.id) { index, loggedSet in
                 let previousSet = index < previousSets.count ? previousSets[index] : nil
                 let sameAsLastSet = index > 0 ? sets[index - 1] : nil
@@ -386,12 +418,10 @@ struct ActiveWorkoutView: View {
                     setNumber: index + 1,
                     previous: previousSet,
                     sameAsLast: sameAsLastSet,
-                    isActive: isActive,
-                    loggedExercise: loggedExercise
+                    isActive: isActive
                 )
             }
 
-            // Add set button
             HStack {
                 Spacer()
                 Button {
@@ -419,8 +449,7 @@ struct ActiveWorkoutView: View {
         setNumber: Int,
         previous: SchemaV1.LoggedSet?,
         sameAsLast: SchemaV1.LoggedSet?,
-        isActive: Bool,
-        loggedExercise: SchemaV1.LoggedExercise
+        isActive: Bool
     ) -> some View {
         let exercise = loggedExercise.exercise
         let weightUnit = exercise?.resolvedWeightUnit(default: viewModel.defaultWeightUnit) ?? viewModel.defaultWeightUnit
@@ -565,30 +594,6 @@ struct ActiveWorkoutView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Add Exercise Button
-
-    private var addExerciseButton: some View {
-        Button {
-            viewModel.addExercise()
-        } label: {
-            HStack(spacing: .spacingSm) {
-                Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
-                Text("Add Exercise")
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(Color.accent)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.bgCard)
-            .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-            .overlay(
-                RoundedRectangle(cornerRadius: .radiusLg)
-                    .strokeBorder(Color.borderDefault, style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
-            )
-        }
     }
 
     // MARK: - Unit Conversion Helpers
