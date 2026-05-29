@@ -15,12 +15,13 @@ A workout tracking iOS app for logging exercises, creating workout templates, an
 - @EnvironmentObject for dependency injection
 
 ### UIKit exception (carve-out)
-The custom numeric keypad for set logging requires `UITextField.inputView`, which has no SwiftUI equivalent. The UIKit usage is confined to these files:
-- `DaisyBells/Components/InputViewTextField.swift` — `UIViewRepresentable` bridge
+SwiftUI lacks APIs for two keyboard-related needs in this app. UIKit usage is confined to these files:
+- `DaisyBells/Components/InputViewTextField.swift` — `UIViewRepresentable` bridge for the numeric keypad (`UITextField.inputView`)
 - `DaisyBells/Components/NumericKeypad.swift` — uses `UIImpactFeedbackGenerator` for keypress haptics
 - `DaisyBells/Extensions/View+TapToDismissKeyboard.swift` — uses `UIResponder.resignFirstResponder` for tap-away dismissal
+- `DaisyBells/Components/BridgedTextInput.swift` — `UIViewRepresentable` bridge for alphabetical TextField/TextEditor that installs a themed `inputAccessoryView` (SwiftUI's `.toolbar(placement: .keyboard)` background is not customizable in any iOS SDK)
 
-Do not introduce UIKit elsewhere. If you need similar bridging for another feature, prefer extending these existing primitives rather than adding new UIKit imports.
+Do not introduce UIKit elsewhere. If you need similar bridging for another feature, prefer extending these existing primitives rather than adding new UIKit imports. `BridgedTextInput` covers all alphabetical text input; `InputViewTextField` covers numeric. Use `BridgedTextField` (single-line) or `BridgedTextEditor` (multi-line) instead of SwiftUI's `TextField` for any field that should show the themed Done bar.
 
 ## App Structure
 ### Tab Structure (5 tabs)

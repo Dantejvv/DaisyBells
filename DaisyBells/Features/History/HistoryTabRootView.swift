@@ -42,14 +42,17 @@ struct HistoryTabRootView: View {
             .animation(.snappy(duration: 0.3), value: container.activeWorkoutManager.isShowingSheet)
         }
         .sheet(item: $router.presentedSheet) { sheet in
-            switch sheet {
-            case .calendar:
-                HistoryCalendarSheet(
-                    viewModel: HistoryCalendarViewModel(
-                        workoutService: container.workoutService
+            Group {
+                switch sheet {
+                case .calendar:
+                    HistoryCalendarSheet(
+                        viewModel: HistoryCalendarViewModel(
+                            workoutService: container.workoutService
+                        )
                     )
-                )
+                }
             }
+            .presentationBackground(Color.bgPrimary)
         }
     }
 }

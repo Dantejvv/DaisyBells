@@ -63,6 +63,7 @@ struct CategoryManagerSheet: View {
                     category: category,
                     viewModel: viewModel
                 )
+                .presentationBackground(Color.bgPrimary)
             }
         }
     }

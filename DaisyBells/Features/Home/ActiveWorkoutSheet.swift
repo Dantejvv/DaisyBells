@@ -29,6 +29,7 @@ struct ActiveWorkoutSheet: View {
                     )
                 )
             }
+            .presentationBackground(Color.bgPrimary)
         }
     }
 

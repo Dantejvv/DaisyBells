@@ -67,6 +67,7 @@ struct ExerciseListView: View {
                     categoryService: viewModel.categoryService
                 )
             )
+            .presentationBackground(Color.bgPrimary)
         }
         .background(Color.bgPrimary)
         .tapToDismissKeyboard()

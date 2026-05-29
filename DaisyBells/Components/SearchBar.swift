@@ -5,19 +5,22 @@ struct SearchBar: View {
     @Binding var text: String
     var onClear: (() -> Void)? = nil
 
-    @FocusState private var focused: Bool
+    @State private var focused: Bool = false
 
     var body: some View {
         HStack(spacing: .spacingSm) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Color.textTertiary)
-            TextField(placeholder, text: $text)
-                .focused($focused)
-                .submitLabel(.search)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .keyboardDoneToolbar(isFocused: focused) { focused = false }
-                .foregroundStyle(Color.textPrimary)
+            BridgedTextField(
+                text: $text,
+                placeholder: placeholder,
+                isFocused: $focused,
+                autocapitalization: .none,
+                autocorrection: .no,
+                returnKey: .search,
+                textColor: .textPrimary,
+                onSubmit: { focused = false }
+            )
             if !text.isEmpty {
                 Button {
                     if let onClear {

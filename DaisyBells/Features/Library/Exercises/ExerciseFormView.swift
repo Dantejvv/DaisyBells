@@ -4,8 +4,8 @@ import SwiftData
 @MainActor
 struct ExerciseFormView: View {
     @State var viewModel: ExerciseFormViewModel
-    @FocusState private var nameFocused: Bool
-    @FocusState private var notesFocused: Bool
+    @State private var nameFocused: Bool = false
+    @State private var notesFocused: Bool = false
 
     var body: some View {
         List {
@@ -61,17 +61,18 @@ struct ExerciseFormView: View {
     private var nameAndNotesSection: some View {
         Section {
             VStack(spacing: 0) {
-                TextField("Exercise name", text: $viewModel.name)
-                    .focused($nameFocused)
-                    .submitLabel(.done)
-                    .textInputAutocapitalization(.words)
-                    .onSubmit { nameFocused = false }
-                    .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
-                    .foregroundStyle(Color.textPrimary)
-                    .padding(.bottom, .spacingSm)
-                    .task {
-                        if !viewModel.isEditing { nameFocused = true }
-                    }
+                BridgedTextField(
+                    text: $viewModel.name,
+                    placeholder: "Exercise name",
+                    isFocused: $nameFocused,
+                    autocapitalization: .words,
+                    textColor: .textPrimary,
+                    onSubmit: { nameFocused = false }
+                )
+                .padding(.bottom, .spacingSm)
+                .task {
+                    if !viewModel.isEditing { nameFocused = true }
+                }
                 if let duplicate = viewModel.duplicateExercise {
                     HStack(spacing: .spacingXs) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -83,13 +84,14 @@ struct ExerciseFormView: View {
                     .padding(.bottom, .spacingSm)
                 }
                 Divider()
-                TextField("Notes", text: $viewModel.notes, axis: .vertical)
-                    .focused($notesFocused)
-                    .textInputAutocapitalization(.sentences)
-                    .keyboardDoneToolbar(isFocused: notesFocused) { notesFocused = false }
-                    .foregroundStyle(Color.textPrimary)
-                    .lineLimit(3...6)
-                    .padding(.top, .spacingMd)
+                BridgedTextEditor(
+                    text: $viewModel.notes,
+                    placeholder: "Notes",
+                    isFocused: $notesFocused,
+                    maxLines: 6,
+                    textColor: .textPrimary
+                )
+                .padding(.top, .spacingMd)
             }
         }
         .listRowBackground(Color.bgCard)

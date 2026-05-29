@@ -195,7 +195,7 @@ private struct CompletedWorkoutNotesField: View {
     @State private var draft: String = ""
     @State private var persistTask: Task<Void, Never>?
     @State private var didSeed = false
-    @FocusState private var isFocused: Bool
+    @State private var isFocused: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: .spacingSm) {
@@ -203,13 +203,14 @@ private struct CompletedWorkoutNotesField: View {
                 .background(Color.borderSubtle)
                 .padding(.top, 10)
 
-            TextField("Notes", text: $draft, axis: .vertical)
-                .focused($isFocused)
-                .textInputAutocapitalization(.sentences)
-                .keyboardDoneToolbar(isFocused: isFocused) { isFocused = false }
-                .font(.system(size: 13))
-                .foregroundStyle(Color.textSecondary)
-                .lineLimit(1...5)
+            BridgedTextEditor(
+                text: $draft,
+                placeholder: "Notes",
+                isFocused: $isFocused,
+                maxLines: 5,
+                font: .systemFont(ofSize: 13),
+                textColor: .textSecondary
+            )
         }
         .task {
             if !didSeed {

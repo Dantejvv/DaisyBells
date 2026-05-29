@@ -8,7 +8,7 @@ struct ActiveWorkoutView: View {
     @State private var notesPersistTask: Task<Void, Never>?
     @State private var keyboardCoordinator = KeyboardFocusCoordinator()
     @State private var focusedField: FocusedSetField?
-    @FocusState private var workoutNotesFocused: Bool
+    @State private var workoutNotesFocused: Bool = false
 
     private func rebuildFocusList() {
         var inputs: [SetFocusInput] = []
@@ -232,18 +232,18 @@ struct ActiveWorkoutView: View {
             Text("Started \(viewModel.startedAtFormatted)")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(Color.textTertiary)
-                .padding(.top, .spacingSm)
+                .padding(.top, .spacingXs)
 
             // Workout notes
-            TextField("Notes", text: $notesDraft, axis: .vertical)
-                .font(.system(size: 13))
-                .foregroundStyle(Color.textSecondary)
-                .lineLimit(1...5)
-                .frame(minHeight: 44)
-                .focused($workoutNotesFocused)
-                .textInputAutocapitalization(.sentences)
-                .keyboardDoneToolbar(isFocused: workoutNotesFocused) { workoutNotesFocused = false }
-                .padding(.top, .spacingSm)
+            BridgedTextEditor(
+                text: $notesDraft,
+                placeholder: "Notes",
+                isFocused: $workoutNotesFocused,
+                maxLines: 5,
+                font: .systemFont(ofSize: 13),
+                textColor: .textSecondary
+            )
+                .padding(.top, .spacingXs)
                 .onChange(of: notesDraft) { _, newValue in
                     notesPersistTask?.cancel()
                     notesPersistTask = Task {
@@ -353,7 +353,7 @@ private struct ExerciseCard: View {
     let viewModel: ActiveWorkoutViewModel
     let keyboardCoordinator: KeyboardFocusCoordinator
     @Binding var focusedField: FocusedSetField?
-    @FocusState private var exerciseNotesFocused: Bool
+    @State private var exerciseNotesFocused: Bool = false
 
     var body: some View {
         let exercise = loggedExercise.exercise
@@ -385,22 +385,22 @@ private struct ExerciseCard: View {
                 }
             }
 
-            TextField("Add note...", text: Binding(
-                get: { exercise?.notes ?? "" },
-                set: { newValue in
-                    guard let exercise else { return }
-                    Task { await viewModel.updateExerciseNotes(exercise, notes: newValue.isEmpty ? nil : newValue) }
-                }
-            ), axis: .vertical)
-            .font(.system(size: 12))
-            .foregroundStyle(Color.textSecondary)
-            .lineLimit(1...3)
-            .frame(minHeight: 44)
-            .focused($exerciseNotesFocused)
-            .textInputAutocapitalization(.sentences)
-            .keyboardDoneToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
+            BridgedTextEditor(
+                text: Binding(
+                    get: { exercise?.notes ?? "" },
+                    set: { newValue in
+                        guard let exercise else { return }
+                        Task { await viewModel.updateExerciseNotes(exercise, notes: newValue.isEmpty ? nil : newValue) }
+                    }
+                ),
+                placeholder: "Add note...",
+                isFocused: $exerciseNotesFocused,
+                maxLines: 3,
+                font: .systemFont(ofSize: 12),
+                textColor: .textSecondary
+            )
             .padding(.horizontal, 14)
-            .padding(.bottom, .spacingXs)
+            .padding(.bottom, 10)
 
             SetColumnHeaders(exerciseType: exerciseType, showCheckColumn: true, weightUnit: weightUnit, distanceUnit: distanceUnit)
 

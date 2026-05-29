@@ -8,20 +8,21 @@ struct CategoryEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name: String = ""
     @State private var showDeleteConfirmation = false
-    @FocusState private var nameFocused: Bool
+    @State private var nameFocused: Bool = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    TextField("Category name", text: $name)
-                        .focused($nameFocused)
-                        .submitLabel(.done)
-                        .textInputAutocapitalization(.words)
-                        .onSubmit { nameFocused = false }
-                        .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
-                        .foregroundStyle(Color.textPrimary)
-                        .task { nameFocused = true }
+                    BridgedTextField(
+                        text: $name,
+                        placeholder: "Category name",
+                        isFocused: $nameFocused,
+                        autocapitalization: .words,
+                        textColor: .textPrimary,
+                        onSubmit: { nameFocused = false }
+                    )
+                    .task { nameFocused = true }
                 } header: {
                     Text("Name")
                         .foregroundStyle(Color.textSecondary)

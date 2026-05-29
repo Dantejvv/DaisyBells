@@ -40,6 +40,7 @@ struct ProfileView: View {
                     Task { await viewModel.resetData() }
                 }
             )
+            .presentationBackground(Color.bgPrimary)
         }
         .destructiveConfirmation(
             title: "Import Data",

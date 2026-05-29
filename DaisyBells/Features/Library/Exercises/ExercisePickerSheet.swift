@@ -72,6 +72,7 @@ struct ExercisePickerSheet: View {
                     categoryService: viewModel.categoryService
                 )
             )
+            .presentationBackground(Color.bgPrimary)
         }
         .sheet(isPresented: $viewModel.showExerciseForm) {
             NavigationStack {
@@ -87,6 +88,7 @@ struct ExercisePickerSheet: View {
                     )
                 )
             }
+            .presentationBackground(Color.bgPrimary)
         }
         .background(Color.bgPrimary)
         .tapToDismissKeyboard()

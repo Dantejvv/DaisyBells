@@ -46,31 +46,34 @@ struct LibraryTabRootView: View {
                 .animation(.snappy(duration: 0.3), value: container.activeWorkoutManager.isShowingSheet)
         }
         .sheet(item: $router.presentedSheet) { sheet in
-            switch sheet {
-            case .exerciseForm(let exerciseId):
-                NavigationStack {
-                    ExerciseFormView(
-                        viewModel: ExerciseFormViewModel(
-                            exerciseService: container.exerciseService,
-                            categoryService: container.categoryService,
-                            router: router,
-                            exerciseId: exerciseId
+            Group {
+                switch sheet {
+                case .exerciseForm(let exerciseId):
+                    NavigationStack {
+                        ExerciseFormView(
+                            viewModel: ExerciseFormViewModel(
+                                exerciseService: container.exerciseService,
+                                categoryService: container.categoryService,
+                                router: router,
+                                exerciseId: exerciseId
+                            )
                         )
-                    )
-                }
-            case .exercisePicker:
-                NavigationStack {
-                    ExercisePickerSheet(
-                        viewModel: ExercisePickerViewModel(
-                            exerciseService: container.exerciseService,
-                            categoryService: container.categoryService,
-                            onSelect: { exerciseIds in
-                                router.onExerciseSelected?(exerciseIds)
-                            }
+                    }
+                case .exercisePicker:
+                    NavigationStack {
+                        ExercisePickerSheet(
+                            viewModel: ExercisePickerViewModel(
+                                exerciseService: container.exerciseService,
+                                categoryService: container.categoryService,
+                                onSelect: { exerciseIds in
+                                    router.onExerciseSelected?(exerciseIds)
+                                }
+                            )
                         )
-                    )
+                    }
                 }
             }
+            .presentationBackground(Color.bgPrimary)
         }
     }
 }

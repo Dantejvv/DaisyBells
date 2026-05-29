@@ -10,7 +10,7 @@ struct TypeToConfirmSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var typed: String = ""
-    @FocusState private var fieldFocused: Bool
+    @State private var fieldFocused: Bool = false
 
     private var matches: Bool { typed == confirmationPhrase }
 
@@ -25,13 +25,15 @@ struct TypeToConfirmSheet: View {
                 .listRowBackground(Color.bgCard)
 
                 Section {
-                    TextField("Type \(confirmationPhrase)", text: $typed)
-                        .foregroundStyle(Color.textPrimary)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.characters)
-                        .focused($fieldFocused)
-                        .submitLabel(.done)
-                        .keyboardDoneToolbar(isFocused: fieldFocused) { fieldFocused = false }
+                    BridgedTextField(
+                        text: $typed,
+                        placeholder: "Type \(confirmationPhrase)",
+                        isFocused: $fieldFocused,
+                        autocapitalization: .allCharacters,
+                        autocorrection: .no,
+                        textColor: .textPrimary,
+                        onSubmit: { fieldFocused = false }
+                    )
                 } header: {
                     Text("Type \(confirmationPhrase) to confirm")
                         .foregroundStyle(Color.textSecondary)

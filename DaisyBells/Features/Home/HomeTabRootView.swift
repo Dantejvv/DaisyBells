@@ -56,44 +56,47 @@ struct HomeTabRootView: View {
             .animation(.snappy(duration: 0.3), value: container.activeWorkoutManager.isShowingSheet)
         }
         .sheet(item: $router.presentedSheet) { sheet in
-            switch sheet {
-            case .templateForm(let templateId):
-                NavigationStack {
-                    TemplateFormView(
-                        viewModel: TemplateFormViewModel(
-                            templateService: container.templateService,
-                            exerciseService: container.exerciseService,
-                            workoutService: container.workoutService,
-                            router: router,
-                            templateId: templateId
+            Group {
+                switch sheet {
+                case .templateForm(let templateId):
+                    NavigationStack {
+                        TemplateFormView(
+                            viewModel: TemplateFormViewModel(
+                                templateService: container.templateService,
+                                exerciseService: container.exerciseService,
+                                workoutService: container.workoutService,
+                                router: router,
+                                templateId: templateId
+                            )
                         )
-                    )
-                }
-            case .splitForm(let splitId):
-                NavigationStack {
-                    SplitFormView(
-                        viewModel: SplitFormViewModel(
-                            splitService: container.splitService,
-                            splitDayService: container.splitDayService,
-                            templateService: container.templateService,
-                            splitId: splitId
+                    }
+                case .splitForm(let splitId):
+                    NavigationStack {
+                        SplitFormView(
+                            viewModel: SplitFormViewModel(
+                                splitService: container.splitService,
+                                splitDayService: container.splitDayService,
+                                templateService: container.templateService,
+                                splitId: splitId
+                            )
                         )
-                    )
-                }
-            case .exercisePicker:
-                EmptyView()
-            case .workoutPicker:
-                NavigationStack {
-                    WorkoutPickerSheet(
-                        viewModel: WorkoutPickerViewModel(
-                            templateService: container.templateService,
-                            onSelect: { templateId in
-                                router.onWorkoutSelected?(templateId)
-                            }
+                    }
+                case .exercisePicker:
+                    EmptyView()
+                case .workoutPicker:
+                    NavigationStack {
+                        WorkoutPickerSheet(
+                            viewModel: WorkoutPickerViewModel(
+                                templateService: container.templateService,
+                                onSelect: { templateId in
+                                    router.onWorkoutSelected?(templateId)
+                                }
+                            )
                         )
-                    )
+                    }
                 }
             }
+            .presentationBackground(Color.bgPrimary)
         }
     }
 }

@@ -33,10 +33,11 @@ extension Color {
 
     // MARK: Backgrounds
 
-    /// Main app background
+    /// Main app background. Dark = pure black so the iOS keyboard window's
+    /// black backdrop strips at the bottom corners blend in seamlessly.
     static let bgPrimary = Color(
         light: Color(red: 245/255, green: 245/255, blue: 247/255),
-        dark: Color(red: 12/255, green: 12/255, blue: 14/255)
+        dark: Color(red: 0/255, green: 0/255, blue: 0/255)
     )
 
     /// Elevated surface — nav bars, tab bars
@@ -63,10 +64,12 @@ extension Color {
         dark: Color(red: 26/255, green: 26/255, blue: 29/255)
     )
 
-    /// Sheet background
+    /// Sheet background. Dark = pure black to match bgPrimary so the iOS
+    /// keyboard's host-window backdrop blends with sheet content (no visible
+    /// dark strips at the bottom corners when the keyboard is up).
     static let bgSheet = Color(
         light: Color(red: 242/255, green: 242/255, blue: 247/255),
-        dark: Color(red: 19/255, green: 19/255, blue: 21/255)
+        dark: Color(red: 0/255, green: 0/255, blue: 0/255)
     )
 
     // MARK: Text

@@ -7,9 +7,9 @@ struct TemplateFormView: View {
     @Environment(DependencyContainer.self) private var container
     @State private var keyboardCoordinator = KeyboardFocusCoordinator()
     @State private var focusedField: FocusedSetField?
-    @FocusState private var nameFocused: Bool
-    @FocusState private var notesFocused: Bool
-    @FocusState private var exerciseNotesFocused: Bool
+    @State private var nameFocused: Bool = false
+    @State private var notesFocused: Bool = false
+    @State private var exerciseNotesFocused: Bool = false
 
     private func rebuildFocusList() {
         var inputs: [SetFocusInput] = []
@@ -65,6 +65,7 @@ struct TemplateFormView: View {
                     )
                 )
             }
+            .presentationBackground(Color.bgPrimary)
         }
         .background(Color.bgPrimary)
         .tapToDismissKeyboard()
@@ -129,30 +130,32 @@ struct TemplateFormView: View {
 
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Template name", text: $viewModel.name)
-                .focused($nameFocused)
-                .submitLabel(.done)
-                .textInputAutocapitalization(.words)
-                .onSubmit { nameFocused = false }
-                .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
-                .task {
-                    if !viewModel.isEditing { nameFocused = true }
-                }
+            BridgedTextField(
+                text: $viewModel.name,
+                placeholder: "Template name",
+                isFocused: $nameFocused,
+                autocapitalization: .words,
+                font: .systemFont(ofSize: 17, weight: .semibold),
+                textColor: .textPrimary,
+                onSubmit: { nameFocused = false }
+            )
+            .task {
+                if !viewModel.isEditing { nameFocused = true }
+            }
 
             Divider()
                 .background(Color.borderSubtle)
                 .padding(.top, 10)
 
-            TextField("Notes", text: $viewModel.notes, axis: .vertical)
-                .focused($notesFocused)
-                .textInputAutocapitalization(.sentences)
-                .keyboardDoneToolbar(isFocused: notesFocused) { notesFocused = false }
-                .font(.system(size: 13))
-                .foregroundStyle(Color.textSecondary)
-                .lineLimit(3...6)
-                .padding(.top, .spacingSm)
+            BridgedTextEditor(
+                text: $viewModel.notes,
+                placeholder: "Notes",
+                isFocused: $notesFocused,
+                maxLines: 6,
+                font: .systemFont(ofSize: 13),
+                textColor: .textSecondary
+            )
+            .padding(.top, .spacingXs)
         }
         .padding(14)
         .padding(.horizontal, 2)
@@ -188,20 +191,21 @@ struct TemplateFormView: View {
             }
 
             // Exercise notes
-            TextField("Add note...", text: Binding(
-                get: { templateExercise.exerciseNotes ?? "" },
-                set: { newValue in
-                    Task { await viewModel.updateExerciseNotes(templateExercise, notes: newValue.isEmpty ? nil : newValue) }
-                }
-            ), axis: .vertical)
-            .focused($exerciseNotesFocused)
-            .textInputAutocapitalization(.sentences)
-            .keyboardDoneToolbar(isFocused: exerciseNotesFocused) { exerciseNotesFocused = false }
-            .font(.system(size: 12))
-            .foregroundStyle(Color.textSecondary)
-            .lineLimit(1...3)
+            BridgedTextEditor(
+                text: Binding(
+                    get: { templateExercise.exerciseNotes ?? "" },
+                    set: { newValue in
+                        Task { await viewModel.updateExerciseNotes(templateExercise, notes: newValue.isEmpty ? nil : newValue) }
+                    }
+                ),
+                placeholder: "Add note...",
+                isFocused: $exerciseNotesFocused,
+                maxLines: 3,
+                font: .systemFont(ofSize: 12),
+                textColor: .textSecondary
+            )
             .padding(.horizontal, 14)
-            .padding(.bottom, .spacingXs)
+            .padding(.bottom, 10)
 
             SetColumnHeaders(exerciseType: exerciseType)
 

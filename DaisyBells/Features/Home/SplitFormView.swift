@@ -6,9 +6,9 @@ struct SplitFormView: View {
     @State var viewModel: SplitFormViewModel
     @Environment(DependencyContainer.self) private var container
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var nameFocused: Bool
-    @FocusState private var notesFocused: Bool
-    @FocusState private var dayNameFocused: Bool
+    @State private var nameFocused: Bool = false
+    @State private var notesFocused: Bool = false
+    @State private var dayNameFocused: Bool = false
 
     var body: some View {
         List {
@@ -69,6 +69,7 @@ struct SplitFormView: View {
                     )
                 )
             }
+            .presentationBackground(Color.bgPrimary)
         }
     }
 
@@ -77,25 +78,27 @@ struct SplitFormView: View {
     private var nameAndNotesSection: some View {
         Section {
             VStack(spacing: 0) {
-                TextField("Split name", text: $viewModel.name)
-                    .focused($nameFocused)
-                    .submitLabel(.done)
-                    .textInputAutocapitalization(.words)
-                    .onSubmit { nameFocused = false }
-                    .keyboardDoneToolbar(isFocused: nameFocused) { nameFocused = false }
-                    .foregroundStyle(Color.textPrimary)
-                    .padding(.bottom, .spacingSm)
-                    .task {
-                        if !viewModel.isEditing { nameFocused = true }
-                    }
+                BridgedTextField(
+                    text: $viewModel.name,
+                    placeholder: "Split name",
+                    isFocused: $nameFocused,
+                    autocapitalization: .words,
+                    textColor: .textPrimary,
+                    onSubmit: { nameFocused = false }
+                )
+                .padding(.bottom, .spacingSm)
+                .task {
+                    if !viewModel.isEditing { nameFocused = true }
+                }
                 Divider()
-                TextField("Notes", text: $viewModel.notes, axis: .vertical)
-                    .focused($notesFocused)
-                    .textInputAutocapitalization(.sentences)
-                    .keyboardDoneToolbar(isFocused: notesFocused) { notesFocused = false }
-                    .foregroundStyle(Color.textPrimary)
-                    .lineLimit(3...6)
-                    .padding(.top, .spacingMd)
+                BridgedTextEditor(
+                    text: $viewModel.notes,
+                    placeholder: "Notes",
+                    isFocused: $notesFocused,
+                    maxLines: 6,
+                    textColor: .textPrimary
+                )
+                .padding(.top, .spacingMd)
             }
         }
         .listRowBackground(Color.bgCard)
@@ -127,20 +130,18 @@ struct SplitFormView: View {
 
     private func dayCard(day: SplitFormViewModel.DayEditState, index: Int) -> some View {
         VStack(alignment: .leading, spacing: .spacingSm) {
-            TextField(
-                "Day name",
+            BridgedTextField(
                 text: Binding(
                     get: { viewModel.days.indices.contains(index) ? viewModel.days[index].name : "" },
                     set: { viewModel.updateDayName($0, at: index) }
-                )
+                ),
+                placeholder: "Day name",
+                isFocused: $dayNameFocused,
+                autocapitalization: .words,
+                font: .systemFont(ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize, weight: .medium),
+                textColor: .textPrimary,
+                onSubmit: { dayNameFocused = false }
             )
-            .focused($dayNameFocused)
-            .submitLabel(.done)
-            .textInputAutocapitalization(.words)
-            .onSubmit { dayNameFocused = false }
-            .keyboardDoneToolbar(isFocused: dayNameFocused) { dayNameFocused = false }
-            .font(.body.weight(.medium))
-            .foregroundStyle(Color.textPrimary)
 
             ForEach(day.assignedWorkouts) { workout in
                 HStack(spacing: .spacingSm) {

@@ -1,33 +1,33 @@
 import SwiftUI
+import UIKit
 
 struct EditableNotesField: View {
     let currentNotes: String?
     let previousNotes: String?
     let onChange: (String?) -> Void
 
-    @FocusState private var isFocused: Bool
+    @State private var isFocused: Bool = false
 
     var body: some View {
         let current = currentNotes ?? ""
         let placeholderText = previousNotes ?? "Notes"
+        let baseFont = UIFont.systemFont(ofSize: 11)
+        let italicFont = UIFont(descriptor: baseFont.fontDescriptor.withSymbolicTraits(.traitItalic) ?? baseFont.fontDescriptor, size: 11)
 
-        TextField(
-            placeholderText,
+        BridgedTextField(
             text: Binding(
                 get: { current },
                 set: { newValue in
                     onChange(newValue.isEmpty ? nil : newValue)
                 }
-            )
+            ),
+            placeholder: placeholderText,
+            isFocused: $isFocused,
+            autocapitalization: .sentences,
+            font: current.isEmpty ? italicFont : baseFont,
+            textColor: .textPrimary,
+            onSubmit: { isFocused = false }
         )
-        .focused($isFocused)
-        .submitLabel(.done)
-        .textInputAutocapitalization(.sentences)
-        .onSubmit { isFocused = false }
-        .keyboardDoneToolbar(isFocused: isFocused) { isFocused = false }
-        .font(.system(size: 11))
-        .italic(current.isEmpty)
-        .foregroundStyle(Color.textPrimary)
         .padding(.horizontal, .spacingSm)
         .frame(height: 30)
         .background(current.isEmpty ? Color.clear : Color.white.opacity(0.02))
