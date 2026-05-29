@@ -310,7 +310,7 @@ struct TemplateFormView: View {
                 viewModel.addSet(to: templateExercise)
             } label: {
                 Text("+ Add Set")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.accent)
                     .frame(maxWidth: .infinity)
                     .padding(.top, .spacingSm)
@@ -327,9 +327,9 @@ struct TemplateFormView: View {
         } label: {
             HStack(spacing: .spacingSm) {
                 Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                 Text("Add Exercise")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
             }
             .foregroundStyle(Color.accent)
             .frame(maxWidth: .infinity)

@@ -48,6 +48,7 @@ struct MainTabView: View {
                 .environment(container.activeWorkoutManager)
                 .interactiveDismissDisabled(false)
                 .presentationBackground(Color.bgPrimary)
+                .presentationDragIndicator(.visible)
         }
         .animation(.snappy(duration: 0.3), value: manager.isShowingSheet)
     }

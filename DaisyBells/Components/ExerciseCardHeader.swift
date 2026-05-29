@@ -7,7 +7,7 @@ struct ExerciseCardHeader<Trailing: View>: View {
     var body: some View {
         HStack {
             Text(name)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.textPrimary)
 
             Spacer()

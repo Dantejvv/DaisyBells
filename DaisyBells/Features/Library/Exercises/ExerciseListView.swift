@@ -79,13 +79,20 @@ struct ExerciseListView: View {
         List {
             ForEach(viewModel.exercises, id: \.id) { exercise in
                 exerciseRow(exercise)
+                    .listRowInsets(EdgeInsets(
+                        top: .spacingSm,
+                        leading: 12,
+                        bottom: .spacingSm,
+                        trailing: 12
+                    ))
             }
             .listRowBackground(Color.bgCard)
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
         .scrollDismissesKeyboard(.interactively)
         .contentMargins(.top, .spacingXs)
         .scrollContentBackground(.hidden)
+        .padding(.horizontal, .spacingBase)
         .background(Color.bgPrimary)
     }
 

@@ -60,7 +60,27 @@ struct PillTextField: View {
                 // Reading coordinator.hasNext(of:) here would observe the
                 // @Observable coordinator from inside the hosted SwiftUI
                 // subtree and feed an AttributeGraph cycle.
-                NumericKeypad(
+                //
+                // Order matters in the advance path: drop our own focus flag
+                // before the commit so the parent re-render triggered by
+                // onCommit sees `isFocused == false` and doesn't re-call
+                // becomeFirstResponder in updateUIView.
+                let advance = {
+                    if let next = resolveNextField(field) {
+                        isFocusedBridge = false
+                        onCommit(Double(draft))
+                        focusedField = next
+                    } else {
+                        isFocusedBridge = false
+                        onCommit(Double(draft))
+                        focusedField = nil
+                        UIApplication.shared.sendAction(
+                            #selector(UIResponder.resignFirstResponder),
+                            to: nil, from: nil, for: nil
+                        )
+                    }
+                }
+                return NumericKeypad(
                     fieldKind: fieldKind,
                     canSameAsLast: previousValue != nil,
                     canNext: true,
@@ -69,26 +89,9 @@ struct PillTextField: View {
                         if let prev = previousValue {
                             draft = Self.format(prev)
                         }
+                        advance()
                     },
-                    onNext: {
-                        // Order matters: drop our own focus flag before the
-                        // commit so the parent re-render triggered by
-                        // onCommit sees `isFocused == false` and doesn't
-                        // re-call becomeFirstResponder in updateUIView.
-                        if let next = resolveNextField(field) {
-                            isFocusedBridge = false
-                            onCommit(Double(draft))
-                            focusedField = next
-                        } else {
-                            isFocusedBridge = false
-                            onCommit(Double(draft))
-                            focusedField = nil
-                            UIApplication.shared.sendAction(
-                                #selector(UIResponder.resignFirstResponder),
-                                to: nil, from: nil, for: nil
-                            )
-                        }
-                    },
+                    onNext: advance,
                     onDone: {
                         isFocusedBridge = false
                         onCommit(Double(draft))

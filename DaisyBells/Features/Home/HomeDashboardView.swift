@@ -279,7 +279,7 @@ struct HomeDashboardView: View {
 
                 if isSuggested {
                     Text("UP NEXT")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(Color.accent)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)

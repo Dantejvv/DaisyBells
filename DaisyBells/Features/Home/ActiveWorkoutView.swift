@@ -96,10 +96,7 @@ struct ActiveWorkoutView: View {
 
     private var emptyState: some View {
         VStack(spacing: 0) {
-            navBar
-                .padding(.horizontal, .spacingBase)
-
-            statusCard
+            headerCard
                 .padding(.horizontal, .spacingBase)
                 .padding(.top, .spacingSm)
 
@@ -126,9 +123,7 @@ struct ActiveWorkoutView: View {
     private var workoutContent: some View {
         ScrollView {
             VStack(spacing: 14) {
-                navBar
-
-                statusCard
+                headerCard
 
                 ForEach(viewModel.exercises, id: \.id) { loggedExercise in
                     ExerciseCard(
@@ -142,9 +137,29 @@ struct ActiveWorkoutView: View {
                 addExerciseButton
             }
             .padding(.horizontal, .spacingBase)
+            .padding(.top, 6)
             .padding(.bottom, .spacing4xl)
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    // MARK: - Header Card (nav row + status content in one card)
+
+    private var headerCard: some View {
+        VStack(spacing: 0) {
+            navBar
+                .padding(.horizontal, 14)
+
+            statusContent
+                .padding(14)
+        }
+        .padding(.horizontal, 2)
+        .background(Color.bgCard)
+        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
+        .overlay(
+            RoundedRectangle(cornerRadius: .radiusLg)
+                .stroke(Color.borderSubtle, lineWidth: 1)
+        )
     }
 
     // MARK: - Nav Bar
@@ -169,7 +184,7 @@ struct ActiveWorkoutView: View {
                 viewModel.showCompleteConfirmation = true
             } label: {
                 Text("Finish Workout")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color.bgPrimary)
                     .padding(.horizontal, .spacingBase)
                     .padding(.vertical, 7)
@@ -182,13 +197,19 @@ struct ActiveWorkoutView: View {
         .padding(.vertical, .spacingSm)
     }
 
-    // MARK: - Status Card
+    // MARK: - Status Content (inner content of header card)
 
-    private var statusCard: some View {
+    private var statusContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Top row: timer + name + more button
+            // Row 1: workout name — full card width, centered, multi-line allowed
+            Text(viewModel.fromTemplateName ?? "Workout")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            // Row 2: timer (leading) + more button (trailing)
             HStack {
-                // Left: pulsing dot + timer
                 HStack(spacing: .spacingSm) {
                     PulsingDot()
                     Text(viewModel.elapsedTime.timerString)
@@ -199,14 +220,6 @@ struct ActiveWorkoutView: View {
 
                 Spacer()
 
-                // Center: workout name
-                Text(viewModel.fromTemplateName ?? "Workout")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.textPrimary)
-
-                Spacer()
-
-                // Right: more button
                 Menu {
                     Button {
                         Task { await viewModel.resetTimer() }
@@ -227,10 +240,11 @@ struct ActiveWorkoutView: View {
                         .minTouchTarget()
                 }
             }
+            .padding(.top, .spacingSm)
 
             // Start time
             Text("Started \(viewModel.startedAtFormatted)")
-                .font(.system(size: 11, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(Color.textTertiary)
                 .padding(.top, .spacingXs)
 
@@ -287,20 +301,12 @@ struct ActiveWorkoutView: View {
             }
             .padding(.top, 10)
         }
-        .padding(14)
-        .padding(.horizontal, 2)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
     }
 
     private func statItem(label: String, completed: Int, total: Int, fillColor: Color) -> some View {
         HStack(spacing: .spacingSm) {
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(Color.textTertiary)
 
             // Progress bar
@@ -315,7 +321,7 @@ struct ActiveWorkoutView: View {
             }
 
             Text("\(completed) / \(total)")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color.textSecondary)
         }
     }
@@ -328,9 +334,9 @@ struct ActiveWorkoutView: View {
         } label: {
             HStack(spacing: .spacingSm) {
                 Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                 Text("Add Exercise")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
             }
             .foregroundStyle(Color.accent)
             .frame(maxWidth: .infinity)
@@ -428,7 +434,7 @@ private struct ExerciseCard: View {
                     Task { await viewModel.addSet(to: loggedExercise) }
                 } label: {
                     Text("+ Add Set")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.accent)
                         .padding(.horizontal, .spacingBase)
                         .padding(.vertical, .spacingSm)

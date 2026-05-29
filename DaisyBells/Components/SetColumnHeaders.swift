@@ -30,13 +30,14 @@ struct SetColumnHeaders: View {
 
             Text("Notes")
                 .frame(maxWidth: .infinity)
+                .padding(.trailing, 18)
 
             if showCheckColumn {
                 Color.clear
                     .frame(width: 22)
             }
         }
-        .font(.system(size: 9, weight: .semibold))
+        .font(.caption2.weight(.semibold))
         .foregroundStyle(Color.textTertiary)
         .textCase(.uppercase)
         .padding(.horizontal, 14)

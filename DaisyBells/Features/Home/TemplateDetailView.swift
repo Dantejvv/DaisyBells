@@ -84,7 +84,7 @@ struct TemplateDetailView: View {
                     .padding(.top, 10)
 
                 Text(notes)
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, .spacingSm)
@@ -103,10 +103,10 @@ struct TemplateDetailView: View {
     private func statusStatItem(label: String, value: String) -> some View {
         VStack(spacing: .spacing2xs) {
             Text(value)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Color.textPrimary)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(Color.textTertiary)
         }
     }
@@ -124,7 +124,7 @@ struct TemplateDetailView: View {
     private var emptyExercises: some View {
         VStack(spacing: .spacingSm) {
             Text("No exercises added")
-                .font(.system(size: 13))
+                .font(.footnote)
                 .foregroundStyle(Color.textTertiary)
         }
         .frame(maxWidth: .infinity)
@@ -151,13 +151,13 @@ struct TemplateDetailView: View {
         return ExerciseCardContainer {
             ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
                 Text(exerciseType.displayName)
-                    .font(.system(size: 11))
+                    .font(.caption2)
                     .foregroundStyle(Color.textTertiary)
             }
 
             if let notes = exercise?.notes, !notes.isEmpty {
                 Text(notes)
-                    .font(.system(size: 11))
+                    .font(.caption2)
                     .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, .spacingSm)
@@ -234,7 +234,7 @@ struct TemplateDetailView: View {
     private func actionButton(title: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(color)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)

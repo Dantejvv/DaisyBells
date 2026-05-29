@@ -194,6 +194,7 @@ final class MultiLineCoordinator: NSObject, UITextViewDelegate {
 final class PlaceholderTextView: UITextView {
     private let placeholderLabel = UILabel()
     private var maxLines: Int = .max
+    private var wasScrollable: Bool = false
     private var lineHeight: CGFloat { font?.lineHeight ?? UIFont.systemFont(ofSize: 17).lineHeight }
 
     func configurePlaceholder(text: String, color: UIColor, font: UIFont) {
@@ -226,8 +227,25 @@ final class PlaceholderTextView: UITextView {
         let fittingWidth = bounds.width > 0 ? bounds.width : CGFloat.greatestFiniteMagnitude
         let fitting = sizeThatFits(CGSize(width: fittingWidth, height: .greatestFiniteMagnitude)).height
         let height = Swift.max(oneLine, Swift.min(fitting, maxHeight))
-        isScrollEnabled = fitting > maxHeight
+        let nowScrollable = fitting > maxHeight
+        isScrollEnabled = nowScrollable
+        // Flash the native scroll indicator on the false → true transition so users
+        // discover that the field has overflowed and can be scrolled.
+        if nowScrollable && !wasScrollable {
+            DispatchQueue.main.async { [weak self] in self?.flashScrollIndicators() }
+        }
+        wasScrollable = nowScrollable
         return CGSize(width: UIView.noIntrinsicMetric, height: height)
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let became = super.becomeFirstResponder()
+        // Flash on focus so a returning user sees the indicator if the field is
+        // already overflowing from previously typed content.
+        if became && isScrollEnabled {
+            DispatchQueue.main.async { [weak self] in self?.flashScrollIndicators() }
+        }
+        return became
     }
 }
 
