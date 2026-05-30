@@ -151,7 +151,9 @@ struct ActiveWorkoutView: View {
                 .padding(.horizontal, 14)
 
             statusContent
-                .padding(14)
+                .padding(.horizontal, 14)
+                .padding(.top, 8)
+                .padding(.bottom, 14)
         }
         .padding(.horizontal, 2)
         .background(Color.bgCard)
@@ -194,7 +196,8 @@ struct ActiveWorkoutView: View {
             }
             .disabled(viewModel.exercises.isEmpty)
         }
-        .padding(.vertical, .spacingSm)
+        .padding(.top, .spacingSm)
+        .padding(.bottom, 2)
     }
 
     // MARK: - Status Content (inner content of header card)
@@ -240,7 +243,7 @@ struct ActiveWorkoutView: View {
                         .minTouchTarget()
                 }
             }
-            .padding(.top, .spacingSm)
+            .padding(.top, 4)
 
             // Start time
             Text("Started \(viewModel.startedAtFormatted)")

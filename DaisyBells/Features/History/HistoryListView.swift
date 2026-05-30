@@ -39,7 +39,8 @@ struct HistoryListView: View {
                     viewModel.showCalendar()
                 } label: {
                     Image(systemName: "calendar")
-                        .foregroundStyle(Color.textSecondary)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accent)
                 }
             }
         }

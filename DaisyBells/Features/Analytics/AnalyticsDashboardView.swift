@@ -20,7 +20,7 @@ struct AnalyticsDashboardView: View {
             }
         }
         .navigationTitle("Analytics")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadAnalytics() }
         .refreshable { await viewModel.refresh() }
         .errorAlert(errorMessage: $viewModel.errorMessage)

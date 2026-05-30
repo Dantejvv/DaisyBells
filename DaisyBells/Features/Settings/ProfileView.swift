@@ -18,6 +18,7 @@ struct ProfileView: View {
         .scrollContentBackground(.hidden)
         .background(Color.bgPrimary)
         .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             viewModel.loadSettings()
         }

@@ -39,16 +39,16 @@ struct ExerciseListView: View {
                 }
             }
         }
-        .navigationTitle(viewModel.selectedCategoryId != nil ? "Exercises" : "")
+        .navigationTitle("Exercises")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if viewModel.selectedCategoryId != nil {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        viewModel.createExercise()
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    viewModel.createExercise()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accent)
                 }
             }
         }

@@ -41,6 +41,8 @@ struct HomeDashboardView: View {
         }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .background(Color.bgPrimary)
+        .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Dashboard Content
