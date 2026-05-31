@@ -22,6 +22,7 @@ final class TemplateFormViewModel {
     private let templateService: TemplateServiceProtocol
     private let exerciseService: ExerciseServiceProtocol
     private let workoutService: WorkoutServiceProtocol
+    private let settingsService: SettingsServiceProtocol
     private let router: TemplateRouting
     private let templateId: PersistentIdentifier?
 
@@ -31,16 +32,21 @@ final class TemplateFormViewModel {
         templateService: TemplateServiceProtocol,
         exerciseService: ExerciseServiceProtocol,
         workoutService: WorkoutServiceProtocol,
+        settingsService: SettingsServiceProtocol,
         router: TemplateRouting,
         templateId: PersistentIdentifier? = nil
     ) {
         self.templateService = templateService
         self.exerciseService = exerciseService
         self.workoutService = workoutService
+        self.settingsService = settingsService
         self.router = router
         self.templateId = templateId
         self.isEditing = templateId != nil
     }
+
+    var defaultWeightUnit: Units { settingsService.units }
+    var defaultDistanceUnit: DistanceUnits { settingsService.distanceUnits }
 
     // MARK: - Intents
 
@@ -60,6 +66,8 @@ final class TemplateFormViewModel {
                     exerciseName: te.exercise?.name ?? "Unknown Exercise",
                     exerciseType: te.exercise?.type ?? .weightAndReps,
                     exerciseNotes: te.exercise?.notes,
+                    preferredWeightUnit: te.exercise?.preferredWeightUnit,
+                    preferredDistanceUnit: te.exercise?.preferredDistanceUnit,
                     notes: te.notes,
                     order: te.order,
                     sets: sortedSets.map { s in
@@ -113,6 +121,8 @@ final class TemplateFormViewModel {
                 exerciseName: exercise.name,
                 exerciseType: exercise.type,
                 exerciseNotes: exercise.notes,
+                preferredWeightUnit: exercise.preferredWeightUnit,
+                preferredDistanceUnit: exercise.preferredDistanceUnit,
                 order: maxOrder + 1 + offset,
                 sets: draftSets
             )
@@ -176,6 +186,57 @@ final class TemplateFormViewModel {
             let exercise = try await exerciseService.fetch(id: draft.exerciseId)
             exercise.notes = notes
             try await exerciseService.update(exercise)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateExerciseWeightUnit(_ draft: DraftTemplateExercise, unit: Units?) async {
+        guard let index = exercises.firstIndex(where: { $0.id == draft.id }) else { return }
+        errorMessage = nil
+        do {
+            let exercise = try await exerciseService.fetch(id: draft.exerciseId)
+            let oldUnit = exercise.resolvedWeightUnit(default: defaultWeightUnit)
+            exercise.preferredWeightUnit = unit
+            let newUnit = exercise.resolvedWeightUnit(default: defaultWeightUnit)
+            try await exerciseService.update(exercise)
+
+            exercises[index].preferredWeightUnit = unit
+
+            if oldUnit != newUnit {
+                for i in exercises[index].sets.indices {
+                    if let w = exercises[index].sets[i].weight {
+                        exercises[index].sets[i].weight = w.convert(from: oldUnit, to: newUnit)
+                    }
+                    if let bw = exercises[index].sets[i].bodyweightModifier {
+                        exercises[index].sets[i].bodyweightModifier = bw.convert(from: oldUnit, to: newUnit)
+                    }
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateExerciseDistanceUnit(_ draft: DraftTemplateExercise, unit: DistanceUnits?) async {
+        guard let index = exercises.firstIndex(where: { $0.id == draft.id }) else { return }
+        errorMessage = nil
+        do {
+            let exercise = try await exerciseService.fetch(id: draft.exerciseId)
+            let oldUnit = exercise.resolvedDistanceUnit(default: defaultDistanceUnit)
+            exercise.preferredDistanceUnit = unit
+            let newUnit = exercise.resolvedDistanceUnit(default: defaultDistanceUnit)
+            try await exerciseService.update(exercise)
+
+            exercises[index].preferredDistanceUnit = unit
+
+            if oldUnit != newUnit {
+                for i in exercises[index].sets.indices {
+                    if let d = exercises[index].sets[i].distance {
+                        exercises[index].sets[i].distance = d.convertDistance(from: oldUnit, to: newUnit)
+                    }
+                }
+            }
         } catch {
             errorMessage = error.localizedDescription
         }

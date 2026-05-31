@@ -6,16 +6,20 @@ struct DraftTemplateExercise: Identifiable {
     let exerciseName: String
     let exerciseType: ExerciseType
     var exerciseNotes: String?
+    var preferredWeightUnit: Units?
+    var preferredDistanceUnit: DistanceUnits?
     var notes: String?
     var order: Int
     var sets: [DraftTemplateSet]
 
-    init(id: UUID = UUID(), exerciseId: UUID, exerciseName: String, exerciseType: ExerciseType, exerciseNotes: String? = nil, notes: String? = nil, order: Int, sets: [DraftTemplateSet] = []) {
+    init(id: UUID = UUID(), exerciseId: UUID, exerciseName: String, exerciseType: ExerciseType, exerciseNotes: String? = nil, preferredWeightUnit: Units? = nil, preferredDistanceUnit: DistanceUnits? = nil, notes: String? = nil, order: Int, sets: [DraftTemplateSet] = []) {
         self.id = id
         self.exerciseId = exerciseId
         self.exerciseName = exerciseName
         self.exerciseType = exerciseType
         self.exerciseNotes = exerciseNotes
+        self.preferredWeightUnit = preferredWeightUnit
+        self.preferredDistanceUnit = preferredDistanceUnit
         self.notes = notes
         self.order = order
         self.sets = sets

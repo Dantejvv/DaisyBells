@@ -4,11 +4,8 @@ import SwiftData
 @MainActor
 struct ActiveWorkoutView: View {
     @State var viewModel: ActiveWorkoutViewModel
-    @State private var notesDraft: String = ""
-    @State private var notesPersistTask: Task<Void, Never>?
     @State private var keyboardCoordinator = KeyboardFocusCoordinator()
     @State private var focusedField: FocusedSetField?
-    @State private var workoutNotesFocused: Bool = false
 
     private func rebuildFocusList() {
         var inputs: [SetFocusInput] = []
@@ -156,48 +153,23 @@ struct ActiveWorkoutView: View {
                 .padding(.bottom, 14)
         }
         .padding(.horizontal, 2)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
+        .cardSurface()
     }
 
     // MARK: - Nav Bar
 
     private var navBar: some View {
-        HStack {
-            Button {
+        InCardNavBar(
+            leading: .init(icon: "xmark") {
                 viewModel.showCancelConfirmation = true
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background(Color.white.opacity(0.06))
-                    .clipShape(Circle())
-                    .minTouchTarget()
-            }
-
-            Spacer()
-
-            Button {
+            },
+            trailing: .init(
+                label: "Finish Workout",
+                isDisabled: viewModel.exercises.isEmpty
+            ) {
                 viewModel.showCompleteConfirmation = true
-            } label: {
-                Text("Finish Workout")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color.bgPrimary)
-                    .padding(.horizontal, .spacingBase)
-                    .padding(.vertical, 7)
-                    .background(Color.accent)
-                    .clipShape(Capsule())
-                    .minTouchTarget()
             }
-            .disabled(viewModel.exercises.isEmpty)
-        }
-        .padding(.top, .spacingSm)
-        .padding(.bottom, 2)
+        )
     }
 
     // MARK: - Status Content (inner content of header card)
@@ -252,31 +224,13 @@ struct ActiveWorkoutView: View {
                 .padding(.top, .spacingXs)
 
             // Workout notes
-            BridgedTextEditor(
-                text: $notesDraft,
+            DebouncedNotesEditor(
+                initialValue: viewModel.workoutNotes,
                 placeholder: "Notes",
-                isFocused: $workoutNotesFocused,
                 maxLines: 5,
-                font: .systemFont(ofSize: 13),
-                textColor: .textSecondary
+                onCommit: { await viewModel.updateWorkoutNotes($0) }
             )
-                .padding(.top, .spacingXs)
-                .onChange(of: notesDraft) { _, newValue in
-                    notesPersistTask?.cancel()
-                    notesPersistTask = Task {
-                        try? await Task.sleep(for: .milliseconds(500))
-                        if Task.isCancelled { return }
-                        await viewModel.updateWorkoutNotes(newValue)
-                    }
-                }
-                .onChange(of: viewModel.workoutNotes) { _, newValue in
-                    if notesPersistTask == nil && notesDraft != newValue {
-                        notesDraft = newValue
-                    }
-                }
-                .task {
-                    notesDraft = viewModel.workoutNotes
-                }
+            .padding(.top, .spacingXs)
 
             // Stats row
             Divider()
@@ -377,7 +331,19 @@ private struct ExerciseCard: View {
             ExerciseCardHeader(name: exercise?.name ?? "Unknown Exercise") {
                 Menu {
                     if let exercise {
-                        unitMenuSection(exercise: exercise, exerciseType: exerciseType)
+                        ExerciseUnitMenu(
+                            exerciseType: exerciseType,
+                            currentWeightUnit: weightUnit,
+                            currentDistanceUnit: distanceUnit,
+                            defaultWeightUnit: viewModel.defaultWeightUnit,
+                            defaultDistanceUnit: viewModel.defaultDistanceUnit,
+                            onWeightUnitChange: { unit in
+                                Task { await viewModel.updateWeightUnit(exercise, unit: unit) }
+                            },
+                            onDistanceUnitChange: { unit in
+                                Task { await viewModel.updateDistanceUnit(exercise, unit: unit) }
+                            }
+                        )
                     }
 
                     Button(role: .destructive) {
@@ -619,49 +585,6 @@ private struct ExerciseCard: View {
         return value.convertDistance(from: from, to: displayUnit)
     }
 
-    // MARK: - Unit Menu
-
-    @ViewBuilder
-    private func unitMenuSection(exercise: SchemaV1.Exercise, exerciseType: ExerciseType) -> some View {
-        switch exerciseType {
-        case .weightAndReps, .bodyweightAndReps, .weightAndTime:
-            Picker("Weight Unit", selection: Binding(
-                get: { exercise.preferredWeightUnit ?? viewModel.defaultWeightUnit },
-                set: { newUnit in
-                    Task {
-                        await viewModel.updateWeightUnit(
-                            exercise,
-                            unit: newUnit == viewModel.defaultWeightUnit ? nil : newUnit
-                        )
-                    }
-                }
-            )) {
-                ForEach(Units.allCases, id: \.self) { unit in
-                    Text(unit.displayName).tag(unit)
-                }
-            }
-            .pickerStyle(.inline)
-        case .distanceAndTime:
-            Picker("Distance Unit", selection: Binding(
-                get: { exercise.preferredDistanceUnit ?? viewModel.defaultDistanceUnit },
-                set: { newUnit in
-                    Task {
-                        await viewModel.updateDistanceUnit(
-                            exercise,
-                            unit: newUnit == viewModel.defaultDistanceUnit ? nil : newUnit
-                        )
-                    }
-                }
-            )) {
-                ForEach(DistanceUnits.allCases, id: \.self) { unit in
-                    Text(unit.displayName).tag(unit)
-                }
-            }
-            .pickerStyle(.inline)
-        case .reps, .time:
-            EmptyView()
-        }
-    }
 }
 
 // MARK: - Pulsing Dot

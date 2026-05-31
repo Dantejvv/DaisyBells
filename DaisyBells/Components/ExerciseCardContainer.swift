@@ -7,11 +7,6 @@ struct ExerciseCardContainer<Content: View>: View {
         VStack(spacing: 0) {
             content
         }
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
+        .cardSurface()
     }
 }

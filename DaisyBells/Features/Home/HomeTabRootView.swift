@@ -65,6 +65,7 @@ struct HomeTabRootView: View {
                                 templateService: container.templateService,
                                 exerciseService: container.exerciseService,
                                 workoutService: container.workoutService,
+                                settingsService: container.settingsService,
                                 router: router,
                                 templateId: templateId
                             )

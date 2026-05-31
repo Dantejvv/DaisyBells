@@ -52,7 +52,12 @@ struct TemplateDetailView: View {
                 statusCard(template)
 
                 if viewModel.exercises.isEmpty {
-                    emptyExercises
+                    EmptyStateView(
+                        icon: "list.bullet",
+                        title: "No Exercises",
+                        message: "This template has no exercises."
+                    )
+                    .padding(.vertical, .spacing2xl)
                 } else {
                     ForEach(viewModel.exercises, id: \.id) { templateExercise in
                         exerciseCard(templateExercise)
@@ -92,12 +97,7 @@ struct TemplateDetailView: View {
         }
         .padding(14)
         .padding(.horizontal, 2)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
+        .cardSurface()
     }
 
     private func statusStatItem(label: String, value: String) -> some View {
@@ -117,24 +117,6 @@ struct TemplateDetailView: View {
             let previousSets = templateExercise.exercise.flatMap { viewModel.previousPerformance[$0.id] }?.count ?? 0
             return total + (templateSets > 0 ? templateSets : max(previousSets, 1))
         }
-    }
-
-    // MARK: - Empty State
-
-    private var emptyExercises: some View {
-        VStack(spacing: .spacingSm) {
-            Text("No exercises added")
-                .font(.footnote)
-                .foregroundStyle(Color.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, .spacing2xl)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
     }
 
     // MARK: - Exercise Card
@@ -223,12 +205,7 @@ struct TemplateDetailView: View {
                 showDeleteConfirmation = true
             }
         }
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
+        .cardSurface()
     }
 
     private func actionButton(title: String, color: Color, action: @escaping () -> Void) -> some View {

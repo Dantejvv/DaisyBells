@@ -35,22 +35,7 @@ struct TemplateFormView: View {
                 formContent
             }
         }
-        .navigationTitle(viewModel.isEditing ? "Edit Template" : "New Template")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    viewModel.cancel()
-                }
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    focusedField = nil
-                    Task { await viewModel.save() }
-                }
-                .disabled(viewModel.isSaving || viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        }
+        .navigationBarHidden(true)
         .task { await viewModel.load() }
         .errorAlert(errorMessage: $viewModel.errorMessage)
         .sheet(isPresented: $viewModel.showExercisePicker) {
@@ -129,42 +114,91 @@ struct TemplateFormView: View {
     // MARK: - Header Card
 
     private var headerCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            BridgedTextField(
-                text: $viewModel.name,
-                placeholder: "Template name",
-                isFocused: $nameFocused,
-                autocapitalization: .words,
-                font: .systemFont(ofSize: 17, weight: .semibold),
-                textColor: .textPrimary,
-                onSubmit: { nameFocused = false }
+        VStack(spacing: 0) {
+            InCardNavBar(
+                leading: .init(icon: "xmark") {
+                    viewModel.cancel()
+                },
+                trailing: .init(
+                    label: "Save",
+                    isDisabled: viewModel.isSaving
+                        || viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ) {
+                    focusedField = nil
+                    Task { await viewModel.save() }
+                }
             )
-            .task {
-                if !viewModel.isEditing { nameFocused = true }
-            }
+            .padding(.horizontal, 14)
 
-            Divider()
-                .background(Color.borderSubtle)
+            VStack(alignment: .leading, spacing: 0) {
+                // Centered title row
+                BridgedTextField(
+                    text: $viewModel.name,
+                    placeholder: "Template name",
+                    isFocused: $nameFocused,
+                    autocapitalization: .words,
+                    font: .systemFont(ofSize: 15, weight: .semibold),
+                    textColor: .textPrimary,
+                    textAlignment: .center,
+                    onSubmit: { nameFocused = false }
+                )
+                .frame(maxWidth: .infinity)
+                .task {
+                    if !viewModel.isEditing { nameFocused = true }
+                }
+
+                // Subheading
+                Text(viewModel.isEditing ? "Editing template" : "New template")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Color.textTertiary)
+                    .padding(.top, .spacingXs)
+
+                // Notes
+                BridgedTextEditor(
+                    text: $viewModel.notes,
+                    placeholder: "Notes",
+                    isFocused: $notesFocused,
+                    maxLines: 6,
+                    font: .systemFont(ofSize: 13),
+                    textColor: .textSecondary
+                )
+                .padding(.top, .spacingXs)
+
+                // Stats row
+                Divider()
+                    .background(Color.borderSubtle)
+                    .padding(.top, 10)
+
+                HStack(spacing: .spacingBase) {
+                    Spacer()
+                    templateStatItem(label: "Exercises", value: viewModel.exercises.count)
+                    templateStatItem(label: "Sets", value: totalSetCount)
+                    Spacer()
+                }
                 .padding(.top, 10)
-
-            BridgedTextEditor(
-                text: $viewModel.notes,
-                placeholder: "Notes",
-                isFocused: $notesFocused,
-                maxLines: 6,
-                font: .systemFont(ofSize: 13),
-                textColor: .textSecondary
-            )
-            .padding(.top, .spacingXs)
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 8)
+            .padding(.bottom, 14)
         }
-        .padding(14)
         .padding(.horizontal, 2)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
+        .cardSurface()
+    }
+
+    private func templateStatItem(label: String, value: Int) -> some View {
+        HStack(spacing: .spacingSm) {
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(Color.textTertiary)
+
+            Text("\(value)")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color.textSecondary)
+        }
+    }
+
+    private var totalSetCount: Int {
+        viewModel.exercises.reduce(0) { $0 + $1.sets.count }
     }
 
     // MARK: - Exercise Card
@@ -173,10 +207,26 @@ struct TemplateFormView: View {
         let exerciseType = templateExercise.exerciseType
         let sets = templateExercise.sets.sorted { $0.order < $1.order }
         let previousSets = viewModel.previousPerformance[templateExercise.exerciseId] ?? []
+        let weightUnit = templateExercise.preferredWeightUnit ?? viewModel.defaultWeightUnit
+        let distanceUnit = templateExercise.preferredDistanceUnit ?? viewModel.defaultDistanceUnit
 
         return ExerciseCardContainer {
             ExerciseCardHeader(name: templateExercise.exerciseName) {
                 Menu {
+                    ExerciseUnitMenu(
+                        exerciseType: exerciseType,
+                        currentWeightUnit: weightUnit,
+                        currentDistanceUnit: distanceUnit,
+                        defaultWeightUnit: viewModel.defaultWeightUnit,
+                        defaultDistanceUnit: viewModel.defaultDistanceUnit,
+                        onWeightUnitChange: { unit in
+                            Task { await viewModel.updateExerciseWeightUnit(templateExercise, unit: unit) }
+                        },
+                        onDistanceUnitChange: { unit in
+                            Task { await viewModel.updateExerciseDistanceUnit(templateExercise, unit: unit) }
+                        }
+                    )
+
                     Button(role: .destructive) {
                         viewModel.removeExercise(templateExercise)
                     } label: {
@@ -207,7 +257,7 @@ struct TemplateFormView: View {
             .padding(.horizontal, 14)
             .padding(.bottom, 10)
 
-            SetColumnHeaders(exerciseType: exerciseType)
+            SetColumnHeaders(exerciseType: exerciseType, weightUnit: weightUnit, distanceUnit: distanceUnit)
 
             Rectangle()
                 .fill(Color.borderSubtle)
@@ -216,10 +266,13 @@ struct TemplateFormView: View {
             ForEach(Array(sets.enumerated()), id: \.element.id) { index, templateSet in
                 let previousSet = index < previousSets.count ? previousSets[index] : nil
                 let sameAsLastSet = index > 0 ? sets[index - 1] : nil
-                EditableSetRow(
+                HStack(spacing: 0) {
+                    EditableSetRow(
                     exerciseType: exerciseType,
                     setNumber: index + 1,
                     badgeStyle: .neutral,
+                    weightUnit: weightUnit,
+                    distanceUnit: distanceUnit,
                     setID: AnyHashable(templateSet.id),
                     focusedField: $focusedField,
                     weight: templateSet.weight,
@@ -297,6 +350,10 @@ struct TemplateFormView: View {
                         )
                     }
                 )
+                }
+                .swipeToDelete(enabled: true) {
+                    viewModel.removeSet(templateSet, from: templateExercise)
+                }
                 .contextMenu {
                     Button(role: .destructive) {
                         viewModel.removeSet(templateSet, from: templateExercise)

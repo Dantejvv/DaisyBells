@@ -15,6 +15,7 @@ struct BridgedSingleLineTextInput: UIViewRepresentable {
     let autocapitalization: UITextAutocapitalizationType
     let autocorrection: UITextAutocorrectionType
     let returnKey: UIReturnKeyType
+    let textAlignment: NSTextAlignment
     let onSubmit: (() -> Void)?
 
     func makeCoordinator() -> SingleLineCoordinator {
@@ -27,6 +28,7 @@ struct BridgedSingleLineTextInput: UIViewRepresentable {
         field.font = font
         field.textColor = textColor
         field.tintColor = textColor
+        field.textAlignment = textAlignment
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.autocapitalizationType = autocapitalization
@@ -309,6 +311,7 @@ struct BridgedTextField: View {
     var font: UIFont = .systemFont(ofSize: UIFont.systemFontSize)
     var textColor: Color = .textPrimary
     var placeholderColor: Color = .textTertiary
+    var textAlignment: NSTextAlignment = .natural
     var onSubmit: (() -> Void)? = nil
 
     var body: some View {
@@ -322,6 +325,7 @@ struct BridgedTextField: View {
             autocapitalization: autocapitalization,
             autocorrection: autocorrection,
             returnKey: returnKey,
+            textAlignment: textAlignment,
             onSubmit: onSubmit
         )
     }

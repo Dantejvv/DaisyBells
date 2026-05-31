@@ -48,8 +48,17 @@ struct CompletedWorkoutDetailView: View {
             VStack(spacing: 14) {
                 summaryCard(workout)
 
-                ForEach(viewModel.exercises, id: \.id) { loggedExercise in
-                    exerciseCard(loggedExercise)
+                if viewModel.exercises.isEmpty {
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No Exercises Logged",
+                        message: "This workout was completed with no exercises."
+                    )
+                    .padding(.vertical, .spacing2xl)
+                } else {
+                    ForEach(viewModel.exercises, id: \.id) { loggedExercise in
+                        exerciseCard(loggedExercise)
+                    }
                 }
             }
             .padding(.horizontal, .spacingBase)
@@ -86,21 +95,21 @@ struct CompletedWorkoutDetailView: View {
             .padding(.top, 10)
 
             // Workout notes (snapshot for completed workouts)
-            CompletedWorkoutNotesField(
+            Divider()
+                .background(Color.borderSubtle)
+                .padding(.top, 10)
+
+            DebouncedNotesEditor(
                 initialValue: workout.notes ?? workout.fromTemplate?.notes ?? "",
-                onCommit: { newValue in
-                    await viewModel.updateNotes(newValue)
-                }
+                placeholder: "Notes",
+                maxLines: 5,
+                onCommit: { await viewModel.updateNotes($0) }
             )
+            .padding(.top, .spacingSm)
         }
         .padding(14)
         .padding(.horizontal, 2)
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: .radiusLg))
-        .overlay(
-            RoundedRectangle(cornerRadius: .radiusLg)
-                .stroke(Color.borderSubtle, lineWidth: 1)
-        )
+        .cardSurface()
     }
 
     private func summaryStatItem(label: String, value: String) -> some View {
@@ -184,48 +193,5 @@ struct CompletedWorkoutDetailView: View {
         guard let value else { return nil }
         let from = storedUnit ?? displayUnit
         return value.convertDistance(from: from, to: displayUnit)
-    }
-}
-
-@MainActor
-private struct CompletedWorkoutNotesField: View {
-    let initialValue: String
-    let onCommit: (String) async -> Void
-
-    @State private var draft: String = ""
-    @State private var persistTask: Task<Void, Never>?
-    @State private var didSeed = false
-    @State private var isFocused: Bool = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: .spacingSm) {
-            Divider()
-                .background(Color.borderSubtle)
-                .padding(.top, 10)
-
-            BridgedTextEditor(
-                text: $draft,
-                placeholder: "Notes",
-                isFocused: $isFocused,
-                maxLines: 5,
-                font: .systemFont(ofSize: 13),
-                textColor: .textSecondary
-            )
-        }
-        .task {
-            if !didSeed {
-                draft = initialValue
-                didSeed = true
-            }
-        }
-        .onChange(of: draft) { _, newValue in
-            guard didSeed else { return }
-            persistTask?.cancel()
-            persistTask = Task {
-                try? await Task.sleep(for: .milliseconds(500))
-                if Task.isCancelled { return }
-                await onCommit(newValue)
-            }
-        }
     }
 }
